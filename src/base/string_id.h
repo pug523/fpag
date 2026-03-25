@@ -5,7 +5,6 @@
 #pragma once
 
 #include "base/mem/string_pool_id.h"
-#include "base/numeric.h"
 
 namespace base {
 

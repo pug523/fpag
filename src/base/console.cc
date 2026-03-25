@@ -4,11 +4,10 @@
 
 #include "base/console.h"
 
-#include "base/debug/check.h"
 #include "base/debug/fatal.h"
-#include "build/build_flag.h"
+#include "build/build_config.h"
 
-#if FPAG_BUILDFLAG(OS_WINDOWS)
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <io.h>
 #include <windows.h>
 #else
@@ -20,7 +19,7 @@ namespace base {
 namespace {
 
 bool check_ansi_sequence_available(Stream stream) {
-#if FPAG_BUILDFLAG(OS_WINDOWS)
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
   // Check if GetStdHandle() returns terminal handle
   DWORD handle = 0;
   if (stream == Stream::Stdout) {
@@ -57,7 +56,7 @@ bool check_ansi_sequence_available(Stream stream) {
 
 }  // namespace
 
-bool can_use_ansi_escape_sequence(Stream stream) {
+bool is_ansi_escape_sequence_available(Stream stream) {
   static const bool out = check_ansi_sequence_available(Stream::Stdout);
   static const bool err = check_ansi_sequence_available(Stream::Stderr);
   switch (stream) {
@@ -68,14 +67,14 @@ bool can_use_ansi_escape_sequence(Stream stream) {
 }
 
 void register_console() {
-  // Set console mode to utf8
-#if FPAG_BUILDFLAG(OS_WINDOWS)
+  // Set console mode to utf-8
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
 #endif
   // Call these once to initialize the static variable
-  can_use_ansi_escape_sequence(Stream::Stdout);
-  can_use_ansi_escape_sequence(Stream::Stderr);
+  is_ansi_escape_sequence_available(Stream::Stdout);
+  is_ansi_escape_sequence_available(Stream::Stderr);
 }
 
 }  // namespace base

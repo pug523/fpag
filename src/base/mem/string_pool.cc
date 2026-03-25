@@ -4,12 +4,13 @@
 
 #include "base/mem/string_pool.h"
 
+#include <atomic>
 #include <cstring>
 #include <string_view>
 #include <utility>
 
 #include "base/mem/arena_allocator.h"
-#include "base/numeric.h"
+#include "base/mem/string_pool_id.h"
 
 namespace base {
 

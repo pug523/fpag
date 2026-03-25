@@ -9,18 +9,18 @@
 #include <cstdio>
 #include <cstring>
 #include <format>
-#include <iostream>
 #include <string_view>
 
 #include "base/debug/fatal.h"
-#include "base/log_prefix.h"
+#include "base/logging/sync_logger.h"
+#include "base/numeric.h"
 
 namespace base::internal {
 
 namespace {
 
-inline constexpr std::size_t const_strlen(const char* s) {
-  std::size_t len = 0;
+inline constexpr usize const_strlen(const char* s) {
+  usize len = 0;
   while (s[len] != '\0') {
     len++;
   }
@@ -29,25 +29,31 @@ inline constexpr std::size_t const_strlen(const char* s) {
 
 }  // namespace
 
-void check_fail_log_and_crash(std::string_view header,
-                              std::string_view msg,
-                              std::string_view location) {
-  std::cerr << fatal_prefix() << header;
-  if (!msg.empty()) {
-    std::cerr << msg << '\n';
-  }
-  std::cerr << location;
-  fatal_crash_impl();
-}
-
 void check_fail_impl(const char* expr,
                      const char* file,
                      i32 line,
                      const char* func,
                      std::string_view msg) {
-  check_fail_log_and_crash(std::format("Check failed!\nExpected: '{}'\n", expr),
-                           msg,
-                           std::format("  at {}:{} ({})\n", file, line, func));
+  SyncLogger& logger = global_logger();
+  logger.fatal("Check failed!\nExpected: '{}'\n{}\n  at {}:{} ({})\n", expr,
+               msg, file, line, func);
+  logger.flush();
+  fatal_crash_impl();
+}
+
+void check_op_fail_impl(const char* expected,
+                        const std::string_view lhs,
+                        const std::string_view rhs,
+                        const char* file,
+                        i32 line,
+                        const char* func,
+                        std::string_view msg) {
+  SyncLogger& logger = global_logger();
+  logger.fatal(
+      "Check failed!\nExpected: '{}', Actual: {} vs {}\n{}\n  at {}:{} ({})\n",
+      expected, lhs, rhs, msg, file, line, func);
+  logger.flush();
+  fatal_crash_impl();
 }
 
 void raw_check_fail_impl(const char* expr,

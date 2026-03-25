@@ -1,0 +1,4 @@
+# Ignore all vendored third-party files.
+# https://clang.llvm.org/docs/ClangFormat.html#clang-format-ignore
+
+**

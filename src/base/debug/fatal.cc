@@ -4,31 +4,34 @@
 
 #include "base/debug/fatal.h"
 
+#include <cstdlib>
 #include <format>
 #include <iostream>
+#include <string_view>
 
-#include "base/log_prefix.h"
-#include "build/build_flag.h"
+#include "base/logging/log_level.h"
+#include "base/numeric.h"
+#include "build/build_config.h"
 
-#if FPAG_BUILDFLAG(COMPILER_MSVC)
+#if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #include <intrin.h>
 #endif
 
 namespace base::internal {
 
 void fatal_crash_impl() {
-#if FPAG_BUILDFLAG(HAS_BUILTIN_TRAP)
+#if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
   __builtin_trap();
-#elif FPAG_BUILDFLAG(COMPILER_MSVC)
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
   __debugbreak();
 #endif
 
   // fallback
   std::abort();
 
-#if FPAG_BUILDFLAG(COMPILER_CLANG_OR_GCC)
+#if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
   __builtin_unreachable();
-#elif FPAG_BUILDFLAG(COMPILER_MSVC)
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
   __assume(false);
 #endif
 
@@ -39,7 +42,8 @@ void unreachable_impl(const char* file,
                       i32 line,
                       const char* func,
                       std::string_view msg) {
-  std::cerr << std::format("{}UNREACHABLE\n", fatal_prefix());
+  std::cerr << std::format("{}UNREACHABLE\n",
+                           log_prefix(LogLevel::Fatal, false));
   if (!msg.empty()) {
     std::cerr << msg << '\n';
   }

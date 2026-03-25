@@ -7,7 +7,6 @@
 #include <type_traits>
 
 #include "base/debug/check.h"
-#include "base/numeric.h"
 
 namespace base {
 

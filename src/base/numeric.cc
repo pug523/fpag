@@ -8,9 +8,9 @@
 
 namespace base {
 
-static_assert(std::numeric_limits<float>::is_iec559 && sizeof(f32) == 4,
+static_assert(std::numeric_limits<f32>::is_iec559 && sizeof(f32) == 4,
               "f32 requires IEEE754 32 bit float");
-static_assert(std::numeric_limits<double>::is_iec559 && sizeof(f64) == 8,
+static_assert(std::numeric_limits<f64>::is_iec559 && sizeof(f64) == 8,
               "f64 requires IEEE754 64 bit float");
 
 }  // namespace base

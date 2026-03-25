@@ -4,47 +4,53 @@
 
 #pragma once
 
-#include "build/build_flag.h"
+#include "build/build_config.h"
 
-#if FPAG_BUILDFLAG(IS_DEBUG)
+#if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
 #include <format>
-#include <iostream>
+#include <string_view>
 #include <utility>
 
-#include "base/log_prefix.h"
 #include "base/numeric.h"
 #endif
 
-#if FPAG_BUILDFLAG(IS_DEBUG)
 namespace base::internal {
 
-void dlog_impl(const char* file,
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+void dlog_impl(std::string_view formatted_msg,
+               const char* file,
                i32 line,
-               const char* func,
-               std::string_view fmt,
-               std::format_args args);
+               const char* func);
+
 template <typename... Args>
 inline void dlog_internal(const char* file,
                           i32 line,
                           const char* func,
                           std::format_string<Args...> fmt,
                           Args&&... args) {
-  internal::dlog_impl(file, line, func, fmt.get(),
-                      std::make_format_args(args...));
+  char buf[512];
+  const std::format_to_n_result result =
+      std::format_to_n(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
+  const std::string_view formatted_msg(buf, result.size);
+  dlog_impl(formatted_msg, file, line, func);
 }
-
-}  // namespace base::internal
 #endif
 
-#if FPAG_BUILDFLAG(IS_DEBUG)
+}  // namespace base::internal
+
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+
 #define dlog(fmt, ...)              \
   ::base::internal::dlog_internal(  \
       __FILE__, __LINE__, __func__, \
       fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 #define dvar(...) dlog(dump_vars(__VA_ARGS__))
+
 #else
+
 #define dlog(fmt, ...) \
   noop(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 #define dvar(...) noop(__VA_ARGS__)
-#endif  // FPAG_BUILDFLAG(IS_DEBUG)
+
+#endif  // FPAG_BUILD_FLAG(IS_DEBUG)

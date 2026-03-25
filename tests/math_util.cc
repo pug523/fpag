@@ -5,6 +5,7 @@
 #include "base/math_util.h"
 
 #include <limits>
+#include <type_traits>
 
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"

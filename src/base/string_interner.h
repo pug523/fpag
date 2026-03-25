@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "base/concurrent_hash_map.h"
-#include "base/mem/blocked_arena_array.h"
 #include "base/mem/string_pool.h"
+#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
-#include "base/string_id.h"
 #include "base/xxh3_hasher.h"
 
 namespace base {

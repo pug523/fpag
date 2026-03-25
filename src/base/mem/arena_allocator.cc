@@ -5,8 +5,11 @@
 #include "base/mem/arena_allocator.h"
 
 #include <algorithm>
+#include <cstdint>
 
+#include "base/debug/check.h"
 #include "base/math_util.h"
+#include "base/mem/page_allocator.h"
 #include "base/numeric.h"
 
 namespace base {
@@ -135,7 +138,7 @@ void* ArenaAllocator::try_alloc_from_block(usize size, usize align) {
 
   // Calculate the aligned address.
   const uintptr_t aligned_addr =
-      (curr_addr + align - 1) & ~(uintptr_t(align) - 1);
+      (curr_addr + align - 1) & ~(static_cast<uintptr_t>(align) - 1);
   const usize padding = static_cast<usize>(aligned_addr - curr_addr);
 
   // Check if padding + size fits within the block's capacity.

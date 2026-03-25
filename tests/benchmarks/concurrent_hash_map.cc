@@ -4,11 +4,13 @@
 
 #include "base/concurrent_hash_map.h"
 
-#include <numeric>
+#include <string>
 #include <thread>
 #include <vector>
 
-#include "catch2/catch_all.hpp"
+#include "base/numeric.h"
+#include "catch2/benchmark/catch_benchmark.hpp"
+#include "catch2/catch_test_macros.hpp"
 
 namespace base {
 

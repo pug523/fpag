@@ -4,12 +4,14 @@
 
 #include "base/string_interner.h"
 
+#include <format>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <vector>
 
 #include "base/numeric.h"
+#include "base/string_id.h"
 #include "catch2/catch_test_macros.hpp"
 
 namespace base {

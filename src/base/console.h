@@ -13,7 +13,7 @@ enum class Stream : u8 {
   Stderr,
 };
 
-bool can_use_ansi_escape_sequence(Stream stream);
+bool is_ansi_escape_sequence_available(Stream stream);
 
 void register_console();
 

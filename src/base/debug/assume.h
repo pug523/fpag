@@ -4,24 +4,12 @@
 
 #pragma once
 
-#include "build/build_flag.h"
+#include "build/build_config.h"
 
-#if FPAG_BUILDFLAG(COMPILER_CLANG)
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
 #define FPAG_ASSUME(expr) __builtin_assume(static_cast<bool>(expr))
-
-#elif FPAG_BUILDFLAG(COMPILER_GCC)
-#define FPAG_ASSUME(expr)         \
-  do {                            \
-    if (!static_cast<bool>(expr)) \
-      __builtin_unreachable();    \
-  } while (0)
-
-#elif FPAG_BUILDFLAG(COMPILER_MSVC)
-
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #define FPAG_ASSUME(expr) __assume(static_cast<bool>(expr))
-
 #else
-
 #define FPAG_ASSUME(expr)
-
 #endif

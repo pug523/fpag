@@ -5,13 +5,10 @@
 #pragma once
 
 #include <cstddef>
-#include <memory>
-#include <type_traits>
 #include <utility>
 
-#include "base/arena_deleter.h"
 #include "base/debug/check.h"
-#include "base/mem/page_allocator.h"
+#include "base/mem/arena_deleter.h"
 #include "base/numeric.h"
 
 namespace base {

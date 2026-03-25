@@ -5,10 +5,9 @@
 #include "base/string_interner.h"
 
 #include <string_view>
-#include <utility>
 
 #include "base/concurrent_hash_map.h"
-#include "base/numeric.h"
+#include "base/mem/string_pool_id.h"
 #include "base/string_id.h"
 
 namespace base {

@@ -4,14 +4,17 @@
 
 #include "base/mem/string_pool.h"
 
+#include <algorithm>
 #include <numeric>
 #include <random>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
-#include "catch2/catch_all.hpp"
+#include "catch2/benchmark/catch_benchmark.hpp"
+#include "catch2/catch_test_macros.hpp"
 
 namespace base {
 
@@ -56,7 +59,9 @@ TEST_CASE("StringPool Benchmark", "[base][string_pool][benchmark][.]") {
 
     std::vector<usize> indices(ids.size());
     std::iota(indices.begin(), indices.end(), 0);
-    std::shuffle(indices.begin(), indices.end(), Catch::sharedRng());
+    std::random_device r{};
+    static std::mt19937 g(r());
+    std::shuffle(indices.begin(), indices.end(), g);
 
     BENCHMARK("Random Get 10k strings") {
       u64 total_len = 0;

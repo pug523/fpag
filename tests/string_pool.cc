@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
-#include "catch2/matchers/catch_matchers_string.hpp"
 
 namespace base {
 

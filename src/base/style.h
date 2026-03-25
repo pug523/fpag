@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <array>
 #include <cstddef>
 
 #include "base/numeric.h"
@@ -66,12 +65,5 @@ constexpr const char kSemicolon = ';';
 constexpr const usize kStyleCodeLength = 4;
 constexpr const usize kResetCodeLength = kStyleCodeLength;
 constexpr const usize kRgbCodeLength = 20;
-
-// Logging
-constexpr const char* kDebugStyle = "\033[1;38;2;40;170;245m";  // Bold Cyan
-constexpr const char* kInfoStyle = "\033[1;38;2;50;255;50m";    // Bold Green
-constexpr const char* kWarnStyle = "\033[1;38;2;255;220;15m";   // Bold Yellow
-constexpr const char* kErrorStyle = "\033[1;38;2;255;5;5m";     // Bold Red
-constexpr const char* kFatalStyle = "\033[1;38;2;255;40;255m";  // Bold Magenta
 
 }  // namespace base

@@ -8,7 +8,9 @@
 #include <cstring>
 #include <utility>
 
+#include "base/debug/check.h"
 #include "base/mem/arena_allocator.h"
+#include "base/numeric.h"
 
 namespace base {
 

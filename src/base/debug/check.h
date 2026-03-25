@@ -4,20 +4,18 @@
 
 #pragma once
 
-#include <format>
 #include <string_view>
 
 #include "base/debug/assume.h"
-#include "base/debug/common.h"
+#include "base/debug/string.h"
 #include "base/numeric.h"
-#include "build/build_flag.h"
+#include "build/build_config.h"
+
+#if FPAG_BUILD_FLAG(IS_RELEASE)
+#include "base/debug/common.h"
+#endif
 
 namespace base::internal {
-
-[[noreturn, gnu::cold]] void check_fail_log_and_crash(
-    std::string_view header,
-    std::string_view msg,
-    std::string_view location);
 
 [[noreturn, gnu::cold]] void check_fail_impl(const char* expr,
                                              const char* file,
@@ -25,7 +23,15 @@ namespace base::internal {
                                              const char* func,
                                              std::string_view msg = "");
 
-[[noreturn, gnu::cold]] inline void check_op_fail_impl(
+[[noreturn, gnu::cold]] void check_op_fail_impl(const char* expected,
+                                                std::string_view lhs,
+                                                std::string_view rhs,
+                                                const char* file,
+                                                i32 line,
+                                                const char* func,
+                                                std::string_view msg = "");
+
+[[noreturn, gnu::cold]] inline void check_op_fail_internal(
     const char* expected,
     const auto& lhs,
     const auto& rhs,
@@ -33,10 +39,10 @@ namespace base::internal {
     i32 line,
     const char* func,
     std::string_view msg = "") {
-  check_fail_log_and_crash(
-      std::format("Check failed!\nExpected: '{}', Actual: {} vs {}\n", expected,
-                  lhs, rhs),
-      msg, std::format("  at {}:{} ({})\n", file, line, func));
+  auto lhs_str = to_debug_string(lhs);
+  auto rhs_str = to_debug_string(rhs);
+  check_op_fail_impl(expected, std::string_view{lhs_str},
+                     std::string_view{rhs_str}, file, line, func, msg);
 }
 
 [[noreturn, gnu::cold]] void raw_check_fail_impl(const char* expr,
@@ -83,17 +89,17 @@ namespace base::internal {
   check_evaluate(expr, ::base::internal::raw_check_fail_impl( \
                            #expr, __FILE__, __LINE__, __func__, msg))
 
-#define check_op(op, lhs, rhs)                                                \
-  check_op_evaluate(                                                          \
-      op, lhs, rhs,                                                           \
-      ::base::internal::check_op_fail_impl(#lhs " " #op " " #rhs, _lhs, _rhs, \
-                                           __FILE__, __LINE__, __func__))
+#define check_op(op, lhs, rhs)                  \
+  check_op_evaluate(                            \
+      op, lhs, rhs,                             \
+      ::base::internal::check_op_fail_internal( \
+          #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, __func__))
 
-#define check_op_msg(op, lhs, rhs, msg)                                       \
-  check_op_evaluate(                                                          \
-      op, lhs, rhs,                                                           \
-      ::base::internal::check_op_fail_impl(#lhs " " #op " " #rhs, _lhs, _rhs, \
-                                           __FILE__, __LINE__, __func__, msg))
+#define check_op_msg(op, lhs, rhs, msg)                                        \
+  check_op_evaluate(op, lhs, rhs,                                              \
+                    ::base::internal::check_op_fail_internal(                  \
+                        #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, \
+                        __func__, msg))
 
 #define check_eq(lhs, rhs) check_op(==, lhs, rhs)
 #define check_ne(lhs, rhs) check_op(!=, lhs, rhs)
@@ -109,7 +115,7 @@ namespace base::internal {
 #define check_gt_msg(lhs, rhs, msg) check_op_msg(>, lhs, rhs, msg)
 #define check_ge_msg(lhs, rhs, msg) check_op_msg(>=, lhs, rhs, msg)
 
-#if FPAG_BUILDFLAG(IS_DEBUG)
+#if FPAG_BUILD_FLAG(IS_DEBUG)
 
 #define dcheck(expr) check(expr)
 #define dcheck_msg(expr, msg) check_msg(expr, msg)
@@ -151,4 +157,4 @@ namespace base::internal {
 #define dcheck_gt_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
 #define dcheck_ge_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
 
-#endif  // FPAG_BUILDFLAG(IS_DEBUG)
+#endif  // FPAG_BUILD_FLAG(IS_DEBUG)

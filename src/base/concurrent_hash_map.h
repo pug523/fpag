@@ -11,6 +11,7 @@
 #include <limits>
 #include <utility>
 
+#include "base/debug/check.h"
 #include "base/debug/fatal.h"
 #include "base/math_util.h"
 #include "base/mem/page_allocator.h"

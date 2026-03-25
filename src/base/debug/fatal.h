@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "base/debug/check.h"
+#include <string_view>
+
+#include "base/numeric.h"
 
 namespace base::internal {
 

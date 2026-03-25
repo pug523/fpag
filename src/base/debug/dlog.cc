@@ -5,21 +5,33 @@
 #include "base/debug/dlog.h"
 
 #include <format>
-#include <iostream>
-#include <string>
 #include <string_view>
 
-#include "base/log_prefix.h"
+#include "base/console.h"
+#include "base/logging/log_level.h"
+#include "base/logging/sync_logger.h"
+#include "base/mem/page_allocator.h"
+#include "base/numeric.h"
 
 namespace base::internal {
 
-void dlog_impl(const char* file,
+namespace {
+
+inline SyncLogger& dlog_instance() {
+  static SyncLogger logger(static_cast<char*>(allocate_pages(kPageSize)),
+                           kPageSize, LogLevel::Debug,
+                           is_ansi_escape_sequence_available(Stream::Stdout));
+  return logger;
+}
+
+}  // namespace
+
+void dlog_impl(std::string_view formatted_msg,
+               const char* file,
                i32 line,
-               const char* func,
-               std::string_view fmt,
-               std::format_args args) {
-  std::clog << std::format("{}{}  [on {} ({}:{})]\n", debug_prefix(),
-                           std::vformat(fmt, args), func, file, line);
+               const char* func) {
+  dlog_instance().debug("{}  [on {} ({}:{})]\n", formatted_msg, func, file,
+                        line);
 }
 
 }  // namespace base::internal

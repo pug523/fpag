@@ -6,9 +6,6 @@ set_project("fpag")
 local project_version = "0.1.0"
 set_version(project_version)
 
-set_policy("build.ccache", true)
-set_policy("check.auto_ignore_flags", false)
-
 option("coverage", { default = false, description = "use llvm-cov for analyzing test coverage" })
 option("xray", { default = false, description = "use llvm-xray for determining performance bottleneck" })
 option("optreport", { default = false, description = "report optimization result" })
@@ -16,11 +13,21 @@ option("sanitizers", { default = false, description = "enable address/undefined 
 option("timetrace", { default = false, description = "generate timetrace json that can be see with perfetto ui" })
 option("native", { default = false, description = "native architecture optimization" })
 option("unitybuild", { default = false, description = "enable unity build to shorten build time" })
+option("lto", { default = false, description = "use link time optimization on release builds" })
 option("tests", { default = false, description = "build unit tests and benchmarks" })
 option("stdlib", { default = "libstdc++", description = "stl to use" })
 
+set_policy("build.ccache", true)
+set_policy("check.auto_ignore_flags", false)
+
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.compile_commands.autoupdate", { outputdir = "out" })
+
+if has_config("lto") and is_mode("release") then
+  set_policy("build.optimization.lto", true)
+end
+
+set_policy("build.c++.msvc.runtime", "MD")
 
 set_languages("c++20")
 set_targetdir("out/$(plat)-$(arch)-$(mode)")
@@ -82,6 +89,33 @@ task("format")
   end)
 task_end()
 
+task("tidy")
+  set_category(task_category)
+  set_menu({
+    usage = "xmake tidy",
+    description = "Run clang-tidy --fix-errors on the source code to fix errors and warnings"
+  })
+  on_run( function ()
+    local files = os.files("src/**.cc")
+    table.join2(files, os.files("src/**.h"))
+    table.join2(files, os.files("tests/**.cc"))
+    table.join2(files, os.files("tests/**.h"))
+
+    if #files > 0 then
+      print("executing clang-tidy with `--fix-errors`...")
+      local result = os.iorunv("clang-tidy", table.join({
+        "--use-color",
+        "--fix-errors",
+        "--config-file=./.clang-tidy",
+        "-p",
+        "out/",
+      }, files)):trim()
+      print(result)
+    end
+  end)
+task_end()
+
+
 task("lint")
   set_category(task_category)
   set_menu({
@@ -105,6 +139,14 @@ task("lint")
         "--ferror-limit=1",
         "--sort-includes",
         "-i"
+      }, files)):trim()
+      print(result)
+      print("executing clang-tidy...")
+      result = os.iorunv("clang-tidy", table.join({
+        "--use-color",
+        "--config-file=./.clang-tidy",
+        "-p",
+        "out/",
       }, files)):trim()
       print(result)
     end
@@ -187,32 +229,11 @@ after_run( function (target)
   end
 end)
 
--- package
--- package("fpag")
---   set_homepage("https://github.com/pug523/fpag")
---   set_description("A high-performance C++20 utility library")
---   set_license("Apache-2.0")
---
---   add_deps("xxhash v0.8.3")
---
---   on_install( function (package)
---     local configs = { }
---     import("package.tools.xmake").install(package, configs)
---   end)
---
---   on_test( function (package)
---     package:check_cxxsnippets({ test = [[
---       #include <fpag/fpag.h>
---       void test() { /* check symbols */ }
---     ]] }, { configs = { languages = "c++20" } })
---   end)
--- package_end()
-
 -- targets
 target("fpag.root_config")
   set_kind("phony", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
-  add_cxxflags("-Wshadow", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", { public = true })
+  add_cxxflags("-Wshadow", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
   set_exceptions("none", { public = true })
   add_cxxflags("-fno-exceptions", "-fno-rtti", "-fPIC", { public = true })
   add_cxxflags("-fstack-protector-strong", { public = true })
@@ -233,17 +254,21 @@ target("fpag.root_config")
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
     add_cxxflags("-fno-omit-frame-pointer", "-rdynamic", "-g3", { public = true })
-    add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
+    add_defines("FPAG_BUILD_DEBUG", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
     if has_config("sanitizers") and get_config("sanitizers") and not is_plat("windows") then
       set_policy("build.sanitizer.address", true)
       set_policy("build.sanitizer.undefined", true)
       set_policy("build.sanitizer.leak", true)
-      add_cxxflags("-fsanitize=address,undefined,leak", "-fno-omit-frame-pointer", "-fno-sanitize-recover=all", { public = true })
+      add_cxxflags("-fsanitize=address,undefined,leak", "-ftrapv", "-fno-sanitize-recover=all", { public = true })
       add_ldflags("-fsanitize=address,undefined,leak", { public = true })
     end
   elseif is_mode("release") then
     set_symbols("hidden", { public = true })
+
+    -- set_optimize("smallest", { public = true })
+    -- set_optimize("faster", { public = true })
     set_optimize("fastest", { public = true })
+
     set_strip("all", { public = true })
     if has_config("native") and get_config("native") and not is_cross() then
       add_cxxflags("-march=native", { public = true })
@@ -255,21 +280,21 @@ target("fpag.root_config")
     add_ldflags("-stdlib=" .. get_config("stdlib"), { public = true })
   end
 
-  if has_config("xray") and get_config("xray") and is_mode("debug") then
+  if has_config("xray") and is_mode("debug") then
     add_cxxflags("-fxray-instrument", "-fxray-instruction-threshold=200", { public = true })
     add_ldflags("-fxray-instrument", { public = true })
   end
-  if has_config("coverage") and get_config("coverage") and not is_plat("windows") then
+  if has_config("coverage") and not is_plat("windows") then
     add_cxxflags("-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
     add_ldflags("-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
   end
-  if has_config("optreport") and get_config("optreport") and is_mode("release") then
+  if has_config("optreport") and is_mode("release") then
     add_cxxflags("-fsave-optimization-record", { public = true })
   end
-  if has_config("timetrace") and get_config("timetrace") then
+  if has_config("timetrace") then
     add_cxxflags("-ftime-trace", { public = true })
   end
-  if has_config("unitybuild") and get_config("unitybuild") then
+  if has_config("unitybuild") then
     add_rules("c++.unity_build", { batchsize = 12 })
   end
 target_end()
@@ -282,33 +307,10 @@ target("fpag")
 
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
 
-  add_configfiles("src/build/build_flag.h.in", {
-    filename = "src/build/build_flag.h",
-    variables = {
-      -- debug
-      FPAG_IS_DEBUG = (is_mode("debug")) and 1 or 0,
+  add_configfiles("build_info.h"
 
-      -- compiler
-      FPAG_COMPILER_CLANG = (has_config("cc", "clang", "clang-cl")) and 1 or 0,
-      FPAG_COMPILER_GCC = (has_config("cc", "gcc")) and 1 or 0,
-      FPAG_COMPILER_MSVC = (has_config("cc", "cl")) and 1 or 0,
 
-      -- platform
-      FPAG_OS_LINUX = (is_plat("linux")) and 1 or 0,
-      FPAG_OS_MACOS = (is_plat("macosx")) and 1 or 0,
-      FPAG_OS_WINDOWS = (is_plat("windows")) and 1 or 0,
-
-      -- sanitizer
-      FPAG_HAS_ASAN = (has_config("sanitizers")) and 1 or 0,
-      FPAG_HAS_UBSAN = (has_config("sanitizers")) and 1 or 0,
-      FPAG_HAS_TSAN = (has_config("sanitizers")) and 1 or 0,
-
-      -- debug features
-      FPAG_ENABLE_DCHECK = (is_mode("debug")) and 1 or 0,
-      FPAG_ENABLE_LOG = (true) and 1 or 0,
-    }
-  })
-  add_includedirs("$(builddir)/src", { public = true })
+  )
 
   set_default(true)
 target_end()
