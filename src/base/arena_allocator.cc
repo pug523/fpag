@@ -30,6 +30,7 @@ ArenaAllocator& ArenaAllocator::operator=(ArenaAllocator&& other) noexcept {
 
 void ArenaAllocator::reserve(usize size, bool use_huge_pages) {
   // Simply push a new block; no need to check for sufficient space.
+  dcheck(size > 0);
   alloc_new_block(size, use_huge_pages);
 }
 
@@ -38,6 +39,7 @@ void* ArenaAllocator::alloc(usize size,
                             usize align,
                             BlockPosition* block_pos) {
   dcheck(is_power_of_two(align));
+  dcheck(size > 0);
 
   // First, try to allocate from the current blocks if exists.
   if (block_ && block_count_ > 0) [[likely]] {

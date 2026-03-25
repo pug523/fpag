@@ -26,7 +26,6 @@ TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   SECTION("Small allocation alignment") {
     // Preservation with default alignment
     void* ptr1 = arena.alloc(1);
-    (void)ptr1;
 
     uintptr_t addr = reinterpret_cast<uintptr_t>(ptr1);
     CHECK(addr % alignof(std::max_align_t) == 0);
@@ -40,12 +39,8 @@ TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   SECTION("Custom alignment requirements") {
     // Preservation with 64 byte alignment
     void* ptr = arena.alloc(10, false, 64);
+    CHECK(ptr != nullptr);
     CHECK(reinterpret_cast<uintptr_t>(ptr) % 64 == 0);
-  }
-
-  SECTION("Allocation size zero") {
-    // Should return a valid pointer or nullptr for 0 size allocation
-    void* _ = arena.alloc(0);
   }
 }
 
@@ -78,8 +73,9 @@ TEST_CASE("ArenaAllocator block management", "[base][arena]") {
   }
 
   SECTION("Reset clears the state") {
-    void* _ = arena.alloc(100);
-    _ = arena.alloc(ArenaAllocator::kBlockSize);
+    void* ptr = arena.alloc(100);
+    ptr = arena.alloc(ArenaAllocator::kBlockSize);
+    CHECK(ptr != nullptr);
     arena.reset();
 
     ArenaAllocator::BlockPosition pos = arena.current_position();
@@ -122,12 +118,14 @@ TEST_CASE("ArenaAllocator object creation", "[base][arena]") {
 
 TEST_CASE("ArenaAllocator move semantics", "[base][arena]") {
   ArenaAllocator arena;
-  void* _ = arena.alloc(1024);
+  void* p = arena.alloc(1024);
+  CHECK(p != nullptr);
   ArenaAllocator::BlockPosition pos_before = arena.current_position();
 
   SECTION("Move constructor") {
     ArenaAllocator moved_arena(std::move(arena));
     CHECK(moved_arena.current_position().offset == pos_before.offset);
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     CHECK(arena.current_position().block_id == 0);
   }
 

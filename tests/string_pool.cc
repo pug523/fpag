@@ -119,6 +119,7 @@ TEST_CASE("StringPool move semantics", "[base][string_pool]") {
     CHECK(moved_to_pool.size() == original_size);
 
     // Verify source pool is in a valid, likely empty state.
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     CHECK(original_pool.size() == 0);
 
     // Verify the new pool can still be used.
@@ -138,6 +139,7 @@ TEST_CASE("StringPool move semantics", "[base][string_pool]") {
     CHECK(assigned_pool.size() == original_size);
 
     // Verify original is reset.
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     CHECK(original_pool.size() == 0);
 
     // Verify pointers/IDs from the original pool are still valid in the new
