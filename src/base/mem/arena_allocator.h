@@ -55,7 +55,7 @@ class ArenaAllocator {
   void reset();
 
   inline const Block* block(usize index) const {
-    dcheck(index < block_count_);
+    dcheck_lt(index, block_count_);
     dcheck(block_);
     return block_[index];
   }

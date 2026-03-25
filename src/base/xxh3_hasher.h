@@ -15,7 +15,8 @@
 
 namespace base {
 
-struct Xxh3Hasher {
+// A wrapper around the XXH3_64bits from xxhash.
+struct Xxh3Hasher64 {
   inline u64 operator()(const std::string& str) const {
     return XXH3_64bits(str.data(), str.size());
   }

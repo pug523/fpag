@@ -29,7 +29,8 @@ class StringPool {
   StringPool(StringPool&& other) noexcept;
   StringPool& operator=(StringPool&& other) noexcept;
 
-  StringPoolId append(const std::string_view str);
+  StringPoolId append(const std::string_view str,
+                      std::string_view* out = nullptr);
 
   inline std::string_view get(StringPoolId id) const {
     const ArenaAllocator::Block* block_base =

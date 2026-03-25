@@ -5,8 +5,10 @@
 #include "base/console.h"
 
 #include "base/debug/check.h"
+#include "base/debug/fatal.h"
+#include "build/build_flag.h"
 
-#if FPAG_IS_PLAT_WINDOWS
+#if FPAG_BUILDFLAG(OS_WINDOWS)
 #include <io.h>
 #include <windows.h>
 #else
@@ -18,7 +20,7 @@ namespace base {
 namespace {
 
 bool check_ansi_sequence_available(Stream stream) {
-#if FPAG_IS_PLAT_WINDOWS
+#if FPAG_BUILDFLAG(OS_WINDOWS)
   // Check if GetStdHandle() returns terminal handle
   DWORD handle = 0;
   if (stream == Stream::Stdout) {
@@ -49,8 +51,7 @@ bool check_ansi_sequence_available(Stream stream) {
   } else if (stream == Stream::Stderr) {
     return isatty(STDERR_FILENO);
   }
-  dcheck(false);
-  return false;
+  unreachable();
 #endif
 }
 
@@ -62,13 +63,13 @@ bool can_use_ansi_escape_sequence(Stream stream) {
   switch (stream) {
     case Stream::Stdout: return out;
     case Stream::Stderr: return err;
-    default: dcheck(false); return false;
+    default: unreachable();
   }
 }
 
 void register_console() {
   // Set console mode to utf8
-#if FPAG_IS_PLAT_WINDOWS
+#if FPAG_BUILDFLAG(OS_WINDOWS)
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
 #endif

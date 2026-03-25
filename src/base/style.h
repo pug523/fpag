@@ -11,7 +11,7 @@
 
 namespace base {
 
-// Formats
+// Format
 constexpr const char* kReset = "\033[0m";
 constexpr const char* kBold = "\033[1m";
 constexpr const char* kDim = "\033[2m";
@@ -22,7 +22,7 @@ constexpr const char* kReverse = "\033[7m";
 constexpr const char* kHidden = "\033[8m";
 constexpr const char* kStrike = "\033[9m";
 
-// Colors
+// Color
 constexpr const char* kBlack = "\033[30m";
 constexpr const char* kRed = "\033[31m";
 constexpr const char* kGreen = "\033[32m";
@@ -40,7 +40,7 @@ constexpr const char* kBrightMagenta = "\033[95m";
 constexpr const char* kBrightCyan = "\033[96m";
 constexpr const char* kBrightWhite = "\033[97m";
 
-// Background colors
+// Background color
 constexpr const char* kBgBlack = "\033[40m";
 constexpr const char* kBgRed = "\033[41m";
 constexpr const char* kBgGreen = "\033[42m";
@@ -58,7 +58,7 @@ constexpr const char* kBgBrightMagenta = "\033[105m";
 constexpr const char* kBgBrightCyan = "\033[106m";
 constexpr const char* kBgBrightWhite = "\033[107m";
 
-// Utilities
+// Utility
 constexpr const char* kFgRgbPrefix = "\033[38;2;";
 constexpr const char* kBgRgbPrefix = "\033[48;2;";
 constexpr const char kRgbSuffix = 'm';
@@ -68,10 +68,10 @@ constexpr const usize kResetCodeLength = kStyleCodeLength;
 constexpr const usize kRgbCodeLength = 20;
 
 // Logging
-constexpr const char* kDebugStyle = "\033[1;38;2;40;170;245m";
-constexpr const char* kInfoStyle = "\033[1;38;2;50;255;50m";
-constexpr const char* kWarnStyle = "\033[1;38;2;255;220;15m";
-constexpr const char* kErrorStyle = "\033[1;38;2;255;5;5m";
-constexpr const char* kFatalStyle = "\033[1;38;2;255;40;255m";
+constexpr const char* kDebugStyle = "\033[1;38;2;40;170;245m";  // Bold Cyan
+constexpr const char* kInfoStyle = "\033[1;38;2;50;255;50m";    // Bold Green
+constexpr const char* kWarnStyle = "\033[1;38;2;255;220;15m";   // Bold Yellow
+constexpr const char* kErrorStyle = "\033[1;38;2;255;5;5m";     // Bold Red
+constexpr const char* kFatalStyle = "\033[1;38;2;255;40;255m";  // Bold Magenta
 
 }  // namespace base

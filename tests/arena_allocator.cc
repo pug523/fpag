@@ -74,6 +74,7 @@ TEST_CASE("ArenaAllocator block management", "[base][arena]") {
 
   SECTION("Reset clears the state") {
     void* ptr = arena.alloc(100);
+    CHECK(ptr != nullptr);
     ptr = arena.alloc(ArenaAllocator::kBlockSize);
     CHECK(ptr != nullptr);
     arena.reset();

@@ -14,17 +14,18 @@
 namespace base {
 
 StringId StringInterner::intern(const std::string_view str) {
-  if (const StringId* existing = map_.find(str)) {
+  const StringId* existing = map_.find(str);
+  if (existing) {
     return *existing;
   }
 
-  const StringPoolId pool_id = pool_.append(str);
-  const std::string_view stored = pool_.get(pool_id);
+  std::string_view stored;
+  const StringPoolId pool_id = pool_.append(str, &stored);
 
   bool inserted = false;
   const StringId* ptr = map_.try_insert(stored, pool_id, &inserted);
 
-  if (ptr) {
+  if (ptr) [[likely]] {
     return *ptr;
   } else {
     return kInvalidStringId;

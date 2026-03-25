@@ -46,7 +46,8 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
   return *this;
 }
 
-StringPoolId StringPool::append(const std::string_view str) {
+StringPoolId StringPool::append(const std::string_view str,
+                                std::string_view* out) {
   if (str.empty()) {
     return {.block_id = 0, .offset = 0, .length = 0};
   }
@@ -55,6 +56,10 @@ StringPoolId StringPool::append(const std::string_view str) {
   void* const ptr =
       arena_allocator_.alloc(str.size(), use_huge_pages_, 1, &block_pos);
   std::memcpy(ptr, str.data(), str.size());
+
+  if (out) {
+    *out = std::string_view(static_cast<char*>(ptr), str.size());
+  }
 
   size_.fetch_add(str.size(), std::memory_order_relaxed);
   string_count_.fetch_add(1, std::memory_order_relaxed);

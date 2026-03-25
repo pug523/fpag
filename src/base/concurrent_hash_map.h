@@ -11,6 +11,7 @@
 #include <limits>
 #include <utility>
 
+#include "base/debug/fatal.h"
 #include "base/math_util.h"
 #include "base/mem/page_allocator.h"
 #include "base/numeric.h"
@@ -178,8 +179,7 @@ class ConcurrentHashMap {
     }
 
     // Full; should not happen.
-    dcheck(false);
-    return nullptr;
+    unreachable();
   }
 
   u64 capacity() const { return capacity_.load(std::memory_order_relaxed); }

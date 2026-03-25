@@ -4,7 +4,9 @@
 
 #pragma once
 
-#if FPAG_IS_DEBUG
+#include "build/build_flag.h"
+
+#if FPAG_BUILDFLAG(IS_DEBUG)
 #include <cstdlib>
 #include <format>
 #include <iostream>
@@ -14,7 +16,7 @@
 #include "base/numeric.h"
 #endif
 
-#if FPAG_IS_DEBUG
+#if FPAG_BUILDFLAG(IS_DEBUG)
 namespace base::internal {
 
 void dlog_impl(const char* file,
@@ -35,7 +37,7 @@ inline void dlog_internal(const char* file,
 }  // namespace base::internal
 #endif
 
-#if FPAG_IS_DEBUG
+#if FPAG_BUILDFLAG(IS_DEBUG)
 #define dlog(fmt, ...)              \
   ::base::internal::dlog_internal(  \
       __FILE__, __LINE__, __func__, \
@@ -45,4 +47,4 @@ inline void dlog_internal(const char* file,
 #define dlog(fmt, ...) \
   noop(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 #define dvar(...) noop(__VA_ARGS__)
-#endif  // FPAG_IS_DEBUG
+#endif  // FPAG_BUILDFLAG(IS_DEBUG)

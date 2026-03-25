@@ -39,7 +39,7 @@ class StringInterner {
  private:
   StringPool pool_;
 
-  ConcurrentHashMap<std::string_view, StringPoolId, Xxh3Hasher> map_;
+  ConcurrentHashMap<std::string_view, StringPoolId, Xxh3Hasher64> map_;
 };
 
 }  // namespace base

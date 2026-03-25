@@ -55,14 +55,14 @@ class BlockedArenaArray {
   }
 
   [[nodiscard]] inline T& operator[](usize index) {
-    dcheck(index < total_size_.load(std::memory_order_acquire));
+    dcheck_lt(index, total_size_.load(std::memory_order_acquire));
     const usize block_idx = index / kElementsPerChunk;
     const usize offset = index % kElementsPerChunk;
     return blocks_[block_idx][offset];
   }
 
   [[nodiscard]] inline const T& operator[](usize index) const {
-    dcheck(index < total_size_.load(std::memory_order_acquire));
+    dcheck_lt(index, total_size_.load(std::memory_order_acquire));
     const usize block_idx = index / kElementsPerChunk;
     const usize offset = index % kElementsPerChunk;
     return blocks_[block_idx][offset];
@@ -88,7 +88,7 @@ class BlockedArenaArray {
     // Re-check after acquiring lock in case another thread allocated it.
     usize current_blocks = block_count_.load(std::memory_order_relaxed);
     while (current_blocks <= required_block_idx) {
-      dcheck_msg(current_blocks < kMaxChunks, "exceeded max blocks");
+      dcheck_lt_msg(current_blocks, kMaxChunks, "exceeded max blocks");
 
       T* new_storage = static_cast<T*>(arena_.alloc(
           sizeof(T) * kElementsPerChunk, use_huge_pages_, alignof(T)));

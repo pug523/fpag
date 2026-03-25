@@ -3,6 +3,3 @@
 // which can be found in the LICENSE file.
 
 #pragma once
-
-// #define noop(...) (void)(0)
-#define noop(...) (void)sizeof(__VA_ARGS__)

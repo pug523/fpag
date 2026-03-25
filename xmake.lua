@@ -224,19 +224,16 @@ target("fpag.root_config")
     add_cxxflags("-fcf-protection=full", "-fPIE", { public = true })
     add_ldflags("-pie", { public = true })
     add_rpathdirs("$LD_LIBRARY_PATH", { public = true })
-    add_defines("FPAG_IS_PLAT_LINUX=1", "FPAG_IS_PLAT_MACOS=0", "FPAG_IS_PLAT_WINDOWS=0", { public = true })
   elseif is_plat("macosx") then
     add_cxxflags("-fPIE", { public = true })
-    add_defines("FPAG_IS_PLAT_LINUX=0", "FPAG_IS_PLAT_MACOS=1", "FPAG_IS_PLAT_WINDOWS=0", { public = true })
   elseif is_plat("windows") then
-    add_defines("FPAG_IS_PLAT_LINUX=0", "FPAG_IS_PLAT_MACOS=0", "FPAG_IS_PLAT_WINDOWS=1", { public = true })
   end
 
   if is_mode("debug") then
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
     add_cxxflags("-fno-omit-frame-pointer", "-rdynamic", "-g3", { public = true })
-    add_defines("FPAG_IS_DEBUG=1", "FPAG_IS_RELEASE=0", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
+    add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
     if has_config("sanitizers") and get_config("sanitizers") and not is_plat("windows") then
       set_policy("build.sanitizer.address", true)
       set_policy("build.sanitizer.undefined", true)
@@ -248,7 +245,6 @@ target("fpag.root_config")
     set_symbols("hidden", { public = true })
     set_optimize("fastest", { public = true })
     set_strip("all", { public = true })
-    add_defines("FPAG_IS_RELEASE=1", "FPAG_IS_DEBUG=0", { public = true })
     if has_config("native") and get_config("native") and not is_cross() then
       add_cxxflags("-march=native", { public = true })
     end
@@ -285,6 +281,34 @@ target("fpag")
   add_packages("xxhash", { public = true })
 
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
+
+  add_configfiles("src/build/build_flag.h.in", {
+    filename = "src/build/build_flag.h",
+    variables = {
+      -- debug
+      FPAG_IS_DEBUG = (is_mode("debug")) and 1 or 0,
+
+      -- compiler
+      FPAG_COMPILER_CLANG = (has_config("cc", "clang", "clang-cl")) and 1 or 0,
+      FPAG_COMPILER_GCC = (has_config("cc", "gcc")) and 1 or 0,
+      FPAG_COMPILER_MSVC = (has_config("cc", "cl")) and 1 or 0,
+
+      -- platform
+      FPAG_OS_LINUX = (is_plat("linux")) and 1 or 0,
+      FPAG_OS_MACOS = (is_plat("macosx")) and 1 or 0,
+      FPAG_OS_WINDOWS = (is_plat("windows")) and 1 or 0,
+
+      -- sanitizer
+      FPAG_HAS_ASAN = (has_config("sanitizers")) and 1 or 0,
+      FPAG_HAS_UBSAN = (has_config("sanitizers")) and 1 or 0,
+      FPAG_HAS_TSAN = (has_config("sanitizers")) and 1 or 0,
+
+      -- debug features
+      FPAG_ENABLE_DCHECK = (is_mode("debug")) and 1 or 0,
+      FPAG_ENABLE_LOG = (true) and 1 or 0,
+    }
+  })
+  add_includedirs("$(builddir)/src", { public = true })
 
   set_default(true)
 target_end()

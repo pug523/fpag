@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "base/debug/check.h"
 #include "base/mem/blocked_arena_array.h"
 #include "base/numeric.h"
 
@@ -43,7 +44,8 @@ class SooArenaArray {
   }
 
   inline const T& at(usize index) const {
-    dcheck(0 <= index && index < current_idx_);
+    dcheck_le(0, index);
+    dcheck_lt(index, current_idx_);
     return index < kSooSize ? static_array_[index]
                             : dynamic_array_[index - kSooSize];
   }
@@ -58,7 +60,7 @@ class SooArenaArray {
   inline bool is_static_array_full() const { return current_idx_ >= kSooSize; }
 
   T static_array_[kSooSize];
-  ChunkedArenaArray<T> dynamic_array_;
+  BlockedArenaArray<T> dynamic_array_;
   usize current_idx_ = 0;
 };
 

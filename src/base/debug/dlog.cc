@@ -18,10 +18,8 @@ void dlog_impl(const char* file,
                const char* func,
                std::string_view fmt,
                std::format_args args) {
-  std::string msg = std::vformat(fmt, args);
-  std::clog << std::format("{}{}  [on {} ({}:{})]\n", debug_prefix(), msg, func,
-                           file, line)
-            << std::flush;
+  std::clog << std::format("{}{}  [on {} ({}:{})]\n", debug_prefix(),
+                           std::vformat(fmt, args), func, file, line);
 }
 
 }  // namespace base::internal

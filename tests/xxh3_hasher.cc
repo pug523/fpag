@@ -14,7 +14,7 @@
 namespace base {
 
 TEST_CASE("Xxh3Hasher basic functionality", "[base][hash][xxh3]") {
-  Xxh3Hasher hasher;
+  Xxh3Hasher64 hasher;
 
   SECTION("Consistency: Same input yields same hash") {
     std::string input = "hello world";
@@ -55,7 +55,7 @@ TEST_CASE("Xxh3Hasher basic functionality", "[base][hash][xxh3]") {
 }
 
 TEST_CASE("Xxh3Hasher stability", "[base][hash]") {
-  Xxh3Hasher hasher;
+  Xxh3Hasher64 hasher;
 
   // Known values for XXH3_64bits (No seed) to ensure the wrapper works as
   // expected These values are standard for the XXH3 algorithm
