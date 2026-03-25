@@ -187,13 +187,34 @@ after_run( function (target)
   end
 end)
 
+-- package
+package("libp")
+    set_homepage("https://github.com/pug523/libp")
+    set_description("A high-performance C++20 utility library")
+    set_license("Apache-2.0")
+
+    add_deps("xxhash v0.8.3")
+
+    on_install( function (package)
+        local configs = { }
+        import("package.tools.xmake").install(package, configs)
+    end)
+
+    on_test( function (package)
+        package:check_cxxsnippets({ test = [[
+            #include <libp/libp.h>
+            void test() { /* check symbols */ }
+        ]] }, { configs = { languages = "c++20" } })
+    end)
+package_end()
+
 -- targets
 target("libp.root_config")
   set_kind("phony", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
   add_cxxflags("-Wshadow", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", { public = true })
   set_exceptions("none", { public = true })
-  add_cxxflags("-fno-exceptions", "-fno-rtti", { public = true })
+  add_cxxflags("-fno-exceptions", "-fno-rtti", "-fPIC", { public = true })
   add_cxxflags("-fstack-protector-strong", { public = true })
   add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
   add_defines("LIBP_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
@@ -255,16 +276,18 @@ target("libp.root_config")
   if has_config("unitybuild") and get_config("unitybuild") then
     add_rules("c++.unity_build", { batchsize = 12 })
   end
-
-  if is_clang then
-    add_defines("LIBP_COMPILER_IS_CLANG")
-  end
 target_end()
 
-target("p")
-  add_deps("libp.root_config")
-  set_kind("static")
+target("libp")
+  add_deps("libp.root_config", { public = false })
+  set_basename("libp")
+  set_prefixname("")
+  set_kind("$(kind)")
   add_files("src/**.cc")
+  add_packages("xxhash", { public = true })
+
+  add_headerfiles("src/(**.h)", { prefixdir = "libp" })
+
   set_default(true)
 target_end()
 
@@ -273,7 +296,7 @@ target("tests")
   add_deps("libp.root_config")
   set_kind("binary")
   add_files("tests/**.cc")
-  add_deps("p")
+  add_deps("libp")
   add_packages("catch2")
   set_group("test")
   set_default(false)
