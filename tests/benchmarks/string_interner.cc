@@ -26,20 +26,20 @@ TEST_CASE("StringInterner Benchmark", "[base][string_interner][benchmark][.]") {
     // Every time, create a new Interner and measure insertion speed
     StringInterner interner(num_unique_strings * 2, 1024 * 1024, false);
     u64 checksum = 0;
-    for (const auto& s : test_data) {
+    for (const std::string& s : test_data) {
       checksum += interner.intern(s).block_id;
     }
     return checksum;
   };
 
   StringInterner shared_interner(num_unique_strings * 2, 1024 * 1024, false);
-  for (const auto& s : test_data) {
+  for (const std::string& s : test_data) {
     shared_interner.intern(s);
   }
 
   BENCHMARK("Interning Existing Strings (10k hits)") {
     u64 checksum = 0;
-    for (const auto& s : test_data) {
+    for (const std::string& s : test_data) {
       checksum += shared_interner.intern(s).block_id;
     }
     return checksum;
@@ -63,7 +63,7 @@ TEST_CASE("StringInterner Benchmark", "[base][string_interner][benchmark][.]") {
         }
       });
     }
-    for (auto& t : threads) {
+    for (std::thread& t : threads) {
       t.join();
     }
     return concurrent_interner.size();

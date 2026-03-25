@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "base/mem/arena_deleter.h"
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
 
@@ -49,7 +50,7 @@ TEST_CASE("ArenaAllocator block management", "[base][arena]") {
   SECTION("Large allocation triggering new blocks") {
     const usize first_alloc_size = 2 * 1024 * 1024;  // 2 MiB
     void* p1 = arena.alloc(first_alloc_size);
-    auto pos1 = arena.current_position();
+    ArenaAllocator::BlockPosition pos1 = arena.current_position();
     CHECK(pos1.block_id == 0);
 
     // Allocating beyond the first block should increment the block ID
@@ -93,7 +94,7 @@ TEST_CASE("ArenaAllocator object creation", "[base][arena]") {
   };
 
   SECTION("create<T> for trivial types") {
-    auto* obj = arena.create<Trivial>(10, 2.5f);
+    Trivial* obj = arena.create<Trivial>(10, 2.5f);
     REQUIRE(obj != nullptr);
     CHECK(obj->x == 10);
     CHECK(obj->y == 2.5f);
@@ -108,7 +109,7 @@ TEST_CASE("ArenaAllocator object creation", "[base][arena]") {
     };
 
     {
-      auto ptr = arena.create_managed<NonTrivial>();
+      ArenaUniquePtr<NonTrivial> ptr = arena.create_managed<NonTrivial>();
       CHECK(!destroyed);
     }
     // Should be destroyed when arena goes out of scope.
@@ -140,7 +141,7 @@ TEST_CASE("ArenaAllocator edge cases and limits", "[base][arena]") {
   ArenaAllocator arena;
 
   SECTION("Very large capacity") {
-    void* p = arena.alloc(3ULL * 1024 * 1024 * 1024);  // 3 GiB
+    void* p = arena.alloc(3ull * 1024 * 1024 * 1024);  // 3 GiB
     CHECK(p != nullptr);
   }
 

@@ -10,8 +10,10 @@
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>
-#else  // POSIX
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <sys/mman.h>
+#else
+#error "Unsupported platform for page_allocator"
 #endif
 
 #ifndef MAP_ANONYMOUS

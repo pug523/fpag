@@ -31,7 +31,7 @@ TEST_CASE("ConcurrentHashMap Benchmark", "[base][container][benchmark][.]") {
   BENCHMARK("Find (Single-thread, 100k ops)") {
     u64 sum = 0;
     for (u32 i = 0; i < num_ops; ++i) {
-      if (auto* v = map.find(i)) {
+      if (const usize* v = map.find(i)) {
         sum += *v;
       }
     }
@@ -53,7 +53,7 @@ TEST_CASE("ConcurrentHashMap Benchmark", "[base][container][benchmark][.]") {
         }
       });
     }
-    for (auto& t : threads) {
+    for (std::thread& t : threads) {
       t.join();
     }
     return map.size();

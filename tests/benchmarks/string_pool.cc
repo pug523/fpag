@@ -34,7 +34,7 @@ TEST_CASE("StringPool Benchmark", "[base][string_pool][benchmark][.]") {
       std::vector<StringPoolId> ids;
       ids.reserve(num_strings);
 
-      for (const auto& s : test_data) {
+      for (const std::string& s : test_data) {
         ids.push_back(pool.append(s));
       }
       return ids;
@@ -45,13 +45,13 @@ TEST_CASE("StringPool Benchmark", "[base][string_pool][benchmark][.]") {
     StringPool pool(1024 * 1024);
     std::vector<StringPoolId> ids;
     ids.reserve(test_data.size());
-    for (const auto& s : test_data) {
+    for (const std::string& s : test_data) {
       ids.push_back(pool.append(s));
     }
 
     BENCHMARK("Sequential Get 10k strings") {
       u64 total_len = 0;
-      for (const auto& id : ids) {
+      for (const StringPoolId& id : ids) {
         total_len += pool.get(id).length();
       }
       return total_len;

@@ -64,7 +64,7 @@ TEST_CASE("ConcurrentHashMap thread-safety stress test",
       });
     }
 
-    for (auto& t : threads) {
+    for (std::thread& t : threads) {
       t.join();
     }
 
@@ -89,7 +89,7 @@ TEST_CASE("ConcurrentHashMap thread-safety stress test",
       t.join();
     }
 
-    auto* v = map.find(1);
+    const u64* v = map.find(1);
     REQUIRE(v != nullptr);
     // One value should be stored (0 〜 num_threads-1)
     CHECK(*v < num_threads);

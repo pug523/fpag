@@ -59,7 +59,7 @@ TEST_CASE("Xxh3Hasher stability", "[base][hash]") {
   // Known values for XXH3_64bits (No seed) to ensure the wrapper works as
   // expected These values are standard for the XXH3 algorithm
   SECTION("Verify against known empty string hash") {
-    CHECK(hasher("") == 0x2D06800538D394C2ULL);
+    CHECK(hasher("") == 0x2D06800538D394C2ull);
   }
 
   SECTION("Verify against known short string hash") {

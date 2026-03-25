@@ -94,8 +94,8 @@ void ArenaAllocator::reset() {
 }
 
 void ArenaAllocator::alloc_new_block(usize size, bool use_huge_pages) {
-  dcheck_msg(block_count_ < kMaxBlocks,
-             "ArenaAllocator out of memory (too many blocks)");
+  dcheck_lt_msg(block_count_, kMaxBlocks,
+                "ArenaAllocator out of memory (too many blocks)");
 
   // Consider header size, ensure at least `kBlockSize` is allocated
   const usize min_required = size + sizeof(Block);
