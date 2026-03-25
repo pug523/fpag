@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "base/arena_deleter.h"
-#include "base/debug.h"
+#include "base/debug/check.h"
 #include "base/numeric.h"
 #include "base/page_allocator.h"
 
@@ -19,12 +19,12 @@ namespace base {
 class ArenaAllocator {
  public:
   // 2 MiB -> 1 huge page or 512 normal pages
-  static constexpr usize kChunkSize = 2 * 1024 * 1024;
+  static constexpr usize kBlockSize = 2 * 1024 * 1024;
 
-  // 1024 * 2 MiB = 2GiB
-  static constexpr usize kMaxChunks = 1024;
+  // 2 MiB * 1024 blocks = 2GiB
+  static constexpr usize kMaxBlocks = 1024;
 
-  struct alignas(std::max_align_t) Chunk {
+  struct alignas(std::max_align_t) Block {
     usize capacity = 0;
     usize used = 0;
 
@@ -32,8 +32,8 @@ class ArenaAllocator {
     u8* data() { return reinterpret_cast<u8*>(this + 1); }
   };
 
-  struct ChunkPosition {
-    u32 chunk_id;
+  struct BlockPosition {
+    u32 block_id;
     usize offset;
   };
 
@@ -46,25 +46,25 @@ class ArenaAllocator {
   ArenaAllocator(ArenaAllocator&& other) noexcept;
   ArenaAllocator& operator=(ArenaAllocator&& other) noexcept;
 
-  void reserve(usize size, bool use_huge_pages = false);
+  void reserve(usize size, bool use_huge_pages = true);
 
   [[nodiscard]] void* alloc(usize size,
-                            bool use_huge_pages = false,
+                            bool use_huge_pages = true,
                             usize align = alignof(std::max_align_t),
-                            ChunkPosition* chunk_pos = nullptr);
+                            BlockPosition* block_pos = nullptr);
   void reset();
 
-  inline const Chunk* chunk(usize index) const {
-    dcheck(index < chunk_count_);
-    dcheck(chunks_);
-    return chunks_[index];
+  inline const Block* block(usize index) const {
+    dcheck(index < block_count_);
+    dcheck(block_);
+    return block_[index];
   }
 
-  inline const ChunkPosition current_position() const {
-    if (chunks_) [[likely]] {
+  inline const BlockPosition current_position() const {
+    if (block_) [[likely]] {
       return {
-          .chunk_id = chunk_count_ - 1,
-          .offset = chunks_[chunk_count_ - 1]->used,
+          .block_id = block_count_ - 1,
+          .offset = block_[block_count_ - 1]->used,
       };
     } else {
       return {0, 0};
@@ -88,13 +88,13 @@ class ArenaAllocator {
   }
 
  private:
-  void alloc_new_chunk(usize size, bool use_huge_pages);
-  void init_chunks_map(Chunk* first_chunk);
-  void* try_alloc_from_chunk(usize size, usize align);
-  void write_chunk_pos(void* ptr, ChunkPosition* pos);
+  void alloc_new_block(usize size, bool use_huge_pages);
+  void init_block_map(Block* first_block);
+  void* try_alloc_from_block(usize size, usize align);
+  void write_block_pos(void* ptr, BlockPosition* pos);
 
-  Chunk** chunks_ = nullptr;
-  u32 chunk_count_ = 0;
+  Block** block_ = nullptr;
+  u32 block_count_ = 0;
 };
 
 }  // namespace base

@@ -26,7 +26,7 @@ TEST_CASE("StringInterner Benchmark", "[base][string_interner][benchmark][.]") {
     StringInterner interner(num_unique_strings * 2, 1024 * 1024, false);
     u64 checksum = 0;
     for (const auto& s : test_data) {
-      checksum += interner.intern(s).chunk_id;
+      checksum += interner.intern(s).block_id;
     }
     return checksum;
   };
@@ -39,7 +39,7 @@ TEST_CASE("StringInterner Benchmark", "[base][string_interner][benchmark][.]") {
   BENCHMARK("Interning Existing Strings (10k hits)") {
     u64 checksum = 0;
     for (const auto& s : test_data) {
-      checksum += shared_interner.intern(s).chunk_id;
+      checksum += shared_interner.intern(s).block_id;
     }
     return checksum;
   };

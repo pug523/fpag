@@ -9,14 +9,16 @@
 namespace base {
 
 struct StringPoolId {
-  u32 chunk_id;
+  u32 block_id;
   usize offset;
   usize length;
 
-  constexpr bool operator==(const StringPoolId& other) const {
-    return chunk_id == other.chunk_id && offset == other.offset &&
+  inline constexpr bool operator==(const StringPoolId& other) const {
+    return block_id == other.block_id && offset == other.offset &&
            length == other.length;
   }
 };
+
+constexpr StringPoolId kInvalidStringPoolId = {0, 0, 0};
 
 }  // namespace base

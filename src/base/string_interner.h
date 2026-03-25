@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "base/chunked_arena_array.h"
+#include "base/blocked_arena_array.h"
 #include "base/concurrent_hash_map.h"
 #include "base/numeric.h"
 #include "base/string_id.h"

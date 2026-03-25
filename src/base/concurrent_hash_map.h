@@ -135,7 +135,7 @@ class ConcurrentHashMap {
     return nullptr;
   }
 
-  const V* try_insert(const K& key, const V& value, bool& inserted) {
+  const V* try_insert(const K& key, const V& value, bool* inserted) {
     const u64 h = hash(key);
     const u64 mask = capacity_.load(std::memory_order_relaxed) - 1;
 
@@ -160,7 +160,7 @@ class ConcurrentHashMap {
           e.value = value;
           e.hash.store(h, std::memory_order_release);
           size_.fetch_add(1, std::memory_order_relaxed);
-          inserted = true;
+          *inserted = true;
           return &e.value;
         }
         // Failed to lock the slot; retry this slot (do not advance to next).
@@ -170,7 +170,7 @@ class ConcurrentHashMap {
 
       // Found an existing entry with the same key; return it.
       if (cur == h && e.key == key) {
-        inserted = false;
+        *inserted = false;
         return &e.value;
       }
 

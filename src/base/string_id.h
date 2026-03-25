@@ -22,4 +22,6 @@ namespace base {
 
 using StringId = StringPoolId;
 
+constexpr StringId kInvalidStringId = {0, 0, 0};
+
 }  // namespace base

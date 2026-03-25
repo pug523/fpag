@@ -32,9 +32,9 @@ class StringPool {
   StringPoolId append(const std::string_view str);
 
   inline std::string_view get(StringPoolId id) const {
-    const ArenaAllocator::Chunk* chunk_base =
-        arena_allocator_.chunk(id.chunk_id);
-    return {reinterpret_cast<const char*>(chunk_base) + id.offset, id.length};
+    const ArenaAllocator::Block* block_base =
+        arena_allocator_.block(id.block_id);
+    return {reinterpret_cast<const char*>(block_base) + id.offset, id.length};
   }
 
   inline void reserve(usize capacity) {

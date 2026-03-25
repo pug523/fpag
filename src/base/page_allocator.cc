@@ -4,10 +4,10 @@
 
 #include "base/page_allocator.h"
 
-#include "base/debug.h"
+#include "base/debug/check.h"
 #include "base/numeric.h"
 
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
 #include <windows.h>
 #else  // POSIX
 #include <sys/mman.h>
@@ -20,7 +20,7 @@
 namespace base {
 
 void* reserve_pages(usize size) {
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   return VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS);
 #else
   void* const ptr =
@@ -30,7 +30,7 @@ void* reserve_pages(usize size) {
 }
 
 bool commit_pages(void* ptr, usize size) {
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != nullptr;
 #else
   return mprotect(ptr, size, PROT_READ | PROT_WRITE) == 0;
@@ -39,7 +39,7 @@ bool commit_pages(void* ptr, usize size) {
 
 void decommit_pages(void* ptr, usize size) {
   dcheck(ptr);
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   VirtualFree(ptr, size, MEM_DECOMMIT);
 #else
   madvise(ptr, size, MADV_DONTNEED);
@@ -59,16 +59,16 @@ void* allocate_pages(usize size) {
 }
 
 void* allocate_huge_pages(usize size) {
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   void* ptr =
       VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
                    PAGE_READWRITE);
   return ptr ? ptr : allocate_pages(size);
-#elif LIBP_IS_PLAT_LINUX
+#elif FPAG_IS_PLAT_LINUX
   void* ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
   return ptr != MAP_FAILED ? ptr : allocate_pages(size);
-#elif LIBP_IS_PLAT_MACOS
+#elif FPAG_IS_PLAT_MACOS
   void* ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS, VM_FLAGS_SUPERPAGE_SIZE_2MB, 0);
   return ptr == MAP_FAILED ? allocate_pages(size) : ptr;
@@ -77,7 +77,7 @@ void* allocate_huge_pages(usize size) {
 
 void free_pages(void* ptr, usize size) {
   dcheck(ptr);
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   VirtualFree(ptr, 0, MEM_RELEASE);
 #else
   munmap(ptr, size);

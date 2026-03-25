@@ -1,5 +1,5 @@
 [project]
-name = "libp"
+name = "fpag"
 version = "0.1.0"
 description = ""
 authors = [{ name = "pugur", email = "pugurmc@gmail.com" }]

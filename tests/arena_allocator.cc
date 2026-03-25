@@ -18,8 +18,8 @@ TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   ArenaAllocator arena;
 
   SECTION("Initial state is zeroed") {
-    ArenaAllocator::ChunkPosition pos = arena.current_position();
-    CHECK(pos.chunk_id == 0);
+    ArenaAllocator::BlockPosition pos = arena.current_position();
+    CHECK(pos.block_id == 0);
     CHECK(pos.offset == 0);
   }
 
@@ -49,41 +49,41 @@ TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   }
 }
 
-TEST_CASE("ArenaAllocator chunk management", "[base][arena]") {
+TEST_CASE("ArenaAllocator block management", "[base][arena]") {
   ArenaAllocator arena;
 
-  SECTION("Large allocation triggering new chunks") {
+  SECTION("Large allocation triggering new blocks") {
     const usize first_alloc_size = 2 * 1024 * 1024;  // 2 MiB
     void* p1 = arena.alloc(first_alloc_size);
     auto pos1 = arena.current_position();
-    CHECK(pos1.chunk_id == 0);
+    CHECK(pos1.block_id == 0);
 
-    // Allocating beyond the first chunk should increment the chunk ID
+    // Allocating beyond the first block should increment the block ID
     void* p2 = arena.alloc(128);
-    ArenaAllocator::ChunkPosition pos2 = arena.current_position();
+    ArenaAllocator::BlockPosition pos2 = arena.current_position();
 
     CHECK(p1 != nullptr);
     CHECK(p2 != nullptr);
-    CHECK(pos2.chunk_id > pos1.chunk_id);
+    CHECK(pos2.block_id > pos1.block_id);
   }
 
   SECTION("Reserve allocates capacity upfront") {
     arena.reserve(10 * 1024 * 1024);
-    ArenaAllocator::ChunkPosition pos = arena.current_position();
+    ArenaAllocator::BlockPosition pos = arena.current_position();
 
     usize expected_metadata_size =
-        sizeof(ArenaAllocator::Chunk*) * ArenaAllocator::kMaxChunks;
+        sizeof(ArenaAllocator::Block*) * ArenaAllocator::kMaxBlocks;
     CHECK(pos.offset == expected_metadata_size);
-    CHECK(pos.chunk_id == 0);
+    CHECK(pos.block_id == 0);
   }
 
   SECTION("Reset clears the state") {
     void* _ = arena.alloc(100);
-    _ = arena.alloc(ArenaAllocator::kChunkSize);
+    _ = arena.alloc(ArenaAllocator::kBlockSize);
     arena.reset();
 
-    ArenaAllocator::ChunkPosition pos = arena.current_position();
-    CHECK(pos.chunk_id == 0);
+    ArenaAllocator::BlockPosition pos = arena.current_position();
+    CHECK(pos.block_id == 0);
     CHECK(pos.offset == 0);
   }
 }
@@ -123,12 +123,12 @@ TEST_CASE("ArenaAllocator object creation", "[base][arena]") {
 TEST_CASE("ArenaAllocator move semantics", "[base][arena]") {
   ArenaAllocator arena;
   void* _ = arena.alloc(1024);
-  ArenaAllocator::ChunkPosition pos_before = arena.current_position();
+  ArenaAllocator::BlockPosition pos_before = arena.current_position();
 
   SECTION("Move constructor") {
     ArenaAllocator moved_arena(std::move(arena));
     CHECK(moved_arena.current_position().offset == pos_before.offset);
-    CHECK(arena.current_position().chunk_id == 0);
+    CHECK(arena.current_position().block_id == 0);
   }
 
   SECTION("Move assignment") {

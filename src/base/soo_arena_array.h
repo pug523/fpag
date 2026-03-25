@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "base/chunked_arena_array.h"
+#include "base/blocked_arena_array.h"
 #include "base/numeric.h"
 
 namespace base {

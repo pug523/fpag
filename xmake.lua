@@ -2,7 +2,7 @@
 -- This source code is licensed under the Apache License, Version 2.0
 -- which can be found in the LICENSE file.
 
-set_project("libp")
+set_project("fpag")
 local project_version = "0.1.0"
 set_version(project_version)
 
@@ -39,7 +39,7 @@ if has_config("stdlib") and is_clang then
     ldflags = "-stdlib=" .. get_config("stdlib"),
   }
   table.join2(catch2_configs, stdlib_config)
-  table.join2(xxhash_configs, stdlib_config)
+  -- table.join2(xxhash_configs, stdlib_config)
 end
 
 add_requires("xxhash v0.8.3", {
@@ -188,28 +188,28 @@ after_run( function (target)
 end)
 
 -- package
-package("libp")
-    set_homepage("https://github.com/pug523/libp")
-    set_description("A high-performance C++20 utility library")
-    set_license("Apache-2.0")
-
-    add_deps("xxhash v0.8.3")
-
-    on_install( function (package)
-        local configs = { }
-        import("package.tools.xmake").install(package, configs)
-    end)
-
-    on_test( function (package)
-        package:check_cxxsnippets({ test = [[
-            #include <libp/libp.h>
-            void test() { /* check symbols */ }
-        ]] }, { configs = { languages = "c++20" } })
-    end)
-package_end()
+-- package("fpag")
+--   set_homepage("https://github.com/pug523/fpag")
+--   set_description("A high-performance C++20 utility library")
+--   set_license("Apache-2.0")
+--
+--   add_deps("xxhash v0.8.3")
+--
+--   on_install( function (package)
+--     local configs = { }
+--     import("package.tools.xmake").install(package, configs)
+--   end)
+--
+--   on_test( function (package)
+--     package:check_cxxsnippets({ test = [[
+--       #include <fpag/fpag.h>
+--       void test() { /* check symbols */ }
+--     ]] }, { configs = { languages = "c++20" } })
+--   end)
+-- package_end()
 
 -- targets
-target("libp.root_config")
+target("fpag.root_config")
   set_kind("phony", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
   add_cxxflags("-Wshadow", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", { public = true })
@@ -217,26 +217,26 @@ target("libp.root_config")
   add_cxxflags("-fno-exceptions", "-fno-rtti", "-fPIC", { public = true })
   add_cxxflags("-fstack-protector-strong", { public = true })
   add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
-  add_defines("LIBP_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
+  add_defines("FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
   add_includedirs("src", "third_party", { public = true })
 
   if is_plat("linux") then
     add_cxxflags("-fcf-protection=full", "-fPIE", { public = true })
     add_ldflags("-pie", { public = true })
     add_rpathdirs("$LD_LIBRARY_PATH", { public = true })
-    add_defines("LIBP_IS_PLAT_LINUX=1", "LIBP_IS_PLAT_MACOS=0", "LIBP_IS_PLAT_WINDOWS=0", { public = true })
+    add_defines("FPAG_IS_PLAT_LINUX=1", "FPAG_IS_PLAT_MACOS=0", "FPAG_IS_PLAT_WINDOWS=0", { public = true })
   elseif is_plat("macosx") then
     add_cxxflags("-fPIE", { public = true })
-    add_defines("LIBP_IS_PLAT_LINUX=0", "LIBP_IS_PLAT_MACOS=1", "LIBP_IS_PLAT_WINDOWS=0", { public = true })
+    add_defines("FPAG_IS_PLAT_LINUX=0", "FPAG_IS_PLAT_MACOS=1", "FPAG_IS_PLAT_WINDOWS=0", { public = true })
   elseif is_plat("windows") then
-    add_defines("LIBP_IS_PLAT_LINUX=0", "LIBP_IS_PLAT_MACOS=0", "LIBP_IS_PLAT_WINDOWS=1", { public = true })
+    add_defines("FPAG_IS_PLAT_LINUX=0", "FPAG_IS_PLAT_MACOS=0", "FPAG_IS_PLAT_WINDOWS=1", { public = true })
   end
 
   if is_mode("debug") then
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
     add_cxxflags("-fno-omit-frame-pointer", "-rdynamic", "-g3", { public = true })
-    add_defines("LIBP_IS_DEBUG=1", "LIBP_IS_RELEASE=0", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
+    add_defines("FPAG_IS_DEBUG=1", "FPAG_IS_RELEASE=0", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
     if has_config("sanitizers") and get_config("sanitizers") and not is_plat("windows") then
       set_policy("build.sanitizer.address", true)
       set_policy("build.sanitizer.undefined", true)
@@ -248,7 +248,7 @@ target("libp.root_config")
     set_symbols("hidden", { public = true })
     set_optimize("fastest", { public = true })
     set_strip("all", { public = true })
-    add_defines("LIBP_IS_RELEASE=1", "LIBP_IS_DEBUG=0", { public = true })
+    add_defines("FPAG_IS_RELEASE=1", "FPAG_IS_DEBUG=0", { public = true })
     if has_config("native") and get_config("native") and not is_cross() then
       add_cxxflags("-march=native", { public = true })
     end
@@ -278,25 +278,23 @@ target("libp.root_config")
   end
 target_end()
 
-target("libp")
-  add_deps("libp.root_config", { public = false })
-  set_basename("libp")
-  set_prefixname("")
+target("fpag")
+  add_deps("fpag.root_config", { public = false })
   set_kind("$(kind)")
   add_files("src/**.cc")
   add_packages("xxhash", { public = true })
 
-  add_headerfiles("src/(**.h)", { prefixdir = "libp" })
+  add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
 
   set_default(true)
 target_end()
 
 target("tests")
   set_enabled(has_config("tests"))
-  add_deps("libp.root_config")
+  add_deps("fpag.root_config")
   set_kind("binary")
   add_files("tests/**.cc")
-  add_deps("libp")
+  add_deps("fpag")
   add_packages("catch2")
   set_group("test")
   set_default(false)

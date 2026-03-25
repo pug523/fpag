@@ -4,9 +4,9 @@
 
 #include "base/console.h"
 
-#include "base/debug.h"
+#include "base/debug/check.h"
 
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
 #include <io.h>
 #include <windows.h>
 #else
@@ -18,7 +18,7 @@ namespace base {
 namespace {
 
 bool check_ansi_sequence_available(Stream stream) {
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   // Check if GetStdHandle() returns terminal handle
   DWORD handle = 0;
   if (stream == Stream::Stdout) {
@@ -68,7 +68,7 @@ bool can_use_ansi_escape_sequence(Stream stream) {
 
 void register_console() {
   // Set console mode to utf8
-#if LIBP_IS_PLAT_WINDOWS
+#if FPAG_IS_PLAT_WINDOWS
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
 #endif

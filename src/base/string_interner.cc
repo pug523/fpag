@@ -22,9 +22,13 @@ StringId StringInterner::intern(const std::string_view str) {
   const std::string_view stored = pool_.get(pool_id);
 
   bool inserted = false;
-  const StringId* ptr = map_.try_insert(stored, pool_id, inserted);
+  const StringId* ptr = map_.try_insert(stored, pool_id, &inserted);
 
-  return *ptr;
+  if (ptr) {
+    return *ptr;
+  } else {
+    return kInvalidStringId;
+  }
 }
 
 }  // namespace base

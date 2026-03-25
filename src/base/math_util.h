@@ -6,7 +6,7 @@
 
 #include <type_traits>
 
-#include "base/debug.h"
+#include "base/debug/check.h"
 #include "base/numeric.h"
 
 namespace base {
