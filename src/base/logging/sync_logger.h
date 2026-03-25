@@ -16,7 +16,7 @@
 
 namespace base {
 
-// Thread-safe simple logger that writes to a shared buffer.
+// Thread-safe simple logger for writing log messages to stdout.
 class SyncLogger {
  public:
   explicit SyncLogger(char* buffer_ptr,

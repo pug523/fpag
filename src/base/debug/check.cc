@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "base/debug/fatal.h"
+#include "base/io_util.h"
 #include "base/logging/sync_logger.h"
 #include "base/numeric.h"
 
@@ -61,27 +62,27 @@ void raw_check_fail_impl(const char* expr,
                          i32 line,
                          const char* func,
                          std::string_view msg) {
-  write(2, "fatal: RAW CHECK FAILED for '",
+  write(kStderrFd, "fatal: RAW CHECK FAILED for '",
         const_strlen("fatal: RAW CHECK FAILED for '"));
-  write(2, expr, std::strlen(expr));
-  write(2, "'\n", const_strlen("'\n"));
+  write(kStderrFd, expr, std::strlen(expr));
+  write(kStderrFd, "'\n", const_strlen("'\n"));
 
   if (!msg.empty()) {
-    write(2, msg.data(), msg.size());
-    write(2, "\n", const_strlen("\n"));
+    write(kStderrFd, msg.data(), msg.size());
+    write(kStderrFd, "\n", const_strlen("\n"));
   }
 
-  write(2, " at ", const_strlen(" at "));
-  write(2, file, std::strlen(file));
-  write(2, ":", 1);
+  write(kStderrFd, " at ", const_strlen(" at "));
+  write(kStderrFd, file, std::strlen(file));
+  write(kStderrFd, ":", 1);
 
   char line_buf[32];
   std::snprintf(line_buf, sizeof(line_buf), "%d", line);
-  write(2, line_buf, std::strlen(line_buf));
+  write(kStderrFd, line_buf, std::strlen(line_buf));
 
-  write(2, " (", const_strlen(" ("));
-  write(2, func, std::strlen(func));
-  write(2, ")\n", const_strlen(")\n"));
+  write(kStderrFd, " (", const_strlen(" ("));
+  write(kStderrFd, func, std::strlen(func));
+  write(kStderrFd, ")\n", const_strlen(")\n"));
 
   fatal_crash_impl();
 }
