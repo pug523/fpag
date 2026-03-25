@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "base/blocked_arena_array.h"
+#include "base/mem/blocked_arena_array.h"
 #include "base/numeric.h"
 
 namespace base {

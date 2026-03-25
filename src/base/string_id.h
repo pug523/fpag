@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
-#include "base/string_pool_id.h"
 
 namespace base {
 

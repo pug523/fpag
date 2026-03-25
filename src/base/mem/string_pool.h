@@ -7,9 +7,9 @@
 #include <atomic>
 #include <string_view>
 
-#include "base/arena_allocator.h"
+#include "base/mem/arena_allocator.h"
+#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
-#include "base/string_pool_id.h"
 
 namespace base {
 

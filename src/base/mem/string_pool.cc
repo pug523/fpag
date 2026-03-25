@@ -2,13 +2,13 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/string_pool.h"
+#include "base/mem/string_pool.h"
 
 #include <cstring>
 #include <string_view>
 #include <utility>
 
-#include "base/arena_allocator.h"
+#include "base/mem/arena_allocator.h"
 #include "base/numeric.h"
 
 namespace base {
