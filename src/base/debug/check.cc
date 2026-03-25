@@ -20,7 +20,7 @@ namespace base::internal {
 
 namespace {
 
-inline constexpr usize const_strlen(const char* s) {
+inline consteval usize const_strlen(const char* s) {
   usize len = 0;
   while (s[len] != '\0') {
     len++;
@@ -36,8 +36,8 @@ void check_fail_impl(const char* expr,
                      const char* func,
                      std::string_view msg) {
   SyncLogger& logger = global_logger();
-  logger.fatal("Check failed!\nExpected: '{}'\n{}\n  at {}:{} ({})\n", expr,
-               msg, file, line, func);
+  logger.fatal("Check failed!\nExpected: '{}'\n{}\n  at {}:{} ({})", expr, msg,
+               file, line, func);
   logger.flush();
   fatal_crash_impl();
 }
@@ -51,9 +51,10 @@ void check_op_fail_impl(const char* expected,
                         std::string_view msg) {
   SyncLogger& logger = global_logger();
   logger.fatal(
-      "Check failed!\nExpected: '{}', Actual: {} vs {}\n{}\n  at {}:{} ({})\n",
+      "Check failed!\nExpected: '{}', Actual: {} vs {}\n{}\n  at {}:{} ({})",
       expected, lhs, rhs, msg, file, line, func);
   logger.flush();
+
   fatal_crash_impl();
 }
 

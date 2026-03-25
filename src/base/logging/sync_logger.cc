@@ -20,6 +20,35 @@
 
 namespace base {
 
+SyncLogger::SyncLogger(SyncLogger&& other) noexcept
+    : buffer_(other.buffer_),
+      capacity_(other.capacity_),
+      offset_(other.offset_),
+      min_level_(other.min_level_),
+      use_ansi_style_(other.use_ansi_style_) {
+  other.buffer_ = nullptr;
+  other.offset_ = 0;
+  lock_.clear();
+}
+
+SyncLogger& SyncLogger::operator=(SyncLogger&& other) noexcept {
+  if (this != &other) {
+    flush();
+
+    buffer_ = other.buffer_;
+    capacity_ = other.capacity_;
+    offset_ = other.offset_;
+    min_level_ = other.min_level_;
+    use_ansi_style_ = other.use_ansi_style_;
+
+    other.buffer_ = nullptr;
+    other.offset_ = 0;
+
+    lock_.clear();
+  }
+  return *this;
+}
+
 void SyncLogger::flush() {
   spin_lock();
   if (offset_ > 0) {

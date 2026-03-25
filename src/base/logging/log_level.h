@@ -30,12 +30,12 @@ static constexpr std::string_view kPlainPrefixes[] = {
 };
 
 static constexpr std::string_view kAnsiPrefixes[] = {
-    "\033[1;38;2;064;064;064mtrace: ",  // Trace: Gray
-    "\033[1;38;2;040;190;240mdebug: ",  // Debug: Blue
-    "\033[1;38;2;050;230;050m info: ",  // Info: Green
-    "\033[1;38;2;245;220;015m warn: ",  // Warn: Yellow
-    "\033[1;38;2;255;005;005merror: ",  // Error: Red
-    "\033[1;38;2;255;040;255mfatal: ",  // Fatal: Magenta
+    "\033[1;38;2;064;064;064mtrace\033[0m: ",  // Trace: Gray
+    "\033[1;38;2;040;190;240mdebug\033[0m: ",  // Debug: Blue
+    "\033[1;38;2;050;230;050m info\033[0m: ",  // Info: Green
+    "\033[1;38;2;245;220;015m warn\033[0m: ",  // Warn: Yellow
+    "\033[1;38;2;255;005;005merror\033[0m: ",  // Error: Red
+    "\033[1;38;2;255;040;255mfatal\033[0m: ",  // Fatal: Magenta
 };
 
 inline constexpr std::string_view log_prefix(LogLevel level,

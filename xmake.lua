@@ -34,7 +34,7 @@ set_targetdir("out/$(plat)-$(arch)-$(mode)")
 set_encodings("source:utf-8")
 set_encodings("utf-8") -- target
 
-local is_clang = has_config("toolchain") and (get_config("toolchain") == "clang" or get_config("toolchain") == "llvm")
+local is_clang = is_config("toolchain", "clang", "llvm")
 
 local catch2_configs = { }
 local xxhash_configs = { }
@@ -181,7 +181,7 @@ task_end()
 
 -- events
 after_build( function (target)
-  if has_config("timetrace") and get_config("timetrace") then
+  if has_config("timetrace") then
     local trace_dir = path.join(os.projectdir(), "out/timetrace")
     os.mkdir(trace_dir)
     for _, objfile in ipairs(target:objectfiles()) do
@@ -193,7 +193,7 @@ after_build( function (target)
     end
   end
 
-  if has_config("optreport") and get_config("optreport") and is_mode("release") then
+  if has_config("optreport") and is_mode("release") then
     local remark_dir = "out/remarks"
     os.mkdir(remark_dir)
     for _, yaml in ipairs(os.files(path.join(target:targetdir(), "**.opt.yaml"))) do
@@ -203,13 +203,13 @@ after_build( function (target)
 end)
 
 before_run( function (target)
-  if has_config("coverage") and get_config("coverage") and target:name() == "tests" and not is_plat("windows") then
+  if has_config("coverage") and target:name() == "tests" and not is_plat("windows") then
     os.setenv("LLVM_PROFILE_FILE", "default.profraw")
   end
 end)
 
 after_run( function (target)
-  if has_config("coverage") and get_config("coverage") and target:name() == "tests" and not is_plat("windows") then
+  if has_config("coverage") and target:name() == "tests" and not is_plat("windows") then
     local profraw = path.join(target:targetdir(), "default.profraw")
     local profdata = path.join(target:targetdir(), "default.profdata")
     local coverage_dir = "out/coverage"

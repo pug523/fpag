@@ -7,6 +7,8 @@
 #include <atomic>
 #include <cstring>
 #include <format>
+#include <iterator>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -16,7 +18,7 @@
 
 namespace base {
 
-// Thread-safe simple logger for writing log messages to stdout.
+// Thread-safe simple logger for writing log messages with newline to stdout.
 class SyncLogger {
  public:
   explicit SyncLogger(char* buffer_ptr,
@@ -54,13 +56,30 @@ class SyncLogger {
     dcheck_lt(prefix.size(), sizeof(stack_buf));
     std::memcpy(stack_buf, prefix.data(), prefix.size());
 
+    const usize max_len = sizeof(stack_buf) - prefix.size() - 1;
     const std::format_to_n_result result =
         std::format_to_n(stack_buf + prefix.size(),
-                         static_cast<i32>(sizeof(stack_buf) - prefix.size()),
+                         static_cast<std::iter_difference_t<char*>>(max_len),
                          fmt, std::forward<Args>(args)...);
-    const usize len = static_cast<usize>(result.out - stack_buf);
 
-    write_to_shared_buffer(stack_buf, len);
+    const usize result_size = static_cast<usize>(result.size);
+    const bool truncated = result_size > max_len;
+    const usize len = prefix.size() + result_size + 1;
+
+    if (!truncated) [[likely]] {
+      // No truncation; write directly to stack buffer.
+      stack_buf[prefix.size() + result_size] = '\n';
+      write_to_shared_buffer(stack_buf, len);
+    } else {
+      // Truncated; allocate heap buffer and format into it.
+      std::string heap_buf;
+      heap_buf.reserve(len);
+      heap_buf.append(prefix);
+      std::format_to(std::back_inserter(heap_buf), fmt,
+                     std::forward<Args>(args)...);
+      heap_buf.push_back('\n');
+      write_to_shared_buffer(heap_buf.data(), heap_buf.size());
+    }
   }
 
   template <typename... Args>
@@ -104,12 +123,12 @@ class SyncLogger {
     return level >= min_level_;
   }
 
-  char* const buffer_;
-  const usize capacity_;
+  char* buffer_;
+  usize capacity_;
   usize offset_ = 0;
   LogLevel min_level_;
   bool use_ansi_style_;
-  std::atomic_flag lock_;
+  std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
 };
 
 SyncLogger& global_logger();

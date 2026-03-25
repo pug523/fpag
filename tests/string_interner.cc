@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/string_interner.h"
+#include "base/mem/string_interner.h"
 
 #include <format>
 #include <string>
@@ -10,8 +10,8 @@
 #include <thread>
 #include <vector>
 
+#include "base/mem/string_id.h"
 #include "base/numeric.h"
-#include "base/string_id.h"
 #include "catch2/catch_test_macros.hpp"
 
 namespace base {

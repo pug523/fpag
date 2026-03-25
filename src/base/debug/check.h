@@ -56,7 +56,7 @@ namespace base::internal {
 #define check_evaluate(expr, on_failed)           \
   do {                                            \
     auto&& _expr = (expr);                        \
-    FPAG_ASSUME(_expr);                           \
+    /* FPAG_ASSUME(_expr); */                     \
     if (!static_cast<bool>(_expr)) [[unlikely]] { \
       on_failed;                                  \
     }                                             \
@@ -66,7 +66,7 @@ namespace base::internal {
   do {                                          \
     auto&& _lhs = (lhs);                        \
     auto&& _rhs = (rhs);                        \
-    FPAG_ASSUME(_lhs op _rhs);                  \
+    /* FPAG_ASSUME(_lhs op _rhs); */            \
     if (!(_lhs op _rhs)) [[unlikely]] {         \
       failed;                                   \
     }                                           \
@@ -140,7 +140,7 @@ namespace base::internal {
 
 #define dcheck(expr) noop(expr)
 #define dcheck_msg(expr, msg) noop(expr, msg)
-#define raw_dcheck(expr) noop(expr, msg)
+#define raw_dcheck(expr) noop(expr)
 #define raw_dcheck_msg(expr, msg) noop(expr, msg)
 
 #define dcheck_eq(lhs, rhs) noop(lhs, rhs)
