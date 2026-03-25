@@ -1,0 +1,83 @@
+// Copyright 2026 pugur
+// This source code is licensed under the Apache License, Version 2.0
+// which can be found in the LICENSE file.
+
+#include "base/logging/sync_logger.h"
+
+#include <algorithm>
+#include <atomic>
+
+#include "base/console.h"
+#include "base/logging/log_level.h"
+#include "base/mem/page_allocator.h"
+#include "base/numeric.h"
+#include "build/build_config.h"
+
+#if !FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY)
+#include <thread>
+#endif
+
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+#include <io.h>
+#include <windows.h>
+#define FPAG_WRITE ::_write
+#define FPAG_STDOUT_FILENO 1
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+#include <unistd.h>
+#define FPAG_WRITE ::write
+#define FPAG_STDOUT_FILENO STDOUT_FILENO
+#else
+#error "Unsupported platform for SyncLogger"
+#endif
+
+namespace base {
+
+void SyncLogger::flush() {
+  spin_lock();
+  if (offset_ > 0) {
+    FPAG_WRITE(FPAG_STDOUT_FILENO, buffer_, offset_);
+    offset_ = 0;
+  }
+  spin_unlock();
+}
+
+void SyncLogger::write_to_shared_buffer(const char* data, usize len) {
+  spin_lock();
+
+  // Flush first if the buffer is full.
+  if (offset_ + len > capacity_) {
+    FPAG_WRITE(FPAG_STDOUT_FILENO, buffer_, offset_);
+    offset_ = 0;
+
+    // Directly write if the message is larger than the buffer.
+    if (len > capacity_) {
+      FPAG_WRITE(FPAG_STDOUT_FILENO, data, len);
+      spin_unlock();
+      return;
+    }
+  }
+
+  std::copy_n(data, len, buffer_ + offset_);
+  offset_ += len;
+
+  spin_unlock();
+}
+
+void SyncLogger::spin_lock() {
+  while (lock_.test_and_set(std::memory_order_acquire)) {
+#if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY)
+    __builtin_ia32_pause();
+#else
+    std::this_thread::yield();
+#endif
+  }
+}
+
+SyncLogger& global_logger() {
+  static SyncLogger logger(static_cast<char*>(allocate_pages(kPageSize)),
+                           kPageSize, LogLevel::Debug,
+                           is_ansi_escape_sequence_available(Stream::Stdout));
+  return logger;
+}
+
+}  // namespace base
