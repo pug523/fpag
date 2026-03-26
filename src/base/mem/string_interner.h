@@ -33,9 +33,9 @@ class StringInterner {
   StringPoolId intern(const std::string_view str);
 
   // Returns the total size of all strings in the pool.
-  usize size() const { return pool_.size(); }
+  inline usize size() const { return pool_.size(); }
   // Returns the number of strings in the pool.
-  usize string_count() const { return pool_.string_count(); }
+  inline usize string_count() const { return pool_.string_count(); }
 
  private:
   StringPool pool_;

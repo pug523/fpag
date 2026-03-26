@@ -53,6 +53,18 @@ class StringPool {
   // Returns the number of strings in the pool.
   inline usize string_count() const { return string_count_; }
 
+  struct Checkpoint {
+    ArenaAllocator::BlockPosition pos;
+  };
+
+  inline Checkpoint checkpoint() const {
+    return {arena_allocator_.current_position()};
+  }
+
+  inline void rollback(const Checkpoint& cp) {
+    arena_allocator_.rollback(cp.pos);
+  }
+
  private:
   ArenaAllocator arena_allocator_;
   std::atomic<usize> size_ = 0;

@@ -13,7 +13,7 @@
 
 namespace base {
 
-class ArenaAllocator {
+class ConcurrentArenaAllocator {
  public:
   // 2 MiB -> 1 huge page or 512 normal pages
   static constexpr usize kBlockSize = 2 * 1024 * 1024;
@@ -34,14 +34,15 @@ class ArenaAllocator {
     usize offset;
   };
 
-  ArenaAllocator() = default;
-  ~ArenaAllocator() { reset(); }
+  ConcurrentArenaAllocator() = default;
+  ~ConcurrentArenaAllocator() { reset(); }
 
-  ArenaAllocator(const ArenaAllocator&) = delete;
-  ArenaAllocator& operator=(const ArenaAllocator&) = delete;
+  ConcurrentArenaAllocator(const ConcurrentArenaAllocator&) = delete;
+  ConcurrentArenaAllocator& operator=(const ConcurrentArenaAllocator&) = delete;
 
-  ArenaAllocator(ArenaAllocator&& other) noexcept;
-  ArenaAllocator& operator=(ArenaAllocator&& other) noexcept;
+  ConcurrentArenaAllocator(ConcurrentArenaAllocator&& other) noexcept;
+  ConcurrentArenaAllocator& operator=(
+      ConcurrentArenaAllocator&& other) noexcept;
 
   void reserve(usize size, bool use_huge_pages = true);
 

@@ -6,7 +6,6 @@
 
 #include <string_view>
 
-#include "base/debug/assume.h"
 #include "base/debug/string.h"
 #include "base/numeric.h"
 #include "build/build_config.h"

@@ -41,6 +41,8 @@ class SyncLogger {
   SyncLogger(SyncLogger&& other) noexcept;
   SyncLogger& operator=(SyncLogger&& other) noexcept;
 
+  // Local stack buffer size used for formatting log messages.
+  // This affects the maximum log message size.
   constexpr static usize kLocalStackBufSize = 512;
   template <typename... Args>
   inline void log(LogLevel level,
@@ -63,23 +65,11 @@ class SyncLogger {
                          fmt, std::forward<Args>(args)...);
 
     const usize result_size = static_cast<usize>(result.size);
-    const bool truncated = result_size > max_len;
+    // const bool truncated = result_size > max_len;
     const usize len = prefix.size() + result_size + 1;
 
-    if (!truncated) [[likely]] {
-      // No truncation; write directly to stack buffer.
-      stack_buf[prefix.size() + result_size] = '\n';
-      write_to_shared_buffer(stack_buf, len);
-    } else {
-      // Truncated; allocate heap buffer and format into it.
-      std::string heap_buf;
-      heap_buf.reserve(len);
-      heap_buf.append(prefix);
-      std::format_to(std::back_inserter(heap_buf), fmt,
-                     std::forward<Args>(args)...);
-      heap_buf.push_back('\n');
-      write_to_shared_buffer(heap_buf.data(), heap_buf.size());
-    }
+    stack_buf[prefix.size() + result_size] = '\n';
+    write_to_shared_buffer(stack_buf, len);
   }
 
   template <typename... Args>

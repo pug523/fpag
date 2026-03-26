@@ -166,7 +166,9 @@ class ConcurrentHashMap {
           return &e.value;
         }
         // Failed to lock the slot; retry this slot (do not advance to next).
-        --i;
+        if (expected == kLockedHash) {
+          --i;
+        }
         continue;
       }
 
