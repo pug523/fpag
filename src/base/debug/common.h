@@ -4,5 +4,5 @@
 
 #pragma once
 
-// #define noop(...) (void)(0)
-#define noop(...) (void)sizeof(__VA_ARGS__)
+#define noop(...) (void)(0)
+// #define noop(...) (void)sizeof(__VA_ARGS__)

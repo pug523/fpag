@@ -34,6 +34,7 @@ set_targetdir("out/$(plat)-$(arch)-$(mode)")
 set_encodings("source:utf-8")
 set_encodings("utf-8") -- target
 
+local is_gcc = is_config("toolchain", "gcc")
 local is_clang = is_config("toolchain", "clang", "llvm")
 
 local catch2_configs = { }
@@ -233,16 +234,19 @@ end)
 target("fpag.root_config")
   set_kind("phony", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
-  add_cxxflags("-Wshadow", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
+  if is_clang or is_gcc then
+    add_cxxflags("-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
+    add_cxxflags("-fstack-protector-strong", { public = true })
+  end
+
   set_exceptions("none", { public = true })
-  add_cxxflags("-fno-exceptions", "-fno-rtti", "-fPIC", { public = true })
-  add_cxxflags("-fstack-protector-strong", { public = true })
+  add_cxxflags("-fno-exceptions", "-fno-rtti", { public = true })
   add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
   add_defines("FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
   add_includedirs("src", "third_party", { public = true })
 
   if is_plat("linux") then
-    add_cxxflags("-fcf-protection=full", "-fPIE", { public = true })
+    add_cxxflags("-fcf-protection=full", "-fPIE", "-fPIC", { public = true })
     add_ldflags("-pie", { public = true })
     add_rpathdirs("$LD_LIBRARY_PATH", { public = true })
   elseif is_plat("macosx") then

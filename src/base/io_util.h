@@ -30,7 +30,7 @@ constexpr i32 kStderrFd = STDERR_FILENO;
 
 inline void write(i32 fd, const char* data, size_t size) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  ::_write(fd, data, size);
+  ::_write(fd, data, static_cast<u32>(size));
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   ::write(fd, data, size);
 #endif

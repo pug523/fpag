@@ -83,6 +83,7 @@ void* allocate_huge_pages(usize size) {
 void free_pages(void* ptr, usize size) {
   dcheck(ptr);
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
+  (void)size;
   VirtualFree(ptr, 0, MEM_RELEASE);
 #else
   munmap(ptr, size);

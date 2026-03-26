@@ -14,7 +14,7 @@
 #include "base/numeric.h"
 #include "build/build_config.h"
 
-#if !FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY)
+#if !FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) || !FPAG_BUILD_FLAG(IS_COMPILER_GCC)
 #include <thread>
 #endif
 
@@ -82,7 +82,7 @@ void SyncLogger::write_to_shared_buffer(const char* data, usize len) {
 
 void SyncLogger::spin_lock() {
   while (lock_.test_and_set(std::memory_order_acquire)) {
-#if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY)
+#if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) && FPAG_BUILD_FLAG(IS_COMPILER_GCC)
     __builtin_ia32_pause();
 #else
     std::this_thread::yield();

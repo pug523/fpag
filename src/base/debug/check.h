@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "base/debug/cold.h"
 #include "base/debug/string.h"
 #include "base/numeric.h"
 #include "build/build_config.h"
@@ -16,21 +17,21 @@
 
 namespace base::internal {
 
-[[noreturn, gnu::cold]] void check_fail_impl(const char* expr,
-                                             const char* file,
-                                             i32 line,
-                                             const char* func,
-                                             std::string_view msg = "");
+[[noreturn]] FPAG_COLD void check_fail_impl(const char* expr,
+                                            const char* file,
+                                            i32 line,
+                                            const char* func,
+                                            std::string_view msg = "");
 
-[[noreturn, gnu::cold]] void check_op_fail_impl(const char* expected,
-                                                std::string_view lhs,
-                                                std::string_view rhs,
-                                                const char* file,
-                                                i32 line,
-                                                const char* func,
-                                                std::string_view msg = "");
+[[noreturn]] FPAG_COLD void check_op_fail_impl(const char* expected,
+                                               std::string_view lhs,
+                                               std::string_view rhs,
+                                               const char* file,
+                                               i32 line,
+                                               const char* func,
+                                               std::string_view msg = "");
 
-[[noreturn, gnu::cold]] inline void check_op_fail_internal(
+[[noreturn]] FPAG_COLD inline void check_op_fail_internal(
     const char* expected,
     const auto& lhs,
     const auto& rhs,
@@ -44,11 +45,11 @@ namespace base::internal {
                      std::string_view{rhs_str}, file, line, func, msg);
 }
 
-[[noreturn, gnu::cold]] void raw_check_fail_impl(const char* expr,
-                                                 const char* file,
-                                                 i32 line,
-                                                 const char* func,
-                                                 std::string_view msg = "");
+[[noreturn]] FPAG_COLD void raw_check_fail_impl(const char* expr,
+                                                const char* file,
+                                                i32 line,
+                                                const char* func,
+                                                std::string_view msg = "");
 
 }  // namespace base::internal
 

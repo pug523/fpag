@@ -6,16 +6,17 @@
 
 #include <string_view>
 
+#include "base/debug/cold.h"
 #include "base/numeric.h"
 
 namespace base::internal {
 
-[[noreturn, gnu::cold]] void fatal_crash_impl();
+[[noreturn]] FPAG_COLD void fatal_crash_impl();
 
-[[noreturn, gnu::cold]] void unreachable_impl(const char* file,
-                                              i32 line,
-                                              const char* func,
-                                              std::string_view msg = "");
+[[noreturn]] FPAG_COLD void unreachable_impl(const char* file,
+                                             i32 line,
+                                             const char* func,
+                                             std::string_view msg = "");
 
 }  // namespace base::internal
 

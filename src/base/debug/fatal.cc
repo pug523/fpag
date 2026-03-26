@@ -33,9 +33,6 @@ void fatal_crash_impl() {
 #endif
 #endif
 
-  // fallback
-  std::abort();
-
   while (true) {}
 }
 
