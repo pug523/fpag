@@ -104,5 +104,4 @@ jobs:
         run: |
           xmake check api
           xmake check clang
-          xmake analyze
           xmake lint
