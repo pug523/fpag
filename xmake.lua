@@ -19,165 +19,76 @@ option("stdlib", { default = "libstdc++", description = "stl to use" })
 
 set_policy("build.ccache", true)
 set_policy("check.auto_ignore_flags", false)
+set_policy("build.optimization.lto", has_config("lto"))
+set_policy("build.c++.msvc.runtime", "MD")
 
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.compile_commands.autoupdate", { outputdir = "out" })
 
-if has_config("lto") and is_mode("release") then
-  set_policy("build.optimization.lto", true)
-end
 
-set_policy("build.c++.msvc.runtime", "MD")
-
-set_languages("c++20")
 set_targetdir("out/$(plat)-$(arch)-$(mode)")
-set_encodings("source:utf-8")
-set_encodings("utf-8") -- target
 
 local is_gcc = is_config("toolchain", "gcc")
 local is_clang = is_config("toolchain", "clang", "llvm")
 
-local catch2_configs = { }
-local xxhash_configs = { }
-
--- only apply stdlib flags for clang
-if has_config("stdlib") and is_clang then
-  local stdlib_config = {
-    cxxflags = "-stdlib=" .. get_config("stdlib"),
-    ldflags = "-stdlib=" .. get_config("stdlib"),
-  }
-  table.join2(catch2_configs, stdlib_config)
-  -- table.join2(xxhash_configs, stdlib_config)
+-- Helper functions
+local function get_stdlib_config()
+    if is_clang and not is_plat("windows") and has_config("stdlib") then
+        local std = get_config("stdlib")
+        return { cxxflags = "-stdlib=" .. std, ldflags = "-stdlib=" .. std }
+    end
+    return { }
 end
 
-add_requires("xxhash v0.8.3", {
-  system = false,
-  configs = xxhash_configs,
-})
-
-if has_config("tests") then
-  add_requires("catch2 v3.13.0", {
-    system = false,
-    configs = catch2_configs,
-  })
-end
-
--- tasks
-task("format")
-  set_category(task_category)
-  set_menu({
-    usage = "xmake format",
-    description = "format source code using clang-format"
-  })
-  on_run( function ()
+local function source_files()
     local files = os.files("src/**.cc")
     table.join2(files, os.files("src/**.h"))
-    table.join2(files, os.files("tests/**.cc"))
-    table.join2(files, os.files("tests/**.h"))
 
-    if #files > 0 then
-      os.runv("clang-format", table.join({
-        "--fail-on-incomplete-format",
-        "--ferror-limit=1",
-        "--sort-includes",
-        "-i"
-      }, files))
+    if has_config("tests") then
+        table.join2(files, os.files("tests/**.cc"))
+        table.join2(files, os.files("tests/**.h"))
     end
+    return files
+end
 
-    os.run("uv sync")
-    local result = os.iorun("uv run scripts/header_license.py"):trim()
-    print(result)
-  end)
+add_requires("xxhash v0.8.3", { system = false })
+if has_config("tests") then
+    add_requires("catch2 v3.13.0", { system = false, configs = get_stdlib_config() })
+end
+
+-- Tasks
+task("format")
+    set_menu({ usage = "xmake format", description = "format source code" })
+    on_run( function ()
+        local files = source_files()
+        if #files > 0 then
+            os.runv("clang-format", table.join({ "--fail-on-incomplete-format", "--ferror-limit=1", "--sort-includes", "-i" }, files))
+        end
+        os.run("uv sync")
+        print(os.iorun("uv run scripts/header_license.py"):trim())
+    end)
 task_end()
 
 task("tidy")
-  set_category(task_category)
-  set_menu({
-    usage = "xmake tidy",
-    description = "Run clang-tidy --fix-errors on the source code to fix errors and warnings"
-  })
-  on_run( function ()
-    local files = os.files("src/**.cc")
-    table.join2(files, os.files("src/**.h"))
-    table.join2(files, os.files("tests/**.cc"))
-    table.join2(files, os.files("tests/**.h"))
-
-    if #files > 0 then
-      print("executing clang-tidy with `--fix-errors`...")
-      local result = os.iorunv("clang-tidy", table.join({
-        "--use-color",
-        "--fix-errors",
-        "--config-file=./.clang-tidy",
-        "-p",
-        "out/",
-      }, files)):trim()
-      print(result)
-    end
-  end)
+    set_menu({ usage = "xmake tidy", description = "Run clang-tidy --fix" })
+    on_run( function ()
+        local files = source_files()
+        if #files > 0 then
+          os.runv("clang-tidy", table.join({ "--use-color", "--fix", "--config-file=./.clang-tidy", "-p", "out/" }, files))
+        end
+    end)
 task_end()
-
 
 task("lint")
-  set_category(task_category)
-  set_menu({
-    usage = "xmake lint",
-    description = "lint source code using cpplint"
-  })
-  on_run( function ()
-    os.run("uv sync")
-    local result = os.iorun("uv run cpplint --recursive src tests"):trim()
-    print(result)
-
-    local files = os.files("src/**.cc")
-    table.join2(files, os.files("src/**.h"))
-    table.join2(files, os.files("tests/**.cc"))
-    table.join2(files, os.files("tests/**.h"))
-
-    if #files > 0 then
-      result = os.iorunv("clang-format", table.join({
-        "--dry-run",
-        "--fail-on-incomplete-format",
-        "--ferror-limit=1",
-        "--sort-includes",
-        "-i"
-      }, files)):trim()
-      print(result)
-      print("executing clang-tidy...")
-      result = os.iorunv("clang-tidy", table.join({
-        "--use-color",
-        "--config-file=./.clang-tidy",
-        "-p",
-        "out/",
-      }, files)):trim()
-      print(result)
-    end
-  end)
-task_end()
-
-task("analyze")
-  set_category(task_category)
-  set_menu({
-    usage = "xmake analyze",
-    description = "analyze source code using scan-build"
-  })
-  on_run( function ()
-    local result = os.iorunv("scan-build", { "xmake", "build" }):trim()
-    print(result)
-  end)
-task_end()
-
-task("checks")
-  set_category(task_category)
-  set_menu({
-    usage = "xmake checks",
-    description = "run format, lint, analyze tasks"
-  })
-  on_run( function ()
-    local result = os.iorun("xmake lint"):trim()
-    print(result)
-    result = os.iorun("xmake analyze"):trim()
-    print(result)
-  end)
+    set_menu({ usage = "xmake lint", description = "lint using cpplint & clang-format" })
+    on_run( function ()
+        os.run("uv sync")
+        print(os.iorun("uv run cpplint --recursive src tests"):trim())
+        local files = source_files()
+        if #files > 0 then
+            os.runv("clang-format", table.join({ "--dry-run", "--fail-on-incomplete-format", "-i" }, files))
+        end
+    end)
 task_end()
 
 -- events
@@ -186,10 +97,9 @@ after_build( function (target)
     local trace_dir = path.join(os.projectdir(), "out/timetrace")
     os.mkdir(trace_dir)
     for _, objfile in ipairs(target:objectfiles()) do
-      local base = path.directory(objfile) .. "/" .. path.basename(objfile)
-      local json = base .. ".json"
+      local json = objfile .. ".json"
       if os.exists(json) then
-        os.cp(json, path.join(trace_dir, path.basename(json) .. ".json"))
+        os.cp(json, path.join(trace_dir, path.basename(json)))
       end
     end
   end
@@ -200,12 +110,6 @@ after_build( function (target)
     for _, yaml in ipairs(os.files(path.join(target:targetdir(), "**.opt.yaml"))) do
       os.cp(yaml, remark_dir)
     end
-  end
-end)
-
-before_run( function (target)
-  if has_config("coverage") and target:name() == "tests" and not is_plat("windows") then
-    os.setenv("LLVM_PROFILE_FILE", "default.profraw")
   end
 end)
 
@@ -233,38 +137,41 @@ end)
 -- targets
 target("fpag.root_config")
   set_kind("phony", { public = true })
+  set_languages("c++20", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
-  if is_clang or is_gcc then
-    add_cxxflags("-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
-    add_cxxflags("-fstack-protector-strong", { public = true })
-  end
+
+  set_encodings("source:utf-8", "utf-8")
+
+  add_includedirs("src", "third_party", { public = true })
+  add_defines("FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
+  add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
 
   set_exceptions("none", { public = true })
   add_cxxflags("-fno-exceptions", "-fno-rtti", { public = true })
-  add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
-  add_defines("FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
-  add_includedirs("src", "third_party", { public = true })
+
+  if is_clang or is_gcc then
+    add_cxxflags("-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
+    add_cxxflags("-fstack-protector-strong", { public = true })
+
+    if is_mode("debug") then
+      add_cxxflags("-rdynamic", "-g3", { public = true })
+    end
+  end
 
   if is_plat("linux") then
-    add_cxxflags("-fcf-protection=full", "-fPIE", "-fPIC", { public = true })
-    add_ldflags("-pie", { public = true })
-    add_rpathdirs("$LD_LIBRARY_PATH", { public = true })
   elseif is_plat("macosx") then
-    add_cxxflags("-fPIE", { public = true })
   elseif is_plat("windows") then
   end
 
   if is_mode("debug") then
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
-    add_cxxflags("-fno-omit-frame-pointer", "-rdynamic", "-g3", { public = true })
+    add_cxxflags("-fno-omit-frame-pointer", { public = true })
     add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
     if has_config("sanitizers") and get_config("sanitizers") and not is_plat("windows") then
       set_policy("build.sanitizer.address", true)
       set_policy("build.sanitizer.undefined", true)
       set_policy("build.sanitizer.leak", true)
-      add_cxxflags("-fsanitize=address,undefined,leak", "-ftrapv", "-fno-sanitize-recover=all", { public = true })
-      add_ldflags("-fsanitize=address,undefined,leak", { public = true })
     end
   elseif is_mode("release") then
     set_symbols("hidden", { public = true })
@@ -279,7 +186,7 @@ target("fpag.root_config")
     end
   end
 
-  if has_config("stdlib") and is_clang then
+  if is_clang and has_config("stdlib") then
     add_cxxflags("-stdlib=" .. get_config("stdlib"), { public = true })
     add_ldflags("-stdlib=" .. get_config("stdlib"), { public = true })
   end
@@ -308,29 +215,22 @@ target("fpag")
   set_kind("$(kind)")
   add_files("src/**.cc")
   add_packages("xxhash", { public = true })
-
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
 
-  add_configfiles("build_info.h"
-
-
-  )
+  add_configfiles("build_info.h")
 
   set_default(true)
 target_end()
 
 target("tests")
   set_enabled(has_config("tests"))
-  add_deps("fpag.root_config")
+  add_deps("fpag.root_config", "fpag")
   set_kind("binary")
   add_files("tests/**.cc")
-  add_deps("fpag")
   add_packages("catch2")
-  set_group("test")
-  set_default(false)
 
   -- catch2 uses c2y extension in their macro
-  if is_clang then
-    add_cxxflags("-Wno-c2y-extensions")
-  end
+  if is_clang then add_cxxflags("-Wno-c2y-extensions") end
+
+  set_default(false)
 target_end()
