@@ -53,7 +53,7 @@
   UseColor:         true
   CheckOptions:
     - key:          bugprone-assert-side-effect.AssertMacros
-      value:        assert,dcheck,check
+      value:        assert,dcheck
     - key:          bugprone-dangling-handle.HandleClasses
       value:        ::std::basic_string_view;::std::span;::absl::string_view;::base::BasicStringPiece;::base::span
     - key:          bugprone-string-constructor.StringNames
