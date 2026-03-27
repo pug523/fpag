@@ -13,3 +13,19 @@
 #else
 #define FPAG_ASSUME(expr)
 #endif
+
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
+#define FPAG_COLD [[gnu::cold]]
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
+#define FPAG_COLD
+#else
+#define FPAG_COLD
+#endif
+
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
+#define FPAG_NOINLINE __attribute__((noinline))
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
+#define FPAG_NOINLINE __declspec(noinline)
+#else
+#define FPAG_NOINLINE
+#endif

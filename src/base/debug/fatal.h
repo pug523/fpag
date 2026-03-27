@@ -6,8 +6,8 @@
 
 #include <string_view>
 
-#include "base/debug/cold.h"
 #include "base/numeric.h"
+#include "build/attributes.h"
 
 namespace base::internal {
 

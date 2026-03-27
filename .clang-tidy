@@ -45,6 +45,7 @@ Checks: >
   modernize-use-override,
   modernize-use-transparent-functors,
   performance-*,
+  -performance-no-int-to-ptr,
   readability-identifier-naming,
   readability-redundant-member-init
 HeaderFilterRegex: '^.*(src|tests)[\\/].*$'

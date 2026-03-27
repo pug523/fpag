@@ -144,7 +144,6 @@ void* ArenaAllocator::try_alloc_from_block(usize size, usize align) {
   // Check if padding + size fits within the block's capacity.
   if (block->used + padding + size <= block->capacity) {
     block->used += padding + size;
-    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     return reinterpret_cast<void*>(aligned_addr);
   }
 

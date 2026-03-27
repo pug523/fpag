@@ -56,6 +56,10 @@ if has_config("tests") then
     add_requires("catch2 v3.13.0", { system = false, configs = get_stdlib_config() })
 end
 
+if is_plat("linux") then
+  add_requires("libunwind v1.8.3", { system = false })
+end
+
 -- Tasks
 task("format")
     set_menu({ usage = "xmake format", description = "format source code" })
@@ -214,7 +218,7 @@ target("fpag")
   add_deps("fpag.root_config", { public = false })
   set_kind("$(kind)")
   add_files("src/**.cc")
-  add_packages("xxhash", { public = true })
+  add_packages("xxhash", "libunwind", { public = true })
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
 
   add_configfiles("build_info.h")

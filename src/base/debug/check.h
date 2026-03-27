@@ -6,9 +6,9 @@
 
 #include <string_view>
 
-#include "base/debug/cold.h"
 #include "base/debug/string.h"
 #include "base/numeric.h"
+#include "build/attributes.h"
 #include "build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_RELEASE)
