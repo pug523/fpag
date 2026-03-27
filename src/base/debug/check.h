@@ -62,7 +62,7 @@ namespace base::internal {
     }                                             \
   } while (false)
 
-#define check_op_evaluate(op, lhs, rhs, failed) \
+#define check_op_evaluate(lhs, rhs, op, failed) \
   do {                                          \
     auto&& _lhs = (lhs);                        \
     auto&& _rhs = (rhs);                        \
@@ -89,31 +89,31 @@ namespace base::internal {
   check_evaluate(expr, ::base::internal::raw_check_fail_impl( \
                            #expr, __FILE__, __LINE__, __func__, msg))
 
-#define check_op(op, lhs, rhs)                  \
+#define check_op(lhs, rhs, op)                  \
   check_op_evaluate(                            \
-      op, lhs, rhs,                             \
+      lhs, rhs, op,                             \
       ::base::internal::check_op_fail_internal( \
           #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, __func__))
 
-#define check_op_msg(op, lhs, rhs, msg)                                        \
-  check_op_evaluate(op, lhs, rhs,                                              \
+#define check_op_msg(lhs, rhs, op, msg)                                        \
+  check_op_evaluate(lhs, rhs, op,                                              \
                     ::base::internal::check_op_fail_internal(                  \
                         #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, \
                         __func__, msg))
 
-#define check_eq(lhs, rhs) check_op(==, lhs, rhs)
-#define check_ne(lhs, rhs) check_op(!=, lhs, rhs)
-#define check_lt(lhs, rhs) check_op(<, lhs, rhs)
-#define check_le(lhs, rhs) check_op(<=, lhs, rhs)
-#define check_gt(lhs, rhs) check_op(>, lhs, rhs)
-#define check_ge(lhs, rhs) check_op(>=, lhs, rhs)
+#define check_eq(lhs, rhs) check_op(lhs, rhs, ==)
+#define check_ne(lhs, rhs) check_op(lhs, rhs, !=)
+#define check_lt(lhs, rhs) check_op(lhs, rhs, <)
+#define check_le(lhs, rhs) check_op(lhs, rhs, <=)
+#define check_gt(lhs, rhs) check_op(lhs, rhs, >)
+#define check_ge(lhs, rhs) check_op(lhs, rhs, >=)
 
-#define check_eq_msg(lhs, rhs, msg) check_op_msg(==, lhs, rhs, msg)
-#define check_ne_msg(lhs, rhs, msg) check_op_msg(!=, lhs, rhs, msg)
-#define check_lt_msg(lhs, rhs, msg) check_op_msg(<, lhs, rhs, msg)
-#define check_le_msg(lhs, rhs, msg) check_op_msg(<=, lhs, rhs, msg)
-#define check_gt_msg(lhs, rhs, msg) check_op_msg(>, lhs, rhs, msg)
-#define check_ge_msg(lhs, rhs, msg) check_op_msg(>=, lhs, rhs, msg)
+#define check_eq_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, ==, msg)
+#define check_ne_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, !=, msg)
+#define check_lt_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, <, msg)
+#define check_le_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, <=, msg)
+#define check_gt_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, >, msg)
+#define check_ge_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, >=, msg)
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
