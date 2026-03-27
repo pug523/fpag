@@ -258,7 +258,7 @@ target("fpag.root_config")
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
     add_cxxflags("-fno-omit-frame-pointer", "-rdynamic", "-g3", { public = true })
-    add_defines("FPAG_BUILD_DEBUG", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
+    add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
     if has_config("sanitizers") and get_config("sanitizers") and not is_plat("windows") then
       set_policy("build.sanitizer.address", true)
       set_policy("build.sanitizer.undefined", true)
