@@ -44,7 +44,7 @@ SyncLogger& SyncLogger::operator=(SyncLogger&& other) noexcept {
     other.buffer_ = nullptr;
     other.offset_ = 0;
 
-    lock_.clear();
+    lock_.clear(std::memory_order_release);
   }
   return *this;
 }

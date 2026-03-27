@@ -54,10 +54,12 @@ class SyncLogger {
 
     char stack_buf[kLocalStackBufSize];
 
+    // Prefix is " info: ", "error: ", etc.
     const std::string_view prefix = log_prefix(level, use_ansi_style_);
     dcheck_lt(prefix.size(), sizeof(stack_buf));
     std::memcpy(stack_buf, prefix.data(), prefix.size());
 
+    // -1 for '\n'
     const usize max_len = sizeof(stack_buf) - prefix.size() - 1;
     const std::format_to_n_result result =
         std::format_to_n(stack_buf + prefix.size(),
@@ -65,10 +67,11 @@ class SyncLogger {
                          fmt, std::forward<Args>(args)...);
 
     const usize result_size = static_cast<usize>(result.size);
+    const usize payload_size = result_size > max_len ? max_len : result_size;
     // const bool truncated = result_size > max_len;
-    const usize len = prefix.size() + result_size + 1;
+    const usize len = prefix.size() + payload_size + 1;
 
-    stack_buf[prefix.size() + result_size] = '\n';
+    stack_buf[prefix.size() + payload_size] = '\n';
     write_to_shared_buffer(stack_buf, len);
   }
 
