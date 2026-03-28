@@ -14,7 +14,8 @@ option("timetrace", { default = false, description = "generate timetrace json th
 option("native", { default = false, description = "native architecture optimization" })
 option("unitybuild", { default = false, description = "enable unity build to shorten build time" })
 option("lto", { default = false, description = "use link time optimization on release builds" })
-option("tests", { default = false, description = "build unit tests and benchmarks" })
+option("tests", { default = false, description = "build unit tests" })
+option("benchmarks", { default = false, description = "build micro benchmarks" })
 option("stdlib", { default = "libstdc++", description = "stl to use" })
 
 set_policy("build.ccache", true)
@@ -32,7 +33,7 @@ local is_gcc = is_config("toolchain", "gcc")
 local is_clang = is_config("toolchain", "clang", "llvm")
 
 -- Helper functions
-local function get_stdlib_config()
+local function stdlib_config()
     if is_clang and not is_plat("windows") and has_config("stdlib") then
         local std = get_config("stdlib")
         return { cxxflags = "-stdlib=" .. std, ldflags = "-stdlib=" .. std }
@@ -53,11 +54,13 @@ end
 
 add_requires("xxhash v0.8.3", { system = false })
 if has_config("tests") then
-    add_requires("catch2 v3.13.0", { system = false, configs = get_stdlib_config() })
+    add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
 end
-
+if has_config("benchmarks") then
+    add_requires("benchmark v1.9.5", { system = false, configs = stdlib_config() })
+end
 if is_plat("linux") then
-  add_requires("libunwind v1.8.3", { system = false })
+  add_requires("libunwind v1.8.3", { system = false, configs = stdlib_config() })
 end
 
 -- Tasks
@@ -232,9 +235,21 @@ target("tests")
   set_kind("binary")
   add_files("tests/**.cc")
   add_packages("catch2")
+  add_includedirs("tests", { public = true })
 
   -- catch2 uses c2y extension in their macro
   if is_clang then add_cxxflags("-Wno-c2y-extensions") end
+
+  set_default(false)
+target_end()
+
+target("benchmarks")
+  set_enabled(has_config("benchmarks"))
+  add_deps("fpag.root_config", "fpag")
+  set_kind("binary")
+  add_files("benchmarks/**.cc")
+  add_packages("benchmark")
+  add_includedirs("benchmarks", { public = true })
 
   set_default(false)
 target_end()
