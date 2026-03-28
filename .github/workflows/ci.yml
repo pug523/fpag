@@ -28,21 +28,18 @@ jobs:
             stdlib: libc++
             sanitizers: y
             libunwind: y
-            elfutils: y
           - os: windows-2025-vs2026
             plat: windows
             arch: x64
             stdlib: msvc
             sanitizers: n
             libunwind: n
-            elfutils: n
           - os: macos-26
             plat: macosx
             arch: arm64
             stdlib: libc++
             sanitizers: n
             libunwind: n
-            elfutils: n
       fail-fast: false
     runs-on: ${{ matrix.os }}
     name: build and test (${{ matrix.os }})
@@ -96,7 +93,6 @@ jobs:
             --stdlib="${{ matrix.stdlib }}" \
             --sanitizers="${{ matrix.sanitizers }}" \
             --libunwind="${{ matrix.libunwind }}" \
-            --elfutils="${{ matrix.elfutils }}" \
             -p "${{ matrix.plat }}" \
             -a "${{ matrix.arch }}"
 

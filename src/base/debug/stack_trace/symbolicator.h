@@ -10,8 +10,8 @@
 #include "base/numeric.h"
 #include "build/build_config.h"
 
-#if FPAG_BUILD_FLAG(USE_ELFUTILS)
-struct Dwfl;
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+// #include "base/debug/dwarf/provider.h"
 #endif
 
 namespace base {
@@ -26,12 +26,9 @@ struct SymbolInfo {
   bool resolved = false;
 };
 
-// Symbolication context. On platforms that require initialization (e.g.
-// Windows DbgHelp), constructing this object performs that initialization and
-// destroying it cleans up. On POSIX platforms it is a no-op wrapper.
 class Symbolicator {
  public:
-#if FPAG_BUILD_FLAG(IS_OS_POSIX) && !FPAG_BUILD_FLAG(USE_ELFUTILS)
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
   Symbolicator() = default;
   ~Symbolicator() = default;
 #else
@@ -47,21 +44,15 @@ class Symbolicator {
   SymbolInfo resolve(const void* address) const;
 
  private:
-#if FPAG_BUILD_FLAG(USE_ELFUTILS)
-  SymbolInfo resolve_elfutils(const void* address) const;
-#endif
-
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
   SymbolInfo resolve_posix(const void* address) const;
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   SymbolInfo resolve_win(const void* address) const;
 #endif
 
-#if FPAG_BUILD_FLAG(USE_ELFUTILS)
-  Dwfl* dwfl_ = nullptr;
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+  // DwarfProvider dwarf_provider_;
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
-  // DbgHelp is not thread-safe, so we store the process handle used during
-  // initialization to ensure SymCleanup is called on the same handle.
   void* process_handle_ = nullptr;
   bool dbghelp_initialized_ = false;
 #endif

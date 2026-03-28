@@ -15,8 +15,11 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
-#include <psapi.h>
+// <psapi.h> must be included after <windows.h>.
+// clang-format off
 #include <windows.h>
+#include <psapi.h>
+// clang-format on
 #elif FPAG_BUILD_FLAG(IS_OS_APPLE)
 #include <dlfcn.h>
 #else

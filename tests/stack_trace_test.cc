@@ -91,13 +91,13 @@ TEST_CASE("StackTrace Edge Cases and Robustness", "[base][stack_trace]") {
     REQUIRE(trace.frame_count() <= small_depth);
   }
 
-  // SECTION("Print with prefix") {
-  //   StackTrace trace;
-  //   std::vector<StackTraceFrame> buffer(10);
-  //   trace.init(buffer.data(), 10);
-  //   trace.collect_trace();
-  //   trace.print_trace("[DEBUG] stack trace test: ");
-  // }
+  SECTION("Print with prefix") {
+    StackTrace trace;
+    std::vector<StackTraceFrame> buffer(10);
+    trace.init(buffer.data(), 10);
+    trace.collect_trace();
+    // trace.print_trace("[DEBUG] stack trace test: ");
+  }
 
   SECTION("String interning and stability") {
     StackTrace trace;

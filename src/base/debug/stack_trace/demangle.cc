@@ -15,8 +15,11 @@
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <cxxabi.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
-#include <dbghelp.h>
+// <dbghelp.h> must be included after <windows.h>.
+// clang-format off
 #include <windows.h>
+#include <dbghelp.h>
+// clang-format on
 #else
 #error "Unsupported platform for symbol demangling"
 #endif

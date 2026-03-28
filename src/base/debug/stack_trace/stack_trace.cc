@@ -5,6 +5,7 @@
 #include "base/debug/stack_trace/stack_trace.h"
 
 #include <string>
+#include <vector>
 
 #include "base/debug/check.h"
 #include "base/debug/stack_trace/capture_stack_addresses.h"

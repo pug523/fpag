@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <format>
 #include <string>
+#include <string_view>
 
 #include "base/debug/stack_trace/stack_frame.h"
 #include "base/numeric.h"
@@ -26,11 +27,18 @@ void append_frame(std::string* out,
   }
 
   if (opts.show_function) {
-    out->append(!frame.function.empty() ? frame.function : "(unknown)");
+    const std::string_view func =
+        !frame.function.empty() ? frame.function : "(unknown)";
+    if (opts.show_file_line && !frame.file.empty()) {
+      out->append(std::format("{:<60}", func));
+    } else {
+      out->append(func);
+    }
   }
 
   if (opts.show_file_line && !frame.file.empty()) {
-    out->append("\n      at ");
+    // out->append("\n      at ");
+    out->append(" at ");
     out->append(frame.file);
     if (frame.line > 0) {
       out->append(std::format(":{}", frame.line));
