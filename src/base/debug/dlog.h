@@ -9,6 +9,7 @@
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
 #include <format>
+#include <iterator>
 #include <string_view>
 #include <utility>
 
@@ -30,9 +31,10 @@ inline void dlog_internal(const char* file,
                           std::format_string<Args...> fmt,
                           Args&&... args) {
   char buf[512];
-  const std::format_to_n_result result =
-      std::format_to_n(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
-  const std::string_view formatted_msg(buf, result.size);
+  const std::format_to_n_result result = std::format_to_n(
+      buf, static_cast<std::iter_difference_t<char>>(sizeof(buf)), fmt,
+      std::forward<Args>(args)...);
+  const std::string_view formatted_msg(buf, static_cast<usize>(result.size));
   dlog_impl(formatted_msg, file, line, func);
 }
 #endif

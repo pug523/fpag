@@ -39,17 +39,16 @@ class StackTrace {
 
   // Initializes the stack trace with a buffer of `frames_buf` which has `depth`
   // frames. `depth` must be less than or equal to kMaxTraceDepth.
-  void init(StackTraceFrame* frames_buf, usize depth = kMaxTraceDepth);
+  void init(StackTraceFrame* frames_buf,
+            usize depth = kMaxTraceDepth,
+            usize skip = 2);
 
   // Collects the current stack trace up to the `depth_`.
   // Must be called before `print_trace()` or `to_string()`.
   void collect_trace();
 
   // Prints the stack trace to the console with a prefix.
-  void print_trace_with_prefix(std::string_view prefix) const;
-
-  // Prints the stack trace to the console without a prefix.
-  inline void print_trace() const { print_trace_with_prefix(""); }
+  void print_trace(std::string_view prefix = "") const;
 
   // Returns a string representation of the stack trace.
   std::string to_string() const;
@@ -68,12 +67,20 @@ class StackTrace {
   StackTraceFrame* frames_ = nullptr;
   // Maximum number of frames to capture (set by init()).
   usize depth_ = kMaxTraceDepth;
+
+  // Number of frames to skip before capturing (set by init()).
+  usize skip_ = 0;
+
   // Number of frames actually captured by collect_trace().
   usize count_ = 0;
+
   // Stable storage for symbolicated strings (function names, file paths).
   // string_view members inside StackTraceFrame point into this buffer.
   std::vector<char> string_buffer_;
   StackTraceStatus status_ = StackTraceStatus::Uninitialized;
 };
+
+// Simple helper that prints the current stack trace to the console.
+void print_stack_trace_from_here();
 
 }  // namespace base

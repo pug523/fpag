@@ -12,6 +12,8 @@ option("optreport", { default = false, description = "report optimization result
 option("sanitizers", { default = false, description = "enable address/undefined behaviour/leak sanitizer" })
 option("timetrace", { default = false, description = "generate timetrace json that can be see with perfetto ui" })
 option("native", { default = false, description = "native architecture optimization" })
+option("libunwind", { default = false, description = "use libunwind for stack tracing" })
+option("elfutils", { default = false, description = "use elfutils for stack tracing" })
 option("unitybuild", { default = false, description = "enable unity build to shorten build time" })
 option("lto", { default = false, description = "use link time optimization on release builds" })
 option("tests", { default = false, description = "build unit tests" })
@@ -59,8 +61,13 @@ end
 if has_config("benchmarks") then
     add_requires("benchmark v1.9.5", { system = false, configs = stdlib_config() })
 end
-if is_plat("linux") then
+if has_config("libunwind") and is_plat("linux") then
   add_requires("libunwind v1.8.3", { system = false, configs = stdlib_config() })
+end
+if has_config("elfutils") and not is_plat("windows") then
+  add_requires("elfutils 0.190", { system = false, configs = stdlib_config() })
+  add_requires("xz 5.8.2", { system = false, configs = stdlib_config() })
+  add_requires("bzip2 1.0.8", { system = false, configs = stdlib_config() })
 end
 
 -- Tasks
@@ -161,7 +168,8 @@ target("fpag.root_config")
     add_cxxflags("-fstack-protector-strong", { public = true })
 
     if is_mode("debug") then
-      add_cxxflags("-rdynamic", "-g3", { public = true })
+      add_cxxflags("-rdynamic", { public = true })
+      add_ldflags("-rdynamic", { public = true })
     end
   end
 
@@ -221,7 +229,22 @@ target("fpag")
   add_deps("fpag.root_config", { public = false })
   set_kind("$(kind)")
   add_files("src/**.cc")
-  add_packages("xxhash", "libunwind", { public = true })
+  add_packages("xxhash", { public = true })
+
+  if has_config("libunwind") and is_plat("linux") then
+    add_packages("libunwind")
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1")
+  else
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0")
+  end
+
+  if has_config("elfutils") and not is_plat("windows") then
+    add_packages("elfutils", "xz", "bzip2")
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_ELFUTILS()=1")
+  else
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_ELFUTILS()=0")
+  end
+
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
 
   add_configfiles("build_info.h")

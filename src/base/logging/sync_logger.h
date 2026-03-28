@@ -41,9 +41,58 @@ class SyncLogger {
   SyncLogger(SyncLogger&& other) noexcept;
   SyncLogger& operator=(SyncLogger&& other) noexcept;
 
+  template <typename... Args>
+  inline void trace(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Trace, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void debug(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Debug, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void info(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Info, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void warn(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void error(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Error, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void fatal(std::format_string<Args&&...> fmt, Args&&... args) {
+    log(LogLevel::Fatal, fmt, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  inline void raw(std::format_string<Args&&...> fmt, Args&&... args) {
+    log_raw(fmt, std::forward<Args>(args)...);
+  }
+
+  inline void raw_str(std::string_view str) { log_raw_str(str); }
+
+  void flush();
+
+ private:
+  void write_to_shared_buffer(const char* data, usize len);
+  void spin_lock();
+  inline void spin_unlock() { lock_.clear(std::memory_order_release); }
+
+  inline constexpr bool should_log(LogLevel level) {
+    return level >= min_level_;
+  }
+
   // Local stack buffer size used for formatting log messages.
   // This affects the maximum log message size.
-  constexpr static usize kLocalStackBufSize = 512;
+  constexpr static usize kLocalStackBufSize = 4096;
+
   template <typename... Args>
   inline void log(LogLevel level,
                   std::format_string<Args&&...> fmt,
@@ -76,44 +125,24 @@ class SyncLogger {
   }
 
   template <typename... Args>
-  inline void trace(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Trace, fmt, std::forward<Args>(args)...);
+  inline void log_raw(std::format_string<Args&&...> fmt, Args&&... args) {
+    char stack_buf[kLocalStackBufSize];
+    const std::format_to_n_result result = std::format_to_n(
+        stack_buf,
+        static_cast<std::iter_difference_t<char*>>(sizeof(stack_buf) - 1), fmt,
+        std::forward<Args>(args)...);
+    const usize len = static_cast<usize>(result.size) + 1;
+    stack_buf[static_cast<usize>(result.size)] = '\n';
+    write_to_shared_buffer(stack_buf, len);
   }
 
-  template <typename... Args>
-  inline void debug(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Debug, fmt, std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  inline void info(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Info, fmt, std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  inline void warn(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Warn, fmt, std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  inline void error(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Error, fmt, std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  inline void fatal(std::format_string<Args&&...> fmt, Args&&... args) {
-    log(LogLevel::Fatal, fmt, std::forward<Args>(args)...);
-  }
-
-  void flush();
-
- private:
-  void write_to_shared_buffer(const char* data, usize len);
-  void spin_lock();
-  inline void spin_unlock() { lock_.clear(std::memory_order_release); }
-
-  inline constexpr bool should_log(LogLevel level) {
-    return level >= min_level_;
+  inline void log_raw_str(std::string_view str) {
+    char stack_buf[kLocalStackBufSize];
+    const usize len =
+        str.size() > sizeof(stack_buf) - 1 ? sizeof(stack_buf) - 1 : str.size();
+    std::memcpy(stack_buf, str.data(), len);
+    stack_buf[len] = '\n';
+    write_to_shared_buffer(stack_buf, len + 1);
   }
 
   char* buffer_;

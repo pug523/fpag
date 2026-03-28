@@ -30,8 +30,7 @@ void dlog_impl(std::string_view formatted_msg,
                const char* file,
                i32 line,
                const char* func) {
-  dlog_instance().debug("{}  [on {} ({}:{})]\n", formatted_msg, func, file,
-                        line);
+  dlog_instance().debug("{}  [on {} ({}:{})]", formatted_msg, func, file, line);
 }
 
 }  // namespace base::internal

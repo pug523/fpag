@@ -29,3 +29,11 @@
 #else
 #define FPAG_NOINLINE
 #endif
+
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
+#define FPAG_VISIBLE __attribute__((visibility("default")))
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
+#define FPAG_VISIBLE __declspec(dllexport)
+#else
+#define FPAG_VISIBLE
+#endif

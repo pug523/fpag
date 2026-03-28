@@ -15,7 +15,9 @@ namespace base {
 
 namespace {
 
-void insert_single_thread(benchmark::State& state) {
+// PERF: optimize it
+
+void concurrent_hash_map_insert_single_thread(benchmark::State& state) {
   const u64 capacity = 1 << 20;
   const u32 num_ops = 100000;
   for (auto _ : state) {
@@ -26,9 +28,9 @@ void insert_single_thread(benchmark::State& state) {
     benchmark::DoNotOptimize(map.find(num_ops - 1));
   }
 }
-BENCHMARK(insert_single_thread);
+BENCHMARK(concurrent_hash_map_insert_single_thread);
 
-void find_single_thread(benchmark::State& state) {
+void concurrent_hash_map_find_single_thread(benchmark::State& state) {
   const u64 capacity = 1 << 20;
   const u32 num_ops = 100000;
   ConcurrentHashMap<u64, u64> map(capacity);
@@ -46,11 +48,12 @@ void find_single_thread(benchmark::State& state) {
     benchmark::DoNotOptimize(sum);
   }
 }
-BENCHMARK(find_single_thread);
+BENCHMARK(concurrent_hash_map_find_single_thread);
 
 // TODO: add `try_insert` benchmarks
 
-void concurrent_insert_multi_thread(benchmark::State& state) {
+void concurrent_hash_map_concurrent_insert_multi_thread(
+    benchmark::State& state) {
   const u64 capacity = 1 << 20;
   const u32 num_ops = 100000;
   const u32 num_threads = std::thread::hardware_concurrency();
@@ -74,7 +77,7 @@ void concurrent_insert_multi_thread(benchmark::State& state) {
     benchmark::DoNotOptimize(map.size());
   }
 }
-BENCHMARK(concurrent_insert_multi_thread);
+BENCHMARK(concurrent_hash_map_concurrent_insert_multi_thread);
 
 }  // namespace
 

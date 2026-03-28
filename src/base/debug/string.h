@@ -10,6 +10,8 @@
 #include <string_view>
 #include <type_traits>
 
+#include "base/numeric.h"
+
 namespace base {
 
 template <typename T>
@@ -36,6 +38,14 @@ inline constexpr auto to_debug_string(const T& value) {
   } else {
     return std::string_view{"<unprintable>"};
   }
+}
+
+inline consteval usize const_strlen(const char* s) {
+  usize len = 0;
+  while (s[len] != '\0') {
+    len++;
+  }
+  return len;
 }
 
 }  // namespace base

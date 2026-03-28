@@ -15,7 +15,9 @@ namespace base {
 
 namespace {
 
-void interning_new_strings(benchmark::State& state) {
+// PERF: optimize it
+
+void string_interner_interning_new_strings(benchmark::State& state) {
   const u32 num_unique_strings = 10000;
   std::vector<std::string> test_data;
   test_data.reserve(num_unique_strings);
@@ -33,9 +35,9 @@ void interning_new_strings(benchmark::State& state) {
     benchmark::DoNotOptimize(checksum);
   }
 }
-BENCHMARK(interning_new_strings);
+BENCHMARK(string_interner_interning_new_strings);
 
-void interning_existing_strings(benchmark::State& state) {
+void string_interner_interning_existing_strings(benchmark::State& state) {
   const u32 num_unique_strings = 10000;
   std::vector<std::string> test_data;
   test_data.reserve(num_unique_strings);
@@ -56,9 +58,9 @@ void interning_existing_strings(benchmark::State& state) {
     benchmark::DoNotOptimize(checksum);
   }
 }
-BENCHMARK(interning_existing_strings);
+BENCHMARK(string_interner_interning_existing_strings);
 
-void concurrent_interning(benchmark::State& state) {
+void string_interner_concurrent_interning(benchmark::State& state) {
   const u32 num_unique_strings = 10000;
   std::vector<std::string> test_data;
   test_data.reserve(num_unique_strings);
@@ -76,14 +78,13 @@ void concurrent_interning(benchmark::State& state) {
                                        false);
 
     for (u32 t = 0; t < num_threads; ++t) {
-      threads.emplace_back(
-          [&concurrent_interner, &test_data, t]() {
-            for (u32 i = 0; i < 1000; ++i) {
-              concurrent_interner.intern("shared_constant_key");
-              concurrent_interner.intern(
-                  test_data[(t * 100 + i) % num_unique_strings]);
-            }
-          });
+      threads.emplace_back([&concurrent_interner, &test_data, t]() {
+        for (u32 i = 0; i < 1000; ++i) {
+          concurrent_interner.intern("shared_constant_key");
+          concurrent_interner.intern(
+              test_data[(t * 100 + i) % num_unique_strings]);
+        }
+      });
     }
     for (std::thread& t : threads) {
       t.join();
@@ -91,7 +92,7 @@ void concurrent_interning(benchmark::State& state) {
     benchmark::DoNotOptimize(concurrent_interner.size());
   }
 }
-BENCHMARK(concurrent_interning);
+BENCHMARK(string_interner_concurrent_interning);
 
 }  // namespace
 

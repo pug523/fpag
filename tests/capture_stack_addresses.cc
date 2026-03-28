@@ -54,10 +54,15 @@ TEST_CASE("capture_stack_addresses basic functionality",
   }
 }
 
+// We only test skip functionality in debug builds because release builds may
+// inline `deep_stack_function` even with `FPAG_NOINLINE`.
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+
 FPAG_NOINLINE usize deep_stack_function(void** out_frames,
                                         usize max_depth,
                                         usize skip) {
-  return capture_stack_addresses(out_frames, max_depth, skip);
+  usize result = capture_stack_addresses(out_frames, max_depth, skip);
+  return result;
 }
 
 TEST_CASE("capture_stack_addresses skip functionality",
@@ -89,5 +94,7 @@ TEST_CASE("capture_stack_addresses skip functionality",
     CHECK(captured == 0);
   }
 }
+
+#endif
 
 }  // namespace base

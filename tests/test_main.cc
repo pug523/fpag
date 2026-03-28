@@ -2,10 +2,11 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "catch2/catch_session.hpp"
-#define CATCH_CONFIG_RUNNER
-
 #include "base/numeric.h"
+
+#include "catch2/catch_session.hpp"
+
+#define CATCH_CONFIG_RUNNER
 
 void init() {
   // noop

@@ -3,3 +3,5 @@
 // which can be found in the LICENSE file.
 
 #pragma once
+
+// TODO: add Location struct and LOCATION_HERE macro

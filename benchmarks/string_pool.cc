@@ -19,7 +19,9 @@ namespace base {
 
 namespace {
 
-void append_performance_pre_reserved(benchmark::State& state) {
+// PERF: optimize it
+
+void string_pool_append_performance_pre_reserved(benchmark::State& state) {
   const u32 num_strings = 10000;
   const std::string base_str = "performance_test_string_";
 
@@ -40,9 +42,9 @@ void append_performance_pre_reserved(benchmark::State& state) {
     benchmark::DoNotOptimize(ids);
   }
 }
-BENCHMARK(append_performance_pre_reserved);
+BENCHMARK(string_pool_append_performance_pre_reserved);
 
-void sequential_get_10k_strings(benchmark::State& state) {
+void string_pool_sequential_get_10k_strings(benchmark::State& state) {
   const u32 num_strings = 10000;
   const std::string base_str = "performance_test_string_";
 
@@ -67,9 +69,9 @@ void sequential_get_10k_strings(benchmark::State& state) {
     benchmark::DoNotOptimize(total_len);
   }
 }
-BENCHMARK(sequential_get_10k_strings);
+BENCHMARK(string_pool_sequential_get_10k_strings);
 
-void random_get_10k_strings(benchmark::State& state) {
+void string_pool_random_get_10k_strings(benchmark::State& state) {
   const u32 num_strings = 10000;
   const std::string base_str = "performance_test_string_";
 
@@ -100,7 +102,7 @@ void random_get_10k_strings(benchmark::State& state) {
     benchmark::DoNotOptimize(total_len);
   }
 }
-BENCHMARK(random_get_10k_strings);
+BENCHMARK(string_pool_random_get_10k_strings);
 
 }  // namespace
 
