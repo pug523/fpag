@@ -5,12 +5,12 @@
 #include "base/debug/stack_trace/formatter.h"
 
 #include <cstdint>
-#include <format>
 #include <string>
 #include <string_view>
 
 #include "base/debug/stack_trace/stack_frame.h"
 #include "base/numeric.h"
+#include "str/format_util.h"
 
 namespace base {
 
@@ -18,19 +18,19 @@ void append_frame(std::string* out,
                   const StackTraceFrame& frame,
                   const FrameFormatOptions& opts) {
   if (opts.show_index) {
-    out->append(std::format("#{:3}  ", frame.index));
+    out->append(str::format("#{:3}  ", frame.index));
   }
 
   if (opts.show_address) {
     out->append(
-        std::format("{:#018x}  ", reinterpret_cast<uintptr_t>(frame.address)));
+        str::format("{:#018x}  ", reinterpret_cast<uintptr_t>(frame.address)));
   }
 
   if (opts.show_function) {
     const std::string_view func =
         !frame.function.empty() ? frame.function : "(unknown)";
     if (opts.show_file_line && !frame.file.empty()) {
-      out->append(std::format("{:<60}", func));
+      out->append(str::format("{:<60}", func));
     } else {
       out->append(func);
     }
@@ -41,9 +41,9 @@ void append_frame(std::string* out,
     out->append(" at ");
     out->append(frame.file);
     if (frame.line > 0) {
-      out->append(std::format(":{}", frame.line));
+      out->append(str::format(":{}", frame.line));
       if (frame.column > 0) {
-        out->append(std::format(":{}", frame.column));
+        out->append(str::format(":{}", frame.column));
       }
     }
   }
@@ -55,7 +55,7 @@ std::string format_frames(const StackTraceFrame* frames,
                           const FrameFormatOptions& opts) {
   std::string out;
   if (!prefix.empty()) {
-    out = std::format("{}\n", prefix);
+    out = str::format("{}\n", prefix);
   }
 
   for (usize i = 0; i < count; ++i) {

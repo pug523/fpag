@@ -2,17 +2,17 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/string_pool.h"
+#include "str/string_pool.h"
 
 #include <atomic>
 #include <cstring>
 #include <string_view>
 #include <utility>
 
-#include "base/mem/arena_allocator.h"
-#include "base/mem/string_pool_id.h"
+#include "mem/arena_allocator.h"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 StringPool::StringPool(StringPool&& other) noexcept {
   arena_allocator_ = std::move(other.arena_allocator_);
@@ -53,7 +53,7 @@ StringPoolId StringPool::append(const std::string_view str,
     return {.block_id = 0, .offset = 0, .length = 0};
   }
 
-  ArenaAllocator::BlockPosition block_pos{};
+  mem::ArenaAllocator::BlockPosition block_pos{};
   void* const ptr =
       arena_allocator_.alloc(str.size(), use_huge_pages_, 1, &block_pos);
   std::memcpy(ptr, str.data(), str.size());
@@ -70,4 +70,4 @@ StringPoolId StringPool::append(const std::string_view str,
           .length = str.size()};
 }
 
-}  // namespace base
+}  // namespace str

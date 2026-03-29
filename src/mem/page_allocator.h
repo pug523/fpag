@@ -6,7 +6,7 @@
 
 #include "base/numeric.h"
 
-namespace base {
+namespace mem {
 
 void* reserve_pages(usize size);
 bool commit_pages(void* ptr, usize size);
@@ -19,4 +19,4 @@ void free_pages(void* ptr, usize size);
 static constexpr u64 kPageSize = 4096;                 // 4 KiB
 static constexpr u64 kHugePageSize = 2 * 1024 * 1024;  // 2 MiB
 
-}  // namespace base
+}  // namespace mem

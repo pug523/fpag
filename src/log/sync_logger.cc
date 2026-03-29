@@ -2,17 +2,17 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/logging/sync_logger.h"
+#include "log/sync_logger.h"
 
 #include <algorithm>
 #include <atomic>
 
 #include "base/console.h"
 #include "base/io_util.h"
-#include "base/logging/log_level.h"
-#include "base/mem/page_allocator.h"
 #include "base/numeric.h"
 #include "build/build_config.h"
+#include "log/log_level.h"
+#include "mem/page_allocator.h"
 
 #if !FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) || !FPAG_BUILD_FLAG(IS_COMPILER_GCC)
 #include <thread>
@@ -90,10 +90,16 @@ void SyncLogger::spin_lock() {
   }
 }
 
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+constexpr LogLevel kDefaultLogLevel = LogLevel::Debug;
+#else
+constexpr LogLevel kDefaultLogLevel = LogLevel::Info;
+#endif
+
 SyncLogger& global_logger() {
-  static SyncLogger logger(static_cast<char*>(allocate_pages(kPageSize)),
-                           kPageSize, LogLevel::Debug,
-                           is_ansi_escape_sequence_available(Stream::Stdout));
+  static SyncLogger logger(
+      static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
+      kDefaultLogLevel, is_ansi_escape_sequence_available(Stream::Stdout));
   return logger;
 }
 

@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/page_allocator.h"
+#include "mem/page_allocator.h"
 
 #include "base/debug/check.h"
 #include "base/numeric.h"
@@ -20,7 +20,7 @@
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
-namespace base {
+namespace mem {
 
 void* reserve_pages(usize size) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -90,4 +90,4 @@ void free_pages(void* ptr, usize size) {
 #endif
 }
 
-}  // namespace base
+}  // namespace mem

@@ -8,12 +8,12 @@
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
-#include <format>
 #include <iterator>
 #include <string_view>
 #include <utility>
 
 #include "base/numeric.h"
+#include "str/format_util.h"
 #endif
 
 namespace base::internal {
@@ -28,12 +28,11 @@ template <typename... Args>
 inline void dlog_internal(const char* file,
                           i32 line,
                           const char* func,
-                          std::format_string<Args...> fmt,
+                          str::format_string<Args...> fmt,
                           Args&&... args) {
   char buf[512];
-  const std::format_to_n_result result = std::format_to_n(
-      buf, static_cast<std::iter_difference_t<char>>(sizeof(buf)), fmt,
-      std::forward<Args>(args)...);
+  const str::format_to_n_result result =
+      str::format_to_n(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
   const std::string_view formatted_msg(buf, static_cast<usize>(result.size));
   dlog_impl(formatted_msg, file, line, func);
 }

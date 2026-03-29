@@ -2,12 +2,12 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/page_allocator.h"
+#include "mem/page_allocator.h"
 
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
 
-namespace base {
+namespace mem {
 
 TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
   const usize size = kPageSize * 4;
@@ -65,4 +65,4 @@ TEST_CASE("Constants validation", "[base][memory]") {
   CHECK(kHugePageSize == 2097152);  // 2 MiB
 }
 
-}  // namespace base
+}  // namespace mem

@@ -7,11 +7,11 @@
 #include <atomic>
 #include <string_view>
 
-#include "base/mem/arena_allocator.h"
-#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
+#include "mem/arena_allocator.h"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 // Thread-safe string pool.
 // Has auto resizing.
@@ -33,7 +33,7 @@ class StringPool {
                       std::string_view* out = nullptr);
 
   inline std::string_view get(StringPoolId id) const {
-    const ArenaAllocator::Block* block_base =
+    const mem::ArenaAllocator::Block* block_base =
         arena_allocator_.block(id.block_id);
     return {reinterpret_cast<const char*>(block_base) + id.offset, id.length};
   }
@@ -54,7 +54,7 @@ class StringPool {
   inline usize string_count() const { return string_count_; }
 
   struct Checkpoint {
-    ArenaAllocator::BlockPosition pos;
+    mem::ArenaAllocator::BlockPosition pos;
   };
 
   inline Checkpoint checkpoint() const {
@@ -66,10 +66,10 @@ class StringPool {
   }
 
  private:
-  ArenaAllocator arena_allocator_;
+  mem::ArenaAllocator arena_allocator_;
   std::atomic<usize> size_ = 0;
   std::atomic<usize> string_count_ = 0;
   bool use_huge_pages_ = false;
 };
 
-}  // namespace base
+}  // namespace str

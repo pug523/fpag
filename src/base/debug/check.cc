@@ -12,8 +12,8 @@
 #include "base/debug/stack_trace/stack_trace.h"
 #include "base/debug/string.h"
 #include "base/io_util.h"
-#include "base/logging/sync_logger.h"
 #include "base/numeric.h"
+#include "logging/sync_logger.h"
 
 namespace base::internal {
 
@@ -22,7 +22,7 @@ void check_fail_impl(const char* expr,
                      i32 line,
                      const char* func,
                      std::string_view msg) {
-  SyncLogger& logger = global_logger();
+  logging::SyncLogger& logger = logging::global_sync_logger();
   if (msg.empty()) {
     logger.fatal("Check failed!\nExpected: '{}'\n  at {}:{} ({})", expr, file,
                  line, func);
@@ -43,7 +43,7 @@ void check_op_fail_impl(const char* expected,
                         i32 line,
                         const char* func,
                         std::string_view msg) {
-  SyncLogger& logger = global_logger();
+  logging::SyncLogger& logger = logging::global_sync_logger();
   if (msg.empty()) {
     logger.fatal(
         "Check failed!\nExpected: '{}', Actual: {} vs {}\n  at {}:{} ({})",

@@ -9,10 +9,10 @@
 #include <utility>
 
 #include "base/debug/check.h"
-#include "base/mem/arena_allocator.h"
 #include "base/numeric.h"
+#include "mem/arena_allocator.h"
 
-namespace base {
+namespace mem {
 
 template <typename T, usize kMaxChunks = 256>
 class BlockedArenaArray {
@@ -116,4 +116,4 @@ class BlockedArenaArray {
   std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
 };
 
-}  // namespace base
+}  // namespace mem

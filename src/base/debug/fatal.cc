@@ -5,12 +5,11 @@
 #include "base/debug/fatal.h"
 
 #include <cstdlib>
-#include <format>
 #include <string_view>
 
-#include "base/logging/sync_logger.h"
 #include "base/numeric.h"
 #include "build/build_config.h"
+#include "logging/sync_logger.h"
 
 #if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #include <intrin.h>
@@ -40,7 +39,7 @@ void unreachable_impl(const char* file,
                       i32 line,
                       const char* func,
                       std::string_view msg) {
-  SyncLogger& logger = global_logger();
+  logging::SyncLogger& logger = logging::global_sync_logger();
   logger.fatal("UNREACHABLE\n{}\n  at {}:{} ({})", msg, file, line, func);
   logger.flush();
   fatal_crash_impl();

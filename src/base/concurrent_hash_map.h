@@ -14,8 +14,8 @@
 #include "base/debug/check.h"
 #include "base/debug/fatal.h"
 #include "base/math_util.h"
-#include "base/mem/page_allocator.h"
 #include "base/numeric.h"
+#include "mem/page_allocator.h"
 
 namespace base {
 
@@ -70,7 +70,7 @@ class ConcurrentHashMap {
   inline void reserve(u64 capacity) {
     dcheck_msg(is_power_of_two(capacity), "capacity must be a power of two");
     capacity_ = capacity;
-    void* const raw_mem = base::allocate_pages(sizeof(Entry) * capacity_);
+    void* const raw_mem = mem::allocate_pages(sizeof(Entry) * capacity_);
     std::memset(raw_mem, 0, sizeof(Entry) * capacity_);
     entries_ = static_cast<Entry*>(raw_mem);
     dcheck(entries_);
@@ -78,7 +78,7 @@ class ConcurrentHashMap {
 
   inline void reset() {
     if (entries_) {
-      base::free_pages(
+      mem::free_pages(
           entries_, sizeof(Entry) * capacity_.load(std::memory_order_relaxed));
     }
   }

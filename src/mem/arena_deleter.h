@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace base {
+namespace mem {
 
 template <typename T>
 struct ArenaDeleter {
@@ -20,4 +20,4 @@ struct ArenaDeleter {
 template <typename T>
 using ArenaUniquePtr = std::unique_ptr<T, ArenaDeleter<T>>;
 
-}  // namespace base
+}  // namespace mem

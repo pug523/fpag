@@ -6,7 +6,7 @@
 
 #include "base/numeric.h"
 
-namespace base {
+namespace str {
 
 struct StringPoolId {
   u32 block_id;
@@ -21,4 +21,4 @@ struct StringPoolId {
 
 constexpr StringPoolId kInvalidStringPoolId = {0, 0, 0};
 
-}  // namespace base
+}  // namespace str

@@ -6,15 +6,15 @@
 
 #include <atomic>
 #include <cstring>
-#include <format>
 #include <iterator>
 #include <string>
 #include <string_view>
 #include <utility>
 
 #include "base/debug/check.h"
-#include "base/logging/log_level.h"
 #include "base/numeric.h"
+#include "log/log_level.h"
+#include "str/format_util.h"
 
 namespace base {
 
@@ -42,37 +42,37 @@ class SyncLogger {
   SyncLogger& operator=(SyncLogger&& other) noexcept;
 
   template <typename... Args>
-  inline void trace(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void trace(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Trace, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void debug(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void debug(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Debug, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void info(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void info(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Info, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void warn(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void warn(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Warn, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void error(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void error(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Error, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void fatal(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void fatal(str::format_string<Args&&...> fmt, Args&&... args) {
     log(LogLevel::Fatal, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  inline void raw(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void raw(str::format_string<Args&&...> fmt, Args&&... args) {
     log_raw(fmt, std::forward<Args>(args)...);
   }
 
@@ -95,7 +95,7 @@ class SyncLogger {
 
   template <typename... Args>
   inline void log(LogLevel level,
-                  std::format_string<Args&&...> fmt,
+                  str::format_string<Args&&...> fmt,
                   Args&&... args) {
     if (!should_log(level)) {
       return;
@@ -110,10 +110,8 @@ class SyncLogger {
 
     // -1 for '\n'
     const usize max_len = sizeof(stack_buf) - prefix.size() - 1;
-    const std::format_to_n_result result =
-        std::format_to_n(stack_buf + prefix.size(),
-                         static_cast<std::iter_difference_t<char*>>(max_len),
-                         fmt, std::forward<Args>(args)...);
+    const str::format_to_n_result result = str::format_to_n(
+        stack_buf + prefix.size(), max_len, fmt, std::forward<Args>(args)...);
 
     const usize result_size = static_cast<usize>(result.size);
     const usize payload_size = result_size > max_len ? max_len : result_size;
@@ -125,12 +123,10 @@ class SyncLogger {
   }
 
   template <typename... Args>
-  inline void log_raw(std::format_string<Args&&...> fmt, Args&&... args) {
+  inline void log_raw(str::format_string<Args&&...> fmt, Args&&... args) {
     char stack_buf[kLocalStackBufSize];
-    const std::format_to_n_result result = std::format_to_n(
-        stack_buf,
-        static_cast<std::iter_difference_t<char*>>(sizeof(stack_buf) - 1), fmt,
-        std::forward<Args>(args)...);
+    const str::format_to_n_result result = str::format_to_n(
+        stack_buf, sizeof(stack_buf) - 1, fmt, std::forward<Args>(args)...);
     const usize len = static_cast<usize>(result.size) + 1;
     stack_buf[static_cast<usize>(result.size)] = '\n';
     write_to_shared_buffer(stack_buf, len);

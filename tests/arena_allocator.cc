@@ -2,17 +2,17 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/arena_allocator.h"
+#include "mem/arena_allocator.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 
-#include "base/mem/arena_deleter.h"
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
+#include "mem/arena_deleter.h"
 
-namespace base {
+namespace mem {
 
 TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   ArenaAllocator arena;
@@ -37,7 +37,7 @@ TEST_CASE("ArenaAllocator basic allocation and alignment", "[base][arena]") {
   }
 
   SECTION("Custom alignment requirements") {
-    // Preservation with 64 byte alignment
+    // Preservation with 64 B alignment
     void* ptr = arena.alloc(10, false, 64);
     CHECK(ptr != nullptr);
     CHECK(reinterpret_cast<uintptr_t>(ptr) % 64 == 0);
@@ -151,4 +151,4 @@ TEST_CASE("ArenaAllocator edge cases and limits", "[base][arena]") {
   }
 }
 
-}  // namespace base
+}  // namespace mem

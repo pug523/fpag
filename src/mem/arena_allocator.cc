@@ -2,17 +2,17 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/arena_allocator.h"
+#include "mem/arena_allocator.h"
 
 #include <algorithm>
 #include <cstdint>
 
 #include "base/debug/check.h"
 #include "base/math_util.h"
-#include "base/mem/page_allocator.h"
 #include "base/numeric.h"
+#include "mem/page_allocator.h"
 
-namespace base {
+namespace mem {
 
 ArenaAllocator::ArenaAllocator(ArenaAllocator&& other) noexcept
     : block_(other.block_), block_count_(other.block_count_) {
@@ -41,7 +41,7 @@ void* ArenaAllocator::alloc(usize size,
                             bool use_huge_pages,
                             usize align,
                             BlockPosition* block_pos) {
-  dcheck(is_power_of_two(align));
+  dcheck(base::is_power_of_two(align));
   dcheck_gt(size, usize(0));
 
   // First, try to allocate from the current blocks if exists.
@@ -159,4 +159,4 @@ inline void ArenaAllocator::write_block_pos(void* ptr, BlockPosition* pos) {
       static_cast<u8*>(ptr) - reinterpret_cast<u8*>(block_[block_count_ - 1]));
 }
 
-}  // namespace base
+}  // namespace mem

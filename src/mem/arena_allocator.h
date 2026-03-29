@@ -8,12 +8,12 @@
 #include <utility>
 
 #include "base/debug/check.h"
-#include "base/mem/arena_deleter.h"
 #include "base/numeric.h"
+#include "mem/arena_deleter.h"
 
-namespace base {
+namespace mem {
 
-class ConcurrentArenaAllocator {
+class ArenaAllocator {
  public:
   // 2 MiB -> 1 huge page or 512 normal pages
   static constexpr usize kBlockSize = 2 * 1024 * 1024;
@@ -34,15 +34,14 @@ class ConcurrentArenaAllocator {
     usize offset;
   };
 
-  ConcurrentArenaAllocator() = default;
-  ~ConcurrentArenaAllocator() { reset(); }
+  ArenaAllocator() = default;
+  ~ArenaAllocator() { reset(); }
 
-  ConcurrentArenaAllocator(const ConcurrentArenaAllocator&) = delete;
-  ConcurrentArenaAllocator& operator=(const ConcurrentArenaAllocator&) = delete;
+  ArenaAllocator(const ArenaAllocator&) = delete;
+  ArenaAllocator& operator=(const ArenaAllocator&) = delete;
 
-  ConcurrentArenaAllocator(ConcurrentArenaAllocator&& other) noexcept;
-  ConcurrentArenaAllocator& operator=(
-      ConcurrentArenaAllocator&& other) noexcept;
+  ArenaAllocator(ArenaAllocator&& other) noexcept;
+  ArenaAllocator& operator=(ArenaAllocator&& other) noexcept;
 
   void reserve(usize size, bool use_huge_pages = true);
 
@@ -107,4 +106,4 @@ class ConcurrentArenaAllocator {
   u32 block_count_ = 0;
 };
 
-}  // namespace base
+}  // namespace mem

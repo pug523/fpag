@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/string_pool.h"
+#include "str/string_pool.h"
 
 #include <algorithm>
 #include <numeric>
@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-#include "base/mem/string_pool_id.h"
+#include "str/string_pool_id.h"
 #include "base/numeric.h"
 #include "benchmark/benchmark.h"
 

@@ -2,19 +2,19 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/string_interner.h"
+#include "str/string_interner.h"
 
-#include <format>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <vector>
 
-#include "base/mem/string_id.h"
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
+#include "str/format_util.h"
+#include "str/string_id.h"
 
-namespace base {
+namespace str {
 
 TEST_CASE("StringInterner basic operations", "[base][string_interner]") {
   // Initialize with a small capacity to test growth if applicable.
@@ -62,7 +62,7 @@ TEST_CASE("StringInterner concurrency",
       for (i32 i = 0; i < iterations; ++i) {
         // Mix of shared strings and unique strings.
         std::string shared = "shared_" + std::to_string(i % 10);
-        std::string unique = std::format("unique_{}_{}", t, i);
+        std::string unique = str::format("unique_{}_{}", t, i);
 
         interner.intern(shared);
         interner.intern(unique);
@@ -96,4 +96,4 @@ TEST_CASE("StringInterner stability with growth", "[base][string_interner]") {
   CHECK(interner.intern(target) == original_id);
 }
 
-}  // namespace base
+}  // namespace str

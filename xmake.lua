@@ -13,6 +13,7 @@ option("sanitizers", { default = false, description = "enable address/undefined 
 option("timetrace", { default = false, description = "generate timetrace json that can be see with perfetto ui" })
 option("native", { default = false, description = "native architecture optimization" })
 option("libunwind", { default = false, description = "use libunwind for stack tracing" })
+option("fmtlib", { default = true, description = "use fmtlib for formatting (use std::format if false)" })
 option("unitybuild", { default = false, description = "enable unity build to shorten build time" })
 option("lto", { default = false, description = "use link time optimization on release builds" })
 option("tests", { default = false, description = "build unit tests" })
@@ -62,6 +63,9 @@ if has_config("benchmarks") then
 end
 if has_config("libunwind") and is_plat("linux") then
   add_requires("libunwind v1.8.3", { system = false, configs = stdlib_config() })
+end
+if has_config("fmtlib") then
+    add_requires("fmt", { system = false, configs = stdlib_config() })
 end
 
 -- Tasks
@@ -231,6 +235,13 @@ target("fpag")
     add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1")
   else
     add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0")
+  end
+
+  if has_config("fmtlib") then
+    add_packages("fmt")
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=1", { public = true })
+  else
+    add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=0", { public = true })
   end
 
   if is_plat("windows") then

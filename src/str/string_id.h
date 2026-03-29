@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "base/mem/string_pool_id.h"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 // struct StringId {
 //   u32 id = kInvalidId;
@@ -23,4 +23,4 @@ using StringId = StringPoolId;
 
 constexpr StringId kInvalidStringId = {0, 0, 0};
 
-}  // namespace base
+}  // namespace str

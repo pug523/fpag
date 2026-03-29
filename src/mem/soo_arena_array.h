@@ -7,10 +7,10 @@
 #include <utility>
 
 #include "base/debug/check.h"
-#include "base/mem/blocked_arena_array.h"
 #include "base/numeric.h"
+#include "mem/blocked_arena_array.h"
 
-namespace base {
+namespace mem {
 
 template <typename T, usize kSooSize = 128, bool kUseHugePages = false>
 class SooArenaArray {
@@ -64,4 +64,4 @@ class SooArenaArray {
   usize current_idx_ = 0;
 };
 
-}  // namespace base
+}  // namespace mem

@@ -2,18 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/string_pool.h"
+#include "str/string_pool.h"
 
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 TEST_CASE("StringPool basic operations", "[base][string_pool]") {
   StringPool pool(1024);
@@ -148,4 +148,4 @@ TEST_CASE("StringPool move semantics", "[base][string_pool]") {
   }
 }
 
-}  // namespace base
+}  // namespace str

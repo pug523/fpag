@@ -7,12 +7,12 @@
 #include <string_view>
 
 #include "base/concurrent_hash_map.h"
-#include "base/mem/string_pool.h"
-#include "base/mem/string_pool_id.h"
 #include "base/numeric.h"
 #include "base/xxh3_hasher.h"
+#include "str/string_pool.h"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 // Concurrent string interner that uses a StringPool for storage.
 class StringInterner {
@@ -40,7 +40,8 @@ class StringInterner {
  private:
   StringPool pool_;
 
-  ConcurrentHashMap<std::string_view, StringPoolId, Xxh3Hasher64> map_;
+  base::ConcurrentHashMap<std::string_view, StringPoolId, base::Xxh3Hasher64>
+      map_;
 };
 
-}  // namespace base
+}  // namespace str

@@ -2,16 +2,16 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/mem/string_interner.h"
+#include "str/string_interner.h"
 
 #include <string_view>
 
 #include "base/concurrent_hash_map.h"
-#include "base/mem/string_id.h"
-#include "base/mem/string_pool.h"
-#include "base/mem/string_pool_id.h"
+#include "str/string_id.h"
+#include "str/string_pool.h"
+#include "str/string_pool_id.h"
 
-namespace base {
+namespace str {
 
 StringId StringInterner::intern(const std::string_view str) {
   if (const StringId* existing = map_.find(str)) {
@@ -48,4 +48,4 @@ StringId StringInterner::intern(const std::string_view str) {
   }
 }
 
-}  // namespace base
+}  // namespace str

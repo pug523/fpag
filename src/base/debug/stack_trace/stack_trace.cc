@@ -12,8 +12,8 @@
 #include "base/debug/stack_trace/formatter.h"
 #include "base/debug/stack_trace/stack_frame.h"
 #include "base/debug/stack_trace/symbolicator.h"
-#include "base/logging/sync_logger.h"
 #include "base/numeric.h"
+#include "logging/sync_logger.h"
 
 namespace base {
 
@@ -69,7 +69,7 @@ void StackTrace::collect_trace() {
 }
 
 void StackTrace::print_trace(std::string_view prefix) const {
-  SyncLogger& logger = global_logger();
+  logging::SyncLogger& logger = logging::global_sync_logger();
 
   if (status_ == StackTraceStatus::Failed) [[unlikely]] {
     logger.error("stack trace collection failed");
