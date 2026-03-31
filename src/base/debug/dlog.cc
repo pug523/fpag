@@ -6,11 +6,8 @@
 
 #include <string_view>
 
-#include "base/console.h"
 #include "base/numeric.h"
-#include "logging/log_level.h"
 #include "logging/sync_logger.h"
-#include "mem/page_allocator.h"
 
 namespace base::internal {
 

@@ -238,7 +238,7 @@ target("fpag")
   end
 
   if has_config("fmtlib") then
-    add_packages("fmt")
+    add_packages("fmt", { public = true })
     add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=1", { public = true })
   else
     add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=0", { public = true })

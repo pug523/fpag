@@ -2,14 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
+#include "base/console.h"
+#include "base/debug/signal_handler.h"
+#include "base/debug/terminate_handler.h"
 #include "base/numeric.h"
-
 #include "catch2/catch_session.hpp"
 
 #define CATCH_CONFIG_RUNNER
 
 void init() {
-  // noop
+  base::register_console();
+  base::register_terminate_handler();
+  base::register_signal_handlers();
 }
 
 void clean_up() {
