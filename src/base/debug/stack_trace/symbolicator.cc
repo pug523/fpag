@@ -4,10 +4,12 @@
 
 #include "base/debug/stack_trace/symbolicator.h"
 
+#include <cstdint>
 #include <cstring>
 #include <utility>
 
 #include "base/debug/stack_trace/demangle.h"
+#include "base/numeric.h"
 #include "build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
@@ -24,7 +26,18 @@
 #endif
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+// TODO: Add support for Linux/Android stack trace file / line / column
+// resolution provided by DWARF parser.
 // #include "base/debug/dwarf/provider.h"
+#endif
+
+#if FPAG_BUILD_FLAG(IS_OS_LINUX)
+// TODO: Remove this section when we implement DWARF parser.
+#include <cstdio>
+#include <memory>
+#include <string>
+
+#include "str/format_util.h"
 #endif
 
 namespace base {
@@ -47,9 +60,53 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
     info.resolved = true;
   }
 
+#if FPAG_BUILD_FLAG(IS_OS_LINUX)
+  // TODO: Remove this section when we implement DWARF parser.
+  if (dl.dli_fname && dl.dli_fname[0]) {
+    constexpr usize kBufSize = 512;
+    char command[kBufSize];
+
+    uintptr_t offset = reinterpret_cast<uintptr_t>(address);
+    if (dl.dli_fname[0] == '/') {
+      offset -= reinterpret_cast<uintptr_t>(dl.dli_fbase);
+    }
+    str::format_to_n(command, sizeof(command),
+                     "addr2line -e {} -f -p -C {:x} 2>/dev/null\0",
+                     dl.dli_fname, offset);
+
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command, "r"), pclose);
+    if (pipe) {
+      char buffer[kBufSize];
+
+      if (fgets(buffer, sizeof(buffer), pipe.get())) {
+        std::string output(buffer);
+        if (!output.empty() && output.back() == '\n') {
+          output.pop_back();
+        }
+
+        const usize at_pos = output.find(" at ");
+        if (at_pos != std::string::npos) {
+          std::string file_line = output.substr(at_pos + 4);
+          const usize colon_pos = file_line.find_last_of(':');
+
+          if (colon_pos != std::string::npos) {
+            std::string file = file_line.substr(0, colon_pos);
+            std::string line_str = file_line.substr(colon_pos + 1);
+
+            if (file != "??" && !line_str.empty() && line_str[0] != '?') {
+              info.file = std::move(file);
+              info.line = static_cast<u32>(std::stoi(line_str));
+            }
+          }
+        }
+      }
+    }
+  }
+#endif
+
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
   // TODO: Add support for Linux/Android stack trace file / line / column
-  // resolution.
+  // resolution provided by DWARF parser.
   //
   // const DwarfModule* module =
   //     dwarf_provider_.module(dl.dli_fname, dl.dli_fbase);
