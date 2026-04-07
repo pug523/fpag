@@ -4,15 +4,12 @@
 
 #pragma once
 
+#include <new>
+
+#include "base/numeric.h"
+
 namespace mem {
 
-template <typename T>
-struct ArenaDeleter {
-  void operator()(T* ptr) const {
-    if (ptr) {
-      ptr->~T();
-    }
-  }
-};
+constexpr usize kCacheLineSize = std::hardware_destructive_interference_size;
 
 }  // namespace mem

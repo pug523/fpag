@@ -4,15 +4,13 @@
 
 #pragma once
 
+#include <memory>
+
+#include "mem/arena_deleter.h"
+
 namespace mem {
 
 template <typename T>
-struct ArenaDeleter {
-  void operator()(T* ptr) const {
-    if (ptr) {
-      ptr->~T();
-    }
-  }
-};
+using ArenaUniquePtr = std::unique_ptr<T, ArenaDeleter<T>>;
 
-}  // namespace mem
+}
