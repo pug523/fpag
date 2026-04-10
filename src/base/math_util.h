@@ -7,6 +7,7 @@
 #include <type_traits>
 
 #include "base/debug/check.h"
+#include "base/numeric.h"
 
 namespace base {
 
@@ -38,6 +39,23 @@ inline constexpr N next_power_of_two(N v) {
 
   dcheck(is_power_of_two(v));
   return v;
+}
+
+// Align up the value to the nearest multiple of alignment.
+// `alignment` must be a power of two.
+template <typename T>
+inline constexpr T round_up(T value, usize alignment) {
+  dcheck_msg(is_power_of_two(alignment), "Alignment must be a power of two.");
+  const usize mask = alignment - 1;
+  return static_cast<T>((static_cast<usize>(value) + mask) & ~mask);
+}
+
+// Align down the value to the nearest multiple of alignment.
+// `alignment` must be a power of two.
+template <typename T>
+inline constexpr T round_down(T value, usize alignment) {
+  dcheck_msg(is_power_of_two(alignment), "Alignment must be a power of two.");
+  return static_cast<T>(static_cast<usize>(value) & ~(alignment - 1));
 }
 
 }  // namespace base
