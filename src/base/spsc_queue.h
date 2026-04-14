@@ -17,6 +17,8 @@ class SpscQueue {
   enum class Mode : u8 {
     kDrop,
     kBlock,
+
+    kDefault = kDrop,
   };
   enum class DequeueStatus : u8 {
     kOk,
@@ -28,7 +30,7 @@ class SpscQueue {
   };
 
   SpscQueue() = default;
-  ~SpscQueue() = default;
+  ~SpscQueue() { reset(); }
 
   SpscQueue(const SpscQueue&) = delete;
   SpscQueue& operator=(const SpscQueue&) = delete;
@@ -38,7 +40,8 @@ class SpscQueue {
 
   // Initialize the queue with the given data buffer and capacity.
   // `capacity` must be a power of 2.
-  void init(usize capacity = kDefaultCapacity, Mode mode = Mode::kDrop);
+  void init(usize capacity = kDefaultCapacity, Mode mode = Mode::kDefault);
+  void reset();
 
   // Zero-copied consumer interface
   const char* peek(usize size);
@@ -62,15 +65,19 @@ class SpscQueue {
   inline bool empty() const { return size() == 0; }
   inline usize available() const { return capacity_ - size(); }
 
+  inline usize size_consumer() const {
+    return tail_.load(std::memory_order_relaxed) - head_cache_;
+  }
+  inline usize size_producer() const {
+    return tail_cache_ - head_.load(std::memory_order_relaxed);
+  }
+
   static constexpr usize kDefaultCapacity = 1 << 12;                  // 4 KiB
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
 
  private:
-  inline usize size_consumer() const;
-  inline usize size_producer() const;
   inline usize capacity_mask() const;
 
-  inline usize available_consumer() const;
   inline usize available_producer() const;
 
   // For consumer
@@ -83,15 +90,15 @@ class SpscQueue {
 
   char* data_ = nullptr;
   usize capacity_ = 0;
-  Mode mode_ = Mode::kDrop;
+  Mode mode_ = Mode::kDefault;
 
   // Consumer
   alignas(mem::kCacheLineSize) std::atomic<usize> head_ = 0;
-  usize head_cache_ = 0;
+  alignas(mem::kCacheLineSize) usize head_cache_ = 0;
 
   // Producer
   alignas(mem::kCacheLineSize) std::atomic<usize> tail_ = 0;
-  usize tail_cache_ = 0;
+  alignas(mem::kCacheLineSize) usize tail_cache_ = 0;
 };
 
 }  // namespace base

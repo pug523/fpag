@@ -20,12 +20,14 @@ namespace base {
 SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
   data_ = other.data_;
   capacity_ = other.capacity_;
+  mode_ = other.mode_;
   head_ = other.head_.load(std::memory_order_relaxed);
   head_cache_ = other.head_cache_;
   tail_ = other.tail_.load(std::memory_order_relaxed);
   tail_cache_ = other.tail_cache_;
   other.data_ = nullptr;
   other.capacity_ = 0;
+  other.mode_ = Mode::kDefault;
   other.head_.store(0, std::memory_order_relaxed);
   other.head_cache_ = 0;
   other.tail_.store(0, std::memory_order_relaxed);
@@ -35,12 +37,14 @@ SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
 SpscQueue& SpscQueue::operator=(SpscQueue&& other) noexcept {
   data_ = other.data_;
   capacity_ = other.capacity_;
+  mode_ = other.mode_;
   head_ = other.head_.load(std::memory_order_relaxed);
   head_cache_ = other.head_cache_;
   tail_ = other.tail_.load(std::memory_order_relaxed);
   tail_cache_ = other.tail_cache_;
   other.data_ = nullptr;
   other.capacity_ = 0;
+  other.mode_ = Mode::kDefault;
   other.head_.store(0, std::memory_order_relaxed);
   other.head_cache_ = 0;
   other.tail_.store(0, std::memory_order_relaxed);
@@ -60,6 +64,18 @@ void SpscQueue::init(usize capacity, Mode mode) {
 
   data_ = static_cast<char*>(mem::allocate_aliased_pages(capacity_));
   dcheck_msg(data_, "SpscQueue: failed to allocate memory for queue data");
+}
+
+void SpscQueue::reset() {
+  mem::free_pages(data_, capacity_);
+
+  data_ = nullptr;
+  capacity_ = 0;
+  mode_ = Mode::kDefault;
+  head_.store(0, std::memory_order_relaxed);
+  head_cache_ = 0;
+  tail_.store(0, std::memory_order_relaxed);
+  tail_cache_ = 0;
 }
 
 const char* SpscQueue::peek(usize size) {
@@ -122,19 +138,10 @@ SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data, usize size) {
   return EnqueueStatus::kOk;
 }
 
-inline usize SpscQueue::size_consumer() const {
-  return tail_.load(std::memory_order_relaxed) - head_cache_;
-}
-inline usize SpscQueue::size_producer() const {
-  return tail_cache_ - head_.load(std::memory_order_relaxed);
-}
 inline usize SpscQueue::capacity_mask() const {
   return capacity_ - 1;
 }
 
-inline usize SpscQueue::available_consumer() const {
-  return capacity_ - size_consumer();
-}
 inline usize SpscQueue::available_producer() const {
   return capacity_ - size_producer();
 }
