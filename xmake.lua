@@ -149,7 +149,7 @@ end)
 -- targets
 target("fpag.root_config")
   set_kind("phony", { public = true })
-  set_languages("c++20", { public = true })
+  set_languages("c++23", { public = true })
   set_warnings("all", "extra", "error", "pedantic", { public = true })
 
   set_encodings("source:utf-8", "utf-8")
