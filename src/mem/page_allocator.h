@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+
 #include "base/numeric.h"
 
 namespace mem {
