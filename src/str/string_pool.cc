@@ -9,14 +9,13 @@
 #include <string_view>
 #include <utility>
 
-#include "mem/arena_allocator.h"
+#include "base/numeric.h"
 #include "str/string_pool_id.h"
 
 namespace str {
 
 StringPool::StringPool(StringPool&& other) noexcept {
-  arena_allocator_ = std::move(other.arena_allocator_);
-  use_huge_pages_ = other.use_huge_pages_;
+  arena_ = std::move(other.arena_);
 
   size_.store(other.size_.load(std::memory_order_relaxed),
               std::memory_order_relaxed);
@@ -32,9 +31,7 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
     return *this;
   }
 
-  arena_allocator_ = std::move(other.arena_allocator_);
-
-  use_huge_pages_ = other.use_huge_pages_;
+  arena_ = std::move(other.arena_);
 
   size_.store(other.size_.load(std::memory_order_relaxed),
               std::memory_order_relaxed);
@@ -50,12 +47,11 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
 StringPoolId StringPool::append(const std::string_view str,
                                 std::string_view* out) {
   if (str.empty()) {
-    return {.block_id = 0, .offset = 0, .length = 0};
+    return {.offset = 0, .length = 0};
   }
 
-  mem::ArenaAllocator::BlockPosition block_pos{};
-  void* const ptr =
-      arena_allocator_.alloc(str.size(), use_huge_pages_, 1, &block_pos);
+  const usize offset = arena_.size();
+  void* const ptr = arena_.alloc(str.size(), 1);
   std::memcpy(ptr, str.data(), str.size());
 
   if (out) {
@@ -65,9 +61,7 @@ StringPoolId StringPool::append(const std::string_view str,
   size_.fetch_add(str.size(), std::memory_order_relaxed);
   string_count_.fetch_add(1, std::memory_order_relaxed);
 
-  return {.block_id = block_pos.block_id,
-          .offset = block_pos.offset,
-          .length = str.size()};
+  return {.offset = offset, .length = str.size()};
 }
 
 }  // namespace str

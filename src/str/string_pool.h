@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "base/numeric.h"
-#include "mem/arena_allocator.h"
+#include "mem/concurrent_arena.h"
 #include "str/string_pool_id.h"
 
 namespace str {
@@ -17,10 +17,7 @@ namespace str {
 // Has auto resizing.
 class StringPool {
  public:
-  explicit StringPool(usize init_capacity, bool use_huge_pages = false) {
-    use_huge_pages_ = use_huge_pages;
-    arena_allocator_.reserve(init_capacity);
-  }
+  StringPool() { arena_.reserve(kMaxStringPoolCapacity); }
   ~StringPool() = default;
 
   StringPool(const StringPool&) = delete;
@@ -33,16 +30,12 @@ class StringPool {
                       std::string_view* out = nullptr);
 
   inline std::string_view get(StringPoolId id) const {
-    const mem::ArenaAllocator::Block* block_base =
-        arena_allocator_.block(id.block_id);
-    return {reinterpret_cast<const char*>(block_base) + id.offset, id.length};
+    return {reinterpret_cast<const char*>(arena_.base_ptr()) + id.offset,
+            id.length};
   }
 
-  inline void reserve(usize capacity) {
-    arena_allocator_.reserve(capacity, use_huge_pages_);
-  }
   inline void reset() {
-    arena_allocator_.reset();
+    arena_.reset();
     size_.store(0, std::memory_order_relaxed);
     string_count_.store(0, std::memory_order_relaxed);
   }
@@ -53,23 +46,12 @@ class StringPool {
   // Returns the number of strings in the pool.
   inline usize string_count() const { return string_count_; }
 
-  struct Checkpoint {
-    mem::ArenaAllocator::BlockPosition pos;
-  };
-
-  inline Checkpoint checkpoint() const {
-    return {arena_allocator_.current_position()};
-  }
-
-  inline void rollback(const Checkpoint& cp) {
-    arena_allocator_.rollback(cp.pos);
-  }
+  static constexpr usize kMaxStringPoolCapacity = 64ull * 1024 * 1024 * 1024;
 
  private:
-  mem::ArenaAllocator arena_allocator_;
+  mem::ConcurrentArena arena_;
   std::atomic<usize> size_ = 0;
   std::atomic<usize> string_count_ = 0;
-  bool use_huge_pages_ = false;
 };
 
 }  // namespace str

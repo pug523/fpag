@@ -6,8 +6,8 @@
 
 #include <string_view>
 
-#include "base/concurrent_hash_map.h"
 #include "base/numeric.h"
+#include "base/simple_concurrent_hash_map.h"
 #include "base/xxh3_hasher.h"
 #include "str/string_pool.h"
 #include "str/string_pool_id.h"
@@ -17,10 +17,13 @@ namespace str {
 // Concurrent string interner that uses a StringPool for storage.
 class StringInterner {
  public:
-  StringInterner(usize pool_init_capacity,
-                 usize map_init_capacity,
-                 bool use_huge_pages)
-      : pool_(pool_init_capacity, use_huge_pages), map_(map_init_capacity) {}
+  using Map = base::SimpleConcurrentHashMap<std::string_view,
+                                            StringPoolId,
+                                            base::Xxh3Hasher64>;
+
+  using StringId = StringPoolId;
+
+  explicit StringInterner(usize map_init_capacity) : map_(map_init_capacity) {}
   ~StringInterner() = default;
 
   StringInterner(const StringInterner&) = delete;
@@ -30,7 +33,11 @@ class StringInterner {
   StringInterner& operator=(StringInterner&&) noexcept = delete;
 
   // Interns the string and returns a stable StringId.
-  StringPoolId intern(const std::string_view str);
+  StringId intern(const std::string_view str);
+
+  inline std::string_view get(StringId id) const { return pool_.get(id); }
+  inline const StringPool& pool() const { return pool_; }
+  inline const Map& map() const { return map_; }
 
   // Returns the total size of all strings in the pool.
   inline usize size() const { return pool_.size(); }
@@ -39,9 +46,7 @@ class StringInterner {
 
  private:
   StringPool pool_;
-
-  base::ConcurrentHashMap<std::string_view, StringPoolId, base::Xxh3Hasher64>
-      map_;
+  Map map_;
 };
 
 }  // namespace str

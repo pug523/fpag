@@ -6,46 +6,26 @@
 
 #include <string_view>
 
-#include "base/concurrent_hash_map.h"
-#include "str/string_id.h"
 #include "str/string_pool.h"
 #include "str/string_pool_id.h"
 
 namespace str {
 
-StringId StringInterner::intern(const std::string_view str) {
-  if (const StringId* existing = map_.find(str)) {
+StringInterner::StringId StringInterner::intern(const std::string_view str) {
+  if (const StringPoolId* existing = map_.find(str)) {
     return *existing;
   }
-
-  // Checkpoint before appending to pool, in case another thread inserts the
-  // same string.
-  const StringPool::Checkpoint cp = pool_.checkpoint();
 
   std::string_view stored;
   const StringPoolId pool_id = pool_.append(str, &stored);
 
   bool inserted = false;
-  const StringId* ptr = map_.try_insert(stored, pool_id, &inserted);
+  const StringPoolId* ptr = map_.try_insert(stored, pool_id, &inserted);
 
-  if (!inserted) {
-    // Another thread already inserted this string, rollback and return
-    // existing.
-    pool_.rollback(cp);
-    const StringId* existing = map_.find(str);
-    // dcheck(existing);
-    if (existing) [[likely]] {
-      return *existing;
-    } else {
-      return kInvalidStringId;
-    }
-  }
+  // TODO: Fix race condition (in case if another thread already inserted this
+  // string).
 
-  if (ptr) [[likely]] {
-    return *ptr;
-  } else {
-    return kInvalidStringId;
-  }
+  return *ptr;
 }
 
 }  // namespace str

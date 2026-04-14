@@ -27,6 +27,11 @@ using format_context = fmt::format_context;
 
 template <typename OutputIt>
 using format_to_n_result = fmt::format_to_n_result<OutputIt>;
+
+using memory_buffer = fmt::memory_buffer;
+
+template <typename T, typename Char = char>
+struct formatter : fmt::formatter<T, Char> {};  // NOLINT
 #else
 template <typename... Args>
 using format_string = std::format_string<Args...>;
@@ -34,10 +39,16 @@ using format_context = std::format_context;
 
 template <typename OutputIt>
 using format_to_n_result = std::format_to_n_result<OutputIt>;
+
+using memory_buffer = std::string;
+
+template <typename T, typename Char = char>
+struct formatter : std::formatter<T, Char> {};  // NOLINT
 #endif
 
 template <typename... Args>
-inline std::string format(format_string<Args...> fmt, Args&&... args) {
+inline constexpr std::string format(format_string<Args...> fmt,
+                                    Args&&... args) {
 #if FPAG_BUILD_FLAG(USE_FMTLIB)
   return fmt::format(fmt, std::forward<Args>(args)...);
 #else
@@ -46,10 +57,8 @@ inline std::string format(format_string<Args...> fmt, Args&&... args) {
 }
 
 template <typename OutputIt, typename... Args>
-inline format_to_n_result<OutputIt> format_to_n(OutputIt out,
-                                                usize n,
-                                                format_string<Args...> fmt,
-                                                Args&&... args) {
+inline constexpr format_to_n_result<OutputIt>
+format_to_n(OutputIt out, usize n, format_string<Args...> fmt, Args&&... args) {
 #if FPAG_BUILD_FLAG(USE_FMTLIB)
   return fmt::format_to_n(out, n, fmt, std::forward<Args>(args)...);
 #else
