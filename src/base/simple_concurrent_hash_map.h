@@ -22,20 +22,20 @@ namespace base {
 // Lock-free fast concurrent hash map.
 // Has no resizing.
 template <typename K, typename V, typename Hash = std::hash<K>>
-class ConcurrentHashMap {
+class SimpleConcurrentHashMap {
  public:
-  explicit ConcurrentHashMap(u64 capacity = 1024 * 1024,
-                             const Hash& hasher = Hash())
+  explicit SimpleConcurrentHashMap(u64 capacity = 1024 * 1024,
+                                   const Hash& hasher = Hash())
       : hasher_(hasher) {
     reserve(capacity);
   }
 
-  ~ConcurrentHashMap() { reset(); }
+  ~SimpleConcurrentHashMap() { reset(); }
 
-  ConcurrentHashMap(const ConcurrentHashMap&) = delete;
-  ConcurrentHashMap& operator=(const ConcurrentHashMap&) = delete;
+  SimpleConcurrentHashMap(const SimpleConcurrentHashMap&) = delete;
+  SimpleConcurrentHashMap& operator=(const SimpleConcurrentHashMap&) = delete;
 
-  ConcurrentHashMap(ConcurrentHashMap&& other) noexcept
+  SimpleConcurrentHashMap(SimpleConcurrentHashMap&& other) noexcept
       : hasher_(std::move(other.hasher_)) {
     capacity_.store(other.capacity_.load(std::memory_order_relaxed),
                     std::memory_order_relaxed);
@@ -49,7 +49,7 @@ class ConcurrentHashMap {
     other.size_.store(0, std::memory_order_relaxed);
   }
 
-  ConcurrentHashMap& operator=(ConcurrentHashMap&& other) noexcept {
+  SimpleConcurrentHashMap& operator=(SimpleConcurrentHashMap&& other) noexcept {
     if (this != &other) [[likely]] {
       reset();
 

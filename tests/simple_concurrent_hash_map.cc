@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/concurrent_hash_map.h"
+#include "base/simple_concurrent_hash_map.h"
 
 #include <thread>
 #include <vector>
@@ -13,8 +13,9 @@
 
 namespace base {
 
-TEST_CASE("ConcurrentHashMap basic operations", "[base][container][hashmap]") {
-  ConcurrentHashMap<u64, u64> map(1024);
+TEST_CASE("SimpleConcurrentHashMap basic operations",
+          "[base][container][hashmap]") {
+  SimpleConcurrentHashMap<u64, u64> map(1024);
 
   SECTION("Insert and find") {
     map.insert(42, 100);
@@ -44,10 +45,10 @@ TEST_CASE("ConcurrentHashMap basic operations", "[base][container][hashmap]") {
 
 // TODO: add `try_insert` tests
 
-TEST_CASE("ConcurrentHashMap thread-safety stress test",
+TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
           "[base][container][stress]") {
   const u64 capacity = 1 << 16;
-  ConcurrentHashMap<u64, u64> map(capacity);
+  SimpleConcurrentHashMap<u64, u64> map(capacity);
 
   const u32 num_threads = std::thread::hardware_concurrency();
   const u32 inserts_per_thread = 1000;
