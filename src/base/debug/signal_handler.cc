@@ -35,7 +35,7 @@ namespace base {
 
 namespace {
 
-inline i32 get_pid() {
+inline i32 current_pid() {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   return static_cast<i32>(GetCurrentProcessId());
 #else
@@ -53,10 +53,10 @@ const char* signal_to_string(int signal_number) {
     case SIGILL: return "SIGILL (Illegal instruction)";
     case SIGINT: return "SIGINT (Interactive attention signal)";
     case SIGTERM: return "SIGTERM (Termination request)";
-    // case SIGBUS: return "SIGBUS (Bus error)";
-    // case SIGKILL: return "SIGKILL (Kill signal)";
-    // case SIGSTOP: return "SIGSTOP (Stop signal)";
-    // case SIGALRM: return "SIGALRM (Alarm clock)";
+    case SIGBUS: return "SIGBUS (Bus error)";
+    case SIGKILL: return "SIGKILL (Kill signal)";
+    case SIGSTOP: return "SIGSTOP (Stop signal)";
+    case SIGALRM: return "SIGALRM (Alarm clock)";
     default: return "Unknown signal";
   }
 }
@@ -73,11 +73,10 @@ void signal_handler(i32 signal_number) {
 
   // const std::string tid = str::format("{}", std::this_thread::get_id());
   const char* sig = signal_to_string(signal_number);
-  const i32 pid = get_pid();
-  const auto tid = std::this_thread::get_id();
+  const i32 pid = current_pid();
+  const std::thread::id tid = std::this_thread::get_id();
 
   logging::SyncLogger& logger = logging::global_sync_logger();
-  // logger.fatal("{}{}", sig, tid);
   logger.fatal(R"(Aborted at {:%Y-%m-%d %H:%M:%S}
 ({} in UNIX Time)
 {} Received by PID {}  (TID {})
@@ -94,6 +93,7 @@ void register_signal_handlers() {
   std::signal(SIGABRT, signal_handler);
   std::signal(SIGFPE, signal_handler);
   std::signal(SIGILL, signal_handler);
+  std::signal(SIGBUS, signal_handler);
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
   std::signal(SIGINT, signal_handler);

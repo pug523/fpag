@@ -80,7 +80,7 @@ void StackTrace::print_trace(std::string_view prefix) const {
                  "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
-  logger.raw_str(out);
+  logger.info("\n{}", out);
 }
 
 std::string StackTrace::to_string() const {

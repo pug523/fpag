@@ -17,6 +17,7 @@ void dlog_impl(std::string_view formatted_msg,
                const char* func) {
   logging::global_sync_logger().debug("{}   [on {} ({}:{})]", formatted_msg,
                                       func, file, line);
+  logging::global_sync_logger().flush();
 }
 
 }  // namespace base::internal
