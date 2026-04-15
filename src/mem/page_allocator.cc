@@ -19,6 +19,11 @@
 #error "Unsupported platform for page_allocator"
 #endif
 
+#if FPAG_BUILD_FLAG(IS_OS_MAC)
+#include <fcntl.h>
+#include <mach/vm_statistics.h>
+#endif
+
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
 #endif
