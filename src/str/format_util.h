@@ -31,7 +31,8 @@ using format_to_n_result = fmt::format_to_n_result<OutputIt>;
 using memory_buffer = fmt::memory_buffer;
 
 template <typename T, typename Char = char>
-struct formatter : fmt::formatter<T, Char> {};  // NOLINT
+// NOLINTNEXTLINE(readability-identifier-naming)
+struct formatter : fmt::formatter<T, Char> {};
 #else
 template <typename... Args>
 using format_string = std::format_string<Args...>;
@@ -43,7 +44,8 @@ using format_to_n_result = std::format_to_n_result<OutputIt>;
 using memory_buffer = std::string;
 
 template <typename T, typename Char = char>
-struct formatter : std::formatter<T, Char> {};  // NOLINT
+// NOLINTNEXTLINE(readability-identifier-naming)
+struct formatter : std::formatter<T, Char> {};
 #endif
 
 template <typename... Args>
