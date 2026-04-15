@@ -22,6 +22,7 @@
 #if FPAG_BUILD_FLAG(IS_OS_MAC)
 #include <fcntl.h>
 #include <mach/vm_statistics.h>
+#include <sys/posix_shm.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -175,10 +176,18 @@ void* allocate_aliased_pages(usize size) {
   return base;
 
 #elif FPAG_BUILD_FLAG(IS_OS_MAC)
-  i32 fd = shm_open(SHM_ANON, O_RDWR | O_CREAT, 0600);
+  char shm_name[64];
+  std::sprintf(
+      shm_name, "/fpag_shm_%d_%llu", getpid(),
+      static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(&size)));
+
+  const i32 fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
   if (fd == -1) {
     return allocate_pages(size);
   }
+  // Unlink immediately so it's only accessible via fd and cleaned up on close.
+  shm_unlink(shm_name);
+
   if (ftruncate(fd, static_cast<off_t>(size)) == -1) {
     close(fd);
     return allocate_pages(size);
