@@ -172,6 +172,9 @@ target("fpag.root_config")
   end
 
   if is_plat("linux") then
+    if is_mode("debug") then
+      add_ldflags("-Wl,--build-id", { public = true })
+    end
   elseif is_plat("macosx") then
   elseif is_plat("windows") then
   end
@@ -180,9 +183,6 @@ target("fpag.root_config")
     set_symbols("debug", { public = true })
     set_optimize("none", { public = true })
     add_cxxflags("-fno-omit-frame-pointer", "-g3", { public = true })
-    if not is_plat("windows") then
-      add_ldflags("-Wl,--build-id", { public = true })
-    end
     add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
   elseif is_mode("release") then
     set_symbols("hidden", { public = true })
