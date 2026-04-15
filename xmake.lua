@@ -247,7 +247,7 @@ target("fpag")
   end
 
   if is_plat("windows") then
-    add_links("dbghelp")
+    add_links("dbghelp", "onecore")
   end
 
   add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
