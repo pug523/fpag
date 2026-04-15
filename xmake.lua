@@ -51,6 +51,11 @@ local function source_files()
         table.join2(files, os.files("tests/**.cc"))
         table.join2(files, os.files("tests/**.h"))
     end
+
+    if has_config("benchmarks") then
+        table.join2(files, os.files("benchmarks/**.cc"))
+        table.join2(files, os.files("benchmarks/**.h"))
+    end
     return files
 end
 

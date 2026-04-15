@@ -10,7 +10,7 @@
 
 #include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
-#include "mem/arena_deleter.h"
+#include "mem/arena_ptr.h"
 #include "mem/page_allocator.h"
 
 namespace mem {
@@ -94,21 +94,25 @@ TEST_CASE("Arena object creation", "[base][arena]") {
 }
 
 TEST_CASE("Arena move semantics", "[base][arena]") {
-  Arena arena;
-  arena.reserve(kPageSize);
-  void* p = arena.alloc(1024);
-  CHECK(p != nullptr);
-
   SECTION("Move constructor") {
-    const usize size_before = arena.size();
-    Arena moved_arena(std::move(arena));
+    Arena arena1;
+    arena1.reserve(kPageSize);
+    void* p = arena1.alloc(1024);
+    CHECK(p != nullptr);
+    const usize size_before = arena1.size();
+    Arena moved_arena(std::move(arena1));
     CHECK(moved_arena.size() == size_before);
   }
 
   SECTION("Move assignment") {
+    Arena arena2;
+    arena2.reserve(kPageSize);
+    void* p = arena2.alloc(1024);
+    CHECK(p != nullptr);
+
     Arena new_arena;
-    const usize size_before = arena.size();
-    new_arena = std::move(arena);
+    const usize size_before = arena2.size();
+    new_arena = std::move(arena2);
     CHECK(new_arena.size() == size_before);
   }
 }
