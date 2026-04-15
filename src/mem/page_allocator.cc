@@ -23,6 +23,8 @@
 #include <fcntl.h>
 #include <mach/vm_statistics.h>
 #include <sys/posix_shm.h>
+
+#include <cstdio>
 #endif
 
 #ifndef MAP_ANONYMOUS
