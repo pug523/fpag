@@ -42,16 +42,14 @@ inline void dlog_internal(const char* file,
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
-#define dlog(fmt, ...)              \
+#define DLOG(fmt, ...)              \
   ::base::internal::dlog_internal(  \
       __FILE__, __LINE__, __func__, \
       fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
-#define dvar(...) dlog(dump_vars(__VA_ARGS__))
 
 #else
 
-#define dlog(fmt, ...) \
+#define DLOG(fmt, ...) \
   noop(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
-#define dvar(...) noop(__VA_ARGS__)
 
 #endif  // FPAG_BUILD_FLAG(IS_DEBUG)

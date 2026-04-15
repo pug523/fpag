@@ -50,7 +50,7 @@ bool check_ansi_sequence_available(Stream stream) {
   } else if (stream == Stream::Stderr) {
     return isatty(STDERR_FILENO);
   }
-  unreachable();
+  FPAG_UNREACHABLE();
 #endif
 }
 
@@ -62,7 +62,7 @@ bool is_ansi_escape_sequence_available(Stream stream) {
   switch (stream) {
     case Stream::Stdout: return out;
     case Stream::Stderr: return err;
-    default: unreachable();
+    default: FPAG_UNREACHABLE();
   }
 }
 

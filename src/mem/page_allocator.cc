@@ -32,7 +32,7 @@
 namespace mem {
 
 void* reserve_pages(usize size) {
-  check(is_page_aligned_size(size));
+  FPAG_CHECK(is_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   return VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS);
 #else
@@ -43,9 +43,9 @@ void* reserve_pages(usize size) {
 }
 
 bool commit_pages(void* ptr, usize size) {
-  dcheck(ptr);
-  check(is_page_aligned_ptr(ptr));
-  check(is_page_aligned_size(size));
+  FPAG_DCHECK(ptr);
+  FPAG_CHECK(is_page_aligned_ptr(ptr));
+  FPAG_CHECK(is_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != nullptr;
 #else
@@ -54,9 +54,9 @@ bool commit_pages(void* ptr, usize size) {
 }
 
 void decommit_pages(void* ptr, usize size) {
-  dcheck(ptr);
-  check(is_page_aligned_ptr(ptr));
-  check(is_page_aligned_size(size));
+  FPAG_DCHECK(ptr);
+  FPAG_CHECK(is_page_aligned_ptr(ptr));
+  FPAG_CHECK(is_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   VirtualFree(ptr, size, MEM_DECOMMIT);
 #else
@@ -66,7 +66,7 @@ void decommit_pages(void* ptr, usize size) {
 }
 
 void* allocate_pages(usize size) {
-  check(is_page_aligned_size(size));
+  FPAG_CHECK(is_page_aligned_size(size));
   void* const ptr = reserve_pages(size);
   if (ptr) {
     if (commit_pages(ptr, size)) {
@@ -79,7 +79,7 @@ void* allocate_pages(usize size) {
 }
 
 void* allocate_huge_pages(usize size) {
-  check(is_huge_page_aligned_size(size));
+  FPAG_CHECK(is_huge_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   void* const ptr =
       VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
@@ -100,7 +100,7 @@ void* allocate_huge_pages(usize size) {
 }
 
 void* allocate_aliased_pages(usize size) {
-  check(is_page_aligned_size(size));
+  FPAG_CHECK(is_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   HANDLE file_mapping =
       CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0,
@@ -213,9 +213,9 @@ void* allocate_aliased_pages(usize size) {
 }
 
 void free_pages(void* ptr, usize size) {
-  dcheck(ptr);
-  check(is_page_aligned_ptr(ptr));
-  check(is_page_aligned_size(size));
+  FPAG_DCHECK(ptr);
+  FPAG_CHECK(is_page_aligned_ptr(ptr));
+  FPAG_CHECK(is_page_aligned_size(size));
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   (void)size;
   VirtualFree(ptr, 0, MEM_RELEASE);

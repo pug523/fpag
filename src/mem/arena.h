@@ -46,7 +46,7 @@ class Arena {
   [[nodiscard]] inline T* create(Args&&... args) {
     void* mem = alloc(sizeof(T), alignof(T));
     T* const obj = new (mem) T(std::forward<Args>(args)...);
-    dcheck(obj);
+    FPAG_DCHECK(obj);
     return obj;
   }
 

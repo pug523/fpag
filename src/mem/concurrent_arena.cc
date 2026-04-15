@@ -39,20 +39,21 @@ ConcurrentArena& ConcurrentArena::operator=(ConcurrentArena&& other) noexcept {
 }
 
 void ConcurrentArena::reserve(usize capacity) {
-  dcheck_msg(!ptr_, "Arena is already reserved.");
+  FPAG_DCHECK_MSG(!ptr_, "Arena is already reserved.");
 
   capacity_ = capacity;
-  dcheck_msg(is_page_aligned_size(capacity_), "Capacity must be page aligned.");
+  FPAG_DCHECK_MSG(is_page_aligned_size(capacity_),
+                  "Capacity must be page aligned.");
 
   ptr_ = static_cast<char*>(reserve_pages(capacity_));
-  dcheck_msg(ptr_, "Failed to reserve pages for arena.");
+  FPAG_DCHECK_MSG(ptr_, "Failed to reserve pages for arena.");
 
   size_.store(0, std::memory_order_relaxed);
   committed_size_.store(0, std::memory_order_relaxed);
 }
 
 void ConcurrentArena::reset() {
-  dcheck(ptr_);
+  FPAG_DCHECK(ptr_);
 
   free_pages(ptr_, capacity_);
   ptr_ = nullptr;
@@ -63,7 +64,7 @@ void ConcurrentArena::reset() {
 }
 
 void* ConcurrentArena::alloc(usize size, usize align) {
-  dcheck(ptr_);
+  FPAG_DCHECK(ptr_);
 
   usize old_size;
   usize new_size;
@@ -75,7 +76,7 @@ void* ConcurrentArena::alloc(usize size, usize align) {
     new_size = aligned + size;
 
     if (new_size > capacity_) [[unlikely]] {
-      dcheck_msg(false, "Arena capacity exceeded.");
+      FPAG_DCHECK_MSG(false, "Arena capacity exceeded.");
       return nullptr;
     }
 
@@ -108,7 +109,7 @@ void* ConcurrentArena::alloc(usize size, usize align) {
       char* commit_ptr = ptr_ + committed;
 
       if (!commit_pages(commit_ptr, diff)) [[unlikely]] {
-        dcheck_msg(false, "Failed to commit pages for arena.");
+        FPAG_DCHECK_MSG(false, "Failed to commit pages for arena.");
         return nullptr;
       }
       break;

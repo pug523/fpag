@@ -53,7 +53,7 @@ namespace base::internal {
 
 }  // namespace base::internal
 
-#define check_evaluate(expr, on_failed)           \
+#define FPAG_CHECK_EVALUATE(expr, on_failed)      \
   do {                                            \
     auto&& _expr = (expr);                        \
     /* FPAG_ASSUME(_expr); */                     \
@@ -62,99 +62,99 @@ namespace base::internal {
     }                                             \
   } while (false)
 
-#define check_op_evaluate(lhs, rhs, op, failed) \
-  do {                                          \
-    auto&& _lhs = (lhs);                        \
-    auto&& _rhs = (rhs);                        \
-    /* FPAG_ASSUME(_lhs op _rhs); */            \
-    if (!(_lhs op _rhs)) [[unlikely]] {         \
-      failed;                                   \
-    }                                           \
+#define FPAG_CHECK_OP_EVALUATE(lhs, rhs, op, failed) \
+  do {                                               \
+    auto&& _lhs = (lhs);                             \
+    auto&& _rhs = (rhs);                             \
+    /* FPAG_ASSUME(_lhs op _rhs); */                 \
+    if (!(_lhs op _rhs)) [[unlikely]] {              \
+      failed;                                        \
+    }                                                \
   } while (false)
 
-#define check(expr)                                                       \
-  check_evaluate(expr, ::base::internal::check_fail_impl(#expr, __FILE__, \
-                                                         __LINE__, __func__))
+#define FPAG_CHECK(expr)                                       \
+  FPAG_CHECK_EVALUATE(expr, ::base::internal::check_fail_impl( \
+                                #expr, __FILE__, __LINE__, __func__))
 
-#define check_msg(expr, msg)                              \
-  check_evaluate(expr, ::base::internal::check_fail_impl( \
-                           #expr, __FILE__, __LINE__, __func__, msg))
+#define FPAG_CHECK_MSG(expr, msg)                              \
+  FPAG_CHECK_EVALUATE(expr, ::base::internal::check_fail_impl( \
+                                #expr, __FILE__, __LINE__, __func__, msg))
 
 // No heap allocations on failure.
-#define raw_check(expr)                                       \
-  check_evaluate(expr, ::base::internal::raw_check_fail_impl( \
-                           #expr, __FILE__, __LINE__, __func__))
+#define FPAG_RAW_CHECK(expr)                                       \
+  FPAG_CHECK_EVALUATE(expr, ::base::internal::raw_check_fail_impl( \
+                                #expr, __FILE__, __LINE__, __func__))
 
-#define raw_check_msg(expr, msg)                              \
-  check_evaluate(expr, ::base::internal::raw_check_fail_impl( \
-                           #expr, __FILE__, __LINE__, __func__, msg))
+#define FPAG_RAW_CHECK_MSG(expr, msg)                              \
+  FPAG_CHECK_EVALUATE(expr, ::base::internal::raw_check_fail_impl( \
+                                #expr, __FILE__, __LINE__, __func__, msg))
 
-#define check_op(lhs, rhs, op)                  \
-  check_op_evaluate(                            \
+#define FPAG_CHECK_OP(lhs, rhs, op)             \
+  FPAG_CHECK_OP_EVALUATE(                       \
       lhs, rhs, op,                             \
       ::base::internal::check_op_fail_internal( \
           #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, __func__))
 
-#define check_op_msg(lhs, rhs, op, msg)                                        \
-  check_op_evaluate(lhs, rhs, op,                                              \
-                    ::base::internal::check_op_fail_internal(                  \
-                        #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, \
-                        __func__, msg))
+#define FPAG_CHECK_OP_MSG(lhs, rhs, op, msg)                              \
+  FPAG_CHECK_OP_EVALUATE(lhs, rhs, op,                                    \
+                         ::base::internal::check_op_fail_internal(        \
+                             #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, \
+                             __LINE__, __func__, msg))
 
-#define check_eq(lhs, rhs) check_op(lhs, rhs, ==)
-#define check_ne(lhs, rhs) check_op(lhs, rhs, !=)
-#define check_lt(lhs, rhs) check_op(lhs, rhs, <)
-#define check_le(lhs, rhs) check_op(lhs, rhs, <=)
-#define check_gt(lhs, rhs) check_op(lhs, rhs, >)
-#define check_ge(lhs, rhs) check_op(lhs, rhs, >=)
+#define FPAG_CHECK_EQ(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, ==)
+#define FPAG_CHECK_NE(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, !=)
+#define FPAG_CHECK_LT(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, <)
+#define FPAG_CHECK_LE(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, <=)
+#define FPAG_CHECK_GT(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, >)
+#define FPAG_CHECK_GE(lhs, rhs) FPAG_CHECK_OP(lhs, rhs, >=)
 
-#define check_eq_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, ==, msg)
-#define check_ne_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, !=, msg)
-#define check_lt_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, <, msg)
-#define check_le_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, <=, msg)
-#define check_gt_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, >, msg)
-#define check_ge_msg(lhs, rhs, msg) check_op_msg(lhs, rhs, >=, msg)
+#define FPAG_CHECK_EQ_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, ==, msg)
+#define FPAG_CHECK_NE_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, !=, msg)
+#define FPAG_CHECK_LT_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, <, msg)
+#define FPAG_CHECK_LE_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, <=, msg)
+#define FPAG_CHECK_GT_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, >, msg)
+#define FPAG_CHECK_GE_MSG(lhs, rhs, msg) FPAG_CHECK_OP_MSG(lhs, rhs, >=, msg)
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
-#define dcheck(expr) check(expr)
-#define dcheck_msg(expr, msg) check_msg(expr, msg)
-#define raw_dcheck(expr) raw_check(expr)
-#define raw_dcheck_msg(expr, msg) raw_check_msg(expr, msg)
+#define FPAG_DCHECK(expr) FPAG_CHECK(expr)
+#define FPAG_DCHECK_MSG(expr, msg) FPAG_CHECK_MSG(expr, msg)
+#define FPAG_RAW_DCHECK(expr) FPAG_RAW_CHECK(expr)
+#define FPAG_RAW_DCHECK_MSG(expr, msg) FPAG_RAW_CHECK_MSG(expr, msg)
 
-#define dcheck_eq(lhs, rhs) check_eq(lhs, rhs)
-#define dcheck_ne(lhs, rhs) check_ne(lhs, rhs)
-#define dcheck_lt(lhs, rhs) check_lt(lhs, rhs)
-#define dcheck_le(lhs, rhs) check_le(lhs, rhs)
-#define dcheck_gt(lhs, rhs) check_gt(lhs, rhs)
-#define dcheck_ge(lhs, rhs) check_ge(lhs, rhs)
+#define FPAG_DCHECK_EQ(lhs, rhs) FPAG_CHECK_EQ(lhs, rhs)
+#define FPAG_DCHECK_NE(lhs, rhs) FPAG_CHECK_NE(lhs, rhs)
+#define FPAG_DCHECK_LT(lhs, rhs) FPAG_CHECK_LT(lhs, rhs)
+#define FPAG_DCHECK_LE(lhs, rhs) FPAG_CHECK_LE(lhs, rhs)
+#define FPAG_DCHECK_GT(lhs, rhs) FPAG_CHECK_GT(lhs, rhs)
+#define FPAG_DCHECK_GE(lhs, rhs) FPAG_CHECK_GE(lhs, rhs)
 
-#define dcheck_eq_msg(lhs, rhs, msg) check_eq_msg(lhs, rhs, msg)
-#define dcheck_ne_msg(lhs, rhs, msg) check_ne_msg(lhs, rhs, msg)
-#define dcheck_lt_msg(lhs, rhs, msg) check_lt_msg(lhs, rhs, msg)
-#define dcheck_le_msg(lhs, rhs, msg) check_le_msg(lhs, rhs, msg)
-#define dcheck_gt_msg(lhs, rhs, msg) check_gt_msg(lhs, rhs, msg)
-#define dcheck_ge_msg(lhs, rhs, msg) check_ge_msg(lhs, rhs, msg)
+#define FPAG_DCHECK_EQ_MSG(lhs, rhs, msg) FPAG_CHECK_EQ_MSG(lhs, rhs, msg)
+#define FPAG_DCHECK_NE_MSG(lhs, rhs, msg) FPAG_CHECK_NE_MSG(lhs, rhs, msg)
+#define FPAG_DCHECK_LT_MSG(lhs, rhs, msg) FPAG_CHECK_LT_MSG(lhs, rhs, msg)
+#define FPAG_DCHECK_LE_MSG(lhs, rhs, msg) FPAG_CHECK_LE_MSG(lhs, rhs, msg)
+#define FPAG_DCHECK_GT_MSG(lhs, rhs, msg) FPAG_CHECK_GT_MSG(lhs, rhs, msg)
+#define FPAG_DCHECK_GE_MSG(lhs, rhs, msg) FPAG_CHECK_GE_MSG(lhs, rhs, msg)
 
 #else
 
-#define dcheck(expr) noop(expr)
-#define dcheck_msg(expr, msg) noop(expr, msg)
-#define raw_dcheck(expr) noop(expr)
-#define raw_dcheck_msg(expr, msg) noop(expr, msg)
+#define FPAG_DCHECK(expr) NOOP(expr)
+#define FPAG_DCHECK_MSG(expr, msg) NOOP(expr, msg)
+#define FPAG_RAW_DCHECK(expr) NOOP(expr)
+#define FPAG_RAW_DCHECK_MSG(expr, msg) NOOP(expr, msg)
 
-#define dcheck_eq(lhs, rhs) noop(lhs, rhs)
-#define dcheck_ne(lhs, rhs) noop(lhs, rhs)
-#define dcheck_lt(lhs, rhs) noop(lhs, rhs)
-#define dcheck_le(lhs, rhs) noop(lhs, rhs)
-#define dcheck_gt(lhs, rhs) noop(lhs, rhs)
-#define dcheck_ge(lhs, rhs) noop(lhs, rhs)
+#define FPAG_DCHECK_EQ(lhs, rhs) NOOP(lhs, rhs)
+#define FPAG_DCHECK_NE(lhs, rhs) NOOP(lhs, rhs)
+#define FPAG_DCHECK_LT(lhs, rhs) NOOP(lhs, rhs)
+#define FPAG_DCHECK_LE(lhs, rhs) NOOP(lhs, rhs)
+#define FPAG_DCHECK_GT(lhs, rhs) NOOP(lhs, rhs)
+#define FPAG_DCHECK_GE(lhs, rhs) NOOP(lhs, rhs)
 
-#define dcheck_eq_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
-#define dcheck_ne_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
-#define dcheck_lt_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
-#define dcheck_le_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
-#define dcheck_gt_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
-#define dcheck_ge_msg(lhs, rhs, msg) noop(lhs, rhs, msg)
+#define FPAG_DCHECK_EQ_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
+#define FPAG_DCHECK_NE_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
+#define FPAG_DCHECK_LT_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
+#define FPAG_DCHECK_LE_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
+#define FPAG_DCHECK_GT_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
+#define FPAG_DCHECK_GE_MSG(lhs, rhs, msg) NOOP(lhs, rhs, msg)
 
 #endif  // FPAG_BUILD_FLAG(IS_DEBUG)

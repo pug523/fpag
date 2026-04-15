@@ -74,7 +74,7 @@ CheckOptions:
   - key:          readability-identifier-naming.IgnoreMainLikeFunctions
     value:        1
   - key:          bugprone-assert-side-effect.AssertMacros
-    value:        assert,dcheck
+    value:        assert,DCHECK
   - key:          bugprone-dangling-handle.HandleClasses
     value:        ::std::basic_string_view;::std::span;::absl::string_view;::base::BasicStringPiece;::base::span
   - key:          bugprone-string-constructor.StringNames

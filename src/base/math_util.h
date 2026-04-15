@@ -37,7 +37,7 @@ inline constexpr N next_power_of_two(N v) {
   }
   ++v;
 
-  dcheck(is_power_of_two(v));
+  FPAG_DCHECK(is_power_of_two(v));
   return v;
 }
 
@@ -45,7 +45,8 @@ inline constexpr N next_power_of_two(N v) {
 // `alignment` must be a power of two.
 template <typename T>
 inline constexpr T round_up(T value, usize alignment) {
-  dcheck_msg(is_power_of_two(alignment), "Alignment must be a power of two.");
+  FPAG_DCHECK_MSG(is_power_of_two(alignment),
+                  "Alignment must be a power of two.");
   const usize mask = alignment - 1;
   return static_cast<T>((static_cast<usize>(value) + mask) & ~mask);
 }
@@ -54,7 +55,8 @@ inline constexpr T round_up(T value, usize alignment) {
 // `alignment` must be a power of two.
 template <typename T>
 inline constexpr T round_down(T value, usize alignment) {
-  dcheck_msg(is_power_of_two(alignment), "Alignment must be a power of two.");
+  FPAG_DCHECK_MSG(is_power_of_two(alignment),
+                  "Alignment must be a power of two.");
   return static_cast<T>(static_cast<usize>(value) & ~(alignment - 1));
 }
 

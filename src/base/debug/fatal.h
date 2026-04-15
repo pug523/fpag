@@ -20,8 +20,8 @@ namespace base::internal {
 
 }  // namespace base::internal
 
-#define unreachable() \
+#define FPAG_UNREACHABLE() \
   ::base::internal::unreachable_impl(__FILE__, __LINE__, __func__);
 
-#define unreachable_msg(msg) \
+#define FPAG_UNREACHABLE_MSG(msg) \
   ::base::internal::unreachable_impl(__FILE__, __LINE__, __func__, msg);

@@ -22,18 +22,19 @@ void StackTrace::init(StackTraceFrame* frames_buf, usize depth, usize skip) {
   depth_ = depth;
   skip_ = skip;
 
-  // `dcheck` uses StackTrace, so to avoid infinite recursion we use
-  // `raw_dcheck_msg`.
-  raw_dcheck_msg(depth_ <= kMaxTraceDepth,
-                 "init called with depth exceeding kMaxTraceDepth.");
-  raw_dcheck_msg(skip_ <= depth_, "init called with skip greater than depth.");
+  // `FPAG_DCHECK` uses StackTrace, so to avoid infinite recursion we use
+  // `raw_FPAG_DCHECK_msg`.
+  FPAG_RAW_DCHECK_MSG(depth_ <= kMaxTraceDepth,
+                      "init called with depth exceeding kMaxTraceDepth.");
+  FPAG_RAW_DCHECK_MSG(skip_ <= depth_,
+                      "init called with skip greater than depth.");
 
   status_ = StackTraceStatus::Initialized;
 }
 
 void StackTrace::collect_trace() {
-  raw_dcheck_msg(status_ == StackTraceStatus::Initialized,
-                 "collect_trace called on uninitialized stack trace.");
+  FPAG_RAW_DCHECK_MSG(status_ == StackTraceStatus::Initialized,
+                      "collect_trace called on uninitialized stack trace.");
 
   // Capture raw addresses
   void* raw_addrs[kMaxTraceDepth];
@@ -76,8 +77,9 @@ void StackTrace::print_trace(std::string_view prefix) const {
     return;
   }
 
-  raw_dcheck_msg(status_ == StackTraceStatus::Collected,
-                 "print_trace_with_prefix called on uncollected stack trace.");
+  FPAG_RAW_DCHECK_MSG(
+      status_ == StackTraceStatus::Collected,
+      "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
   logger.info("\n{}", out);
@@ -88,8 +90,8 @@ std::string StackTrace::to_string() const {
     return "stack trace collection failed";
   }
 
-  raw_dcheck_msg(status_ == StackTraceStatus::Collected,
-                 "to_string called on uncollected stack trace.");
+  FPAG_RAW_DCHECK_MSG(status_ == StackTraceStatus::Collected,
+                      "to_string called on uncollected stack trace.");
   return format_frames(frames_, count_);
 }
 std::string_view StackTrace::intern_string(std::string_view str) {

@@ -27,8 +27,8 @@ class StdoutSink final : public Sink {
         use_ansi_style_(use_ansi_style),
         use_buffer_(use_buffer) {
     if (use_buffer) {
-      dcheck(buffer_);
-      dcheck_gt(capacity_, usize(0));
+      FPAG_DCHECK(buffer_);
+      FPAG_DCHECK_GT(capacity_, usize{0});
     }
   }
 

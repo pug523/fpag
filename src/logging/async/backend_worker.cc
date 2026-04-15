@@ -45,8 +45,9 @@ void BackendWorker::swap(BackendWorker&& other) noexcept {
 }
 
 void BackendWorker::init(usize queue_capacity, base::SpscQueue::Mode mode) {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kNotInitialized, "BackendWorker is not idling");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kNotInitialized,
+                     "BackendWorker is not idling");
 
   entries_buf_.reserve(kEntriesBufSize);
   sinks_.reserve(4);
@@ -58,9 +59,9 @@ void BackendWorker::init(usize queue_capacity, base::SpscQueue::Mode mode) {
 }
 
 void BackendWorker::register_sink(std::unique_ptr<Sink> sink) {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kInitialized,
-                "BackendWorker is not initialized or already running");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kInitialized,
+                     "BackendWorker is not initialized or already running");
   sinks_.push_back(std::move(sink));
 }
 
@@ -75,16 +76,16 @@ void BackendWorker::reset() {
 }
 
 void BackendWorker::start() {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kInitialized,
-                "BackendWorker is not initialized or already running");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kInitialized,
+                     "BackendWorker is not initialized or already running");
   internal_status_.store(InternalStatus::kRunning, std::memory_order_release);
   thread_ = std::make_unique<std::thread>(&BackendWorker::worker_loop, this);
 }
 
 void BackendWorker::stop() {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kRunning, "BackendWorker is not running");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kRunning, "BackendWorker is not running");
   flush();
   internal_status_.store(InternalStatus::kStopping, std::memory_order_release);
   if (thread_) [[likely]] {
@@ -94,8 +95,8 @@ void BackendWorker::stop() {
 }
 
 void BackendWorker::force_stop() {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kRunning, "BackendWorker is not running");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kRunning, "BackendWorker is not running");
   // Do not flush on force stopping
   internal_status_.store(InternalStatus::kForceStopping,
                          std::memory_order_release);
@@ -106,8 +107,8 @@ void BackendWorker::force_stop() {
 }
 
 void BackendWorker::flush() {
-  dcheck_eq_msg(internal_status_.load(std::memory_order_acquire),
-                InternalStatus::kRunning, "BackendWorker is not running");
+  FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
+                     InternalStatus::kRunning, "BackendWorker is not running");
   flush_requested_.store(true, std::memory_order_release);
   wait_for_flush();
 }
@@ -151,8 +152,8 @@ bool BackendWorker::process_batch() {
     const LogLevel level = *reinterpret_cast<const LogLevel*>(
         data_ptr + sizeof(usize) + sizeof(DeserializeFunction));
 
-    dcheck_ge(payload_size, kPayloadHeaderSize);
-    dcheck_ge(payload_size, payload_size);
+    FPAG_DCHECK_GE(payload_size, kPayloadHeaderSize);
+    FPAG_DCHECK_GE(payload_size, payload_size);
 
     // Deserialize args and format into format buffer.
     usize formatted_size =

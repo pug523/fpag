@@ -55,15 +55,15 @@ SpscQueue& SpscQueue::operator=(SpscQueue&& other) noexcept {
 
 void SpscQueue::init(usize capacity, Mode mode) {
   capacity_ = capacity;
-  dcheck_msg(base::is_power_of_two(capacity_),
-             "SpscQueue: capacity must be a power of two.");
-  dcheck_msg(capacity_ <= kMaxCapacity,
-             "SpscQueue: capacity must be <= kMaxCapacity");
+  FPAG_DCHECK_MSG(base::is_power_of_two(capacity_),
+                  "SpscQueue: capacity must be a power of two.");
+  FPAG_DCHECK_MSG(capacity_ <= kMaxCapacity,
+                  "SpscQueue: capacity must be <= kMaxCapacity");
 
   mode_ = mode;
 
   data_ = static_cast<char*>(mem::allocate_aliased_pages(capacity_));
-  dcheck_msg(data_, "SpscQueue: failed to allocate memory for queue data");
+  FPAG_DCHECK_MSG(data_, "SpscQueue: failed to allocate memory for queue data");
 }
 
 void SpscQueue::reset() {
@@ -79,7 +79,7 @@ void SpscQueue::reset() {
 }
 
 const char* SpscQueue::peek(usize size) {
-  dcheck_ge(size_consumer(), size);
+  FPAG_DCHECK_GE(size_consumer(), size);
 
   return head_ptr();  // `data_` is double buffered; safe
 }
@@ -90,7 +90,7 @@ void SpscQueue::discard(usize size) {
 }
 
 SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest, usize size) {
-  dcheck_le(size, capacity_);
+  FPAG_DCHECK_LE(size, capacity_);
 
   if (size_consumer() < size) {
     return DequeueStatus::kEmpty;
@@ -104,7 +104,7 @@ SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest, usize size) {
 }
 
 SpscQueue::EnqueueStatus SpscQueue::reserve(usize size, void** out) {
-  dcheck_le(size, capacity_);
+  FPAG_DCHECK_LE(size, capacity_);
 
   if (available_producer() < size) [[unlikely]] {
     if (mode_ == Mode::kDrop) {
@@ -126,7 +126,7 @@ void SpscQueue::commit(usize size) {
 }
 
 SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data, usize size) {
-  dcheck_le(size, capacity_);
+  FPAG_DCHECK_LE(size, capacity_);
   void* buf = nullptr;
   EnqueueStatus status = reserve(size, &buf);
   if (status != EnqueueStatus::kOk) [[unlikely]] {
