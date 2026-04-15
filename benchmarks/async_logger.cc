@@ -26,6 +26,7 @@ void async_logger_log_literal_string(benchmark::State& state) {
   logger.stop_backend_worker();
 }
 BENCHMARK(async_logger_log_literal_string);
+// NOLINTEND(clang-analyzer-deadcode.DeadStores)
 
 }  // namespace
 
