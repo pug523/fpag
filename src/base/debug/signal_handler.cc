@@ -53,10 +53,12 @@ const char* signal_to_string(int signal_number) {
     case SIGILL: return "SIGILL (Illegal instruction)";
     case SIGINT: return "SIGINT (Interactive attention signal)";
     case SIGTERM: return "SIGTERM (Termination request)";
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
     case SIGBUS: return "SIGBUS (Bus error)";
     case SIGKILL: return "SIGKILL (Kill signal)";
     case SIGSTOP: return "SIGSTOP (Stop signal)";
     case SIGALRM: return "SIGALRM (Alarm clock)";
+#endif
     default: return "Unknown signal";
   }
 }
@@ -93,7 +95,13 @@ void register_signal_handlers() {
   std::signal(SIGABRT, signal_handler);
   std::signal(SIGFPE, signal_handler);
   std::signal(SIGILL, signal_handler);
+
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
   std::signal(SIGBUS, signal_handler);
+  std::signal(SIGKILL, signal_handler);
+  std::signal(SIGSTOP, signal_handler);
+  std::signal(SIGALRM, signal_handler);
+#endif
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
   std::signal(SIGINT, signal_handler);
