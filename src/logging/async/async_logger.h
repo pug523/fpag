@@ -21,7 +21,7 @@ namespace logging {
 class AsyncLogger {
  public:
   AsyncLogger() = default;
-  ~AsyncLogger() { stop_backend_worker(); }
+  ~AsyncLogger() { reset(); }
 
   AsyncLogger(const AsyncLogger&) = delete;
   AsyncLogger& operator=(const AsyncLogger&) = delete;
@@ -37,6 +37,7 @@ class AsyncLogger {
   void stop_backend_worker();
   void force_stop_backend_worker();
   void flush();
+  void reset();
 
   template <typename... Args>
   inline constexpr void trace(str::format_string<Args&&...> fmt,

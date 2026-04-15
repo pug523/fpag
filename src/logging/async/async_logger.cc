@@ -47,7 +47,15 @@ void AsyncLogger::force_stop_backend_worker() {
 }
 
 void AsyncLogger::flush() {
-  worker_.flush();
+  if (worker_.running()) [[likely]] {
+    worker_.flush();
+  }
+}
+
+void AsyncLogger::reset() {
+  flush();
+  stop_backend_worker();
+  worker_.reset();
 }
 
 AsyncLogger& global_async_logger() {

@@ -31,6 +31,12 @@ void SyncLogger::flush() {
   }
 }
 
+void SyncLogger::reset() {
+  flush();
+  sinks_.clear();
+  min_level_ = kDefaultLogLevel;
+}
+
 SyncLogger& global_sync_logger() {
   static SyncLogger logger = [] {
     SyncLogger l;

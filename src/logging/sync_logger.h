@@ -25,7 +25,7 @@ namespace logging {
 class SyncLogger {
  public:
   SyncLogger() = default;
-  ~SyncLogger() { flush(); }
+  ~SyncLogger() { reset(); }
 
   SyncLogger(const SyncLogger&) = delete;
   SyncLogger& operator=(const SyncLogger&) = delete;
@@ -37,6 +37,7 @@ class SyncLogger {
   void register_sink(std::unique_ptr<Sink> sink);
 
   void flush();
+  void reset();
 
   template <typename... Args>
   inline constexpr void trace(str::format_string<Args&&...> fmt,

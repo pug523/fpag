@@ -67,9 +67,10 @@ void SpscQueue::init(usize capacity, Mode mode) {
 }
 
 void SpscQueue::reset() {
-  mem::free_pages(data_, capacity_);
-
-  data_ = nullptr;
+  if (data_) {
+    mem::free_pages(data_, capacity_);
+    data_ = nullptr;
+  }
   capacity_ = 0;
   mode_ = Mode::kDefault;
   head_.store(0, std::memory_order_relaxed);
