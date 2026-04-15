@@ -3,4 +3,4 @@
 A fast, light-weight utility library for C++20
 
 > [!NOTE] 
-> This project is currently work in progress.
+> This project is now work in progress.
