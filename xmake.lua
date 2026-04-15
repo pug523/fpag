@@ -199,10 +199,12 @@ target("fpag.root_config")
     add_ldflags("-stdlib=" .. get_config("stdlib"), { public = true })
   end
 
-  if has_config("sanitizers") and not is_plat("windows") and is_mode("debug") then
+  if has_config("sanitizers") and is_mode("debug") and not is_plat("windows") then
     set_policy("build.sanitizer.address", true)
+    -- set_policy("build.sanitizer.memory", true)
     set_policy("build.sanitizer.undefined", true)
     set_policy("build.sanitizer.leak", true)
+    -- add_cxflags("-fsanitize=thread")
   end
   if has_config("xray") and is_mode("debug") then
     add_cxxflags("-fxray-instrument", "-fxray-instruction-threshold=200", { public = true })
