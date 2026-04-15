@@ -87,7 +87,6 @@ void BackendWorker::start() {
 void BackendWorker::stop() {
   FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                      InternalStatus::kRunning, "BackendWorker is not running");
-  flush();
   internal_status_.store(InternalStatus::kStopping, std::memory_order_release);
   if (thread_) [[likely]] {
     thread_->join();
@@ -116,13 +115,22 @@ void BackendWorker::flush() {
 
 void BackendWorker::worker_loop() {
   u32 count_from_last_processed = 0;
-  while (internal_status_.load(std::memory_order_acquire) ==
-         InternalStatus::kRunning) {
+  while (true) {
+    const InternalStatus status =
+        internal_status_.load(std::memory_order_acquire);
+    if (status == InternalStatus::kForceStopping) [[unlikely]] {
+      break;
+    }
+
     const bool processed = process_batch();
 
     if (flush_requested_.load(std::memory_order_acquire)) [[unlikely]] {
       flush_sinks();
       flush_requested_.store(false, std::memory_order_release);
+    }
+    if (status == InternalStatus::kStopping && !processed && queue_.empty())
+        [[unlikely]] {
+      break;
     }
 
     if (processed) {
