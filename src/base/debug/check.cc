@@ -65,26 +65,26 @@ void raw_check_fail_impl(const char* expr,
                          i32 line,
                          const char* func,
                          std::string_view msg) {
-  write(kStderrFd, "fatal: RAW CHECK FAILED for '",
-        const_strlen("fatal: RAW CHECK FAILED for '"));
-  write(kStderrFd, expr, std::strlen(expr));
-  write(kStderrFd, "'\n", const_strlen("'\n"));
+  ::base::write(kStderrFd, "fatal: RAW CHECK FAILED for '",
+                const_strlen("fatal: RAW CHECK FAILED for '"));
+  ::base::write(kStderrFd, expr, std::strlen(expr));
+  ::base::write(kStderrFd, "'\n", const_strlen("'\n"));
 
-  write(kStderrFd, " at ", const_strlen(" at "));
-  write(kStderrFd, file, std::strlen(file));
-  write(kStderrFd, ":", 1);
+  ::base::write(kStderrFd, " at ", const_strlen(" at "));
+  ::base::write(kStderrFd, file, std::strlen(file));
+  ::base::write(kStderrFd, ":", 1);
 
   char line_buf[32];
   std::snprintf(line_buf, sizeof(line_buf), "%d", line);
-  write(kStderrFd, line_buf, std::strlen(line_buf));
+  ::base::write(kStderrFd, line_buf, std::strlen(line_buf));
 
-  write(kStderrFd, " (", const_strlen(" ("));
-  write(kStderrFd, func, std::strlen(func));
-  write(kStderrFd, ")\n", const_strlen(")\n"));
+  ::base::write(kStderrFd, " (", const_strlen(" ("));
+  ::base::write(kStderrFd, func, std::strlen(func));
+  ::base::write(kStderrFd, ")\n", const_strlen(")\n"));
 
   if (!msg.empty()) {
-    write(kStderrFd, msg.data(), msg.size());
-    write(kStderrFd, "\n", const_strlen("\n"));
+    ::base::write(kStderrFd, msg.data(), msg.size());
+    ::base::write(kStderrFd, "\n", const_strlen("\n"));
   }
 
   fatal_crash_impl();

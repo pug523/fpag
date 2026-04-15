@@ -61,7 +61,7 @@ class StdoutSink final : public Sink {
 
   void flush() override {
     if (offset_ > 0 && use_buffer_) [[likely]] {
-      write(base::kStdoutFd, buffer_, offset_);
+      base::write(base::kStdoutFd, buffer_, offset_);
       offset_ = 0;
     }
   }
@@ -71,9 +71,9 @@ class StdoutSink final : public Sink {
 
   inline void directly_write(const std::string_view& prefix,
                              const std::string_view& message) {
-    write(base::kStdoutFd, prefix.data(), prefix.size());
-    write(base::kStdoutFd, message.data(), message.size());
-    write(base::kStdoutFd, "\n", 1);
+    base::write(base::kStdoutFd, prefix.data(), prefix.size());
+    base::write(base::kStdoutFd, message.data(), message.size());
+    base::write(base::kStdoutFd, "\n", 1);
   }
 
   char* buffer_;
