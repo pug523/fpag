@@ -59,7 +59,7 @@ if has_config("tests") then
     add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
 end
 if has_config("benchmarks") then
-    add_requires("benchmark v1.9.5", { system = false, configs = stdlib_config() })
+    add_requires("benchmark v1.9.5", { system = false, configs = table.join(stdlib_config(), { exceptions = false, cxflags = "-DBENCHMARK_USE_LIBCXX=" .. (is_clang and not is_plat("windows") and has_config("stdlib") and "ON" or "OFF"), }) })
 end
 if has_config("libunwind") and is_plat("linux") then
   add_requires("libunwind v1.8.3", { system = false, configs = stdlib_config() })
