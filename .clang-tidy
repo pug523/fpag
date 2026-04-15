@@ -74,7 +74,7 @@ CheckOptions:
   - key:          readability-identifier-naming.IgnoreMainLikeFunctions
     value:        1
   - key:          bugprone-assert-side-effect.AssertMacros
-    value:        assert,DCHECK
+    value:        assert,FPAG_DCHECK
   - key:          bugprone-dangling-handle.HandleClasses
     value:        ::std::basic_string_view;::std::span;::absl::string_view;::base::BasicStringPiece;::base::span
   - key:          bugprone-string-constructor.StringNames
@@ -90,4 +90,4 @@ CheckOptions:
   - key:          modernize-loop-convert.MakeReverseRangeHeader
     value:        1
   - key: misc-include-cleaner.IgnoreHeaders
-    value:        '^.*(third_party|src\/build|include|catch2).*$'
+    value:        '^.*(third_party|src[\\/]build|include|catch2).*$'

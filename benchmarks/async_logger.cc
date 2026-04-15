@@ -4,6 +4,7 @@
 
 #include "logging/async/async_logger.h"
 
+#include "base/numeric.h"
 #include "benchmark/benchmark.h"
 #include "logging/log_level.h"
 
