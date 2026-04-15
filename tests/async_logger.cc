@@ -4,11 +4,11 @@
 
 #include "logging/async/async_logger.h"
 
+#include <memory>
 #include <string>
 
+#include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
-#include "logging/async/codec/ref_arg.h"
-#include "logging/log_level.h"
 #include "logging/sink/stdout_sink.h"
 
 namespace logging {
