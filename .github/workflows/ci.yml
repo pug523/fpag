@@ -6,12 +6,13 @@ on:
     paths: &ci_paths
       - src/**
       - tests/**
+      - benchmarks/**
       - third_party/**
       - .github/workflows/ci.yml
       - xmake.lua
+      - .clang-tidy
       - CPPLINT.cfg
       - uv.lock
-      - .clang-tidy
   pull_request:
     branches: [main]
     paths: *ci_paths
