@@ -177,9 +177,8 @@ void* allocate_aliased_pages(usize size) {
 
 #elif FPAG_BUILD_FLAG(IS_OS_MAC)
   char shm_name[64];
-  std::sprintf(
-      shm_name, "/fpag_shm_%d_%llu", getpid(),
-      static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(&size)));
+  std::snprintf(shm_name, sizeof(shm_name), "/fpag_shm_%d_%llu", getpid(),
+                static_cast<u64>(reinterpret_cast<uintptr_t>(&size)));
 
   const i32 fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
   if (fd == -1) {
