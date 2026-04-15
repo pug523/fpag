@@ -210,6 +210,12 @@ void BackendWorker::flush_sinks() {
 void BackendWorker::wait_for_next() {
   u32 spin_count = 0;
   while (queue_.empty()) {
+    if (spin_count % 32 == 0 &&
+        internal_status_.load(std::memory_order_acquire) !=
+            InternalStatus::kRunning) {
+      return;
+    }
+
     if (spin_count < 64) {
     } else if (spin_count < 1024) {
 #if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) && FPAG_BUILD_FLAG(IS_COMPILER_GCC)
