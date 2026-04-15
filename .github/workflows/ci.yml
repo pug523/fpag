@@ -83,6 +83,17 @@ jobs:
           # https://github.com/KyleMayes/install-llvm-action/blob/master/assets.json
           version: "21.1.8"
 
+      - name: setup environment variables
+        shell: bash
+        run: |
+          if [[ "${{ matrix.plat }}" == "macosx" ]]; then
+            xcode-select --install || true
+            SDK=$(xcrun --show-sdk-path)
+            echo "SDKROOT=$SDK" >> $GITHUB_ENV
+            echo "LDFLAGS=-L$SDK/usr/lib" >> $GITHUB_ENV
+            echo "CXXFLAGS=-isysroot $SDK" >> $GITHUB_ENV
+          fi
+
       - name: configure
         shell: bash
         run: |
