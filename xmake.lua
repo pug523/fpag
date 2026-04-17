@@ -29,7 +29,7 @@ add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.compile_commands.autoupdate", { outputdir = "out" })
 
 
-set_targetdir("out/$(plat)-$(arch)-$(mode)")
+-- set_targetdir("out/$(plat)-$(arch)-$(mode)")
 
 local function is_clang()
     return is_config("toolchain", "clang", "llvm") or (not is_config("toolchain", "gcc") and (is_plat("macosx", "iphoneos") or is_host("macosx")))
