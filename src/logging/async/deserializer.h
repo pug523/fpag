@@ -24,6 +24,9 @@ constexpr usize kPayloadHeaderSize = sizeof(DeserializeFunction) +
                                      sizeof(usize) + sizeof(LogLevel) +
                                      sizeof(str::format_string<>);
 
+// For function pointer alignment
+constexpr usize kPayloadAlign = 8;
+
 template <typename... Args>
 class Deserializer {
  public:

@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <thread>
@@ -154,8 +155,11 @@ bool BackendWorker::process_batch() {
   const u64 timestamp_ns = base::current_timestamp_ns();
 
   while (remaining_size > 0) {
-    const char* data_ptr = queue_.peek(kPayloadHeaderSize);
+    const char* const old_head = queue_.head_ptr();
+
+    const char* const data_ptr = queue_.peek(kPayloadHeaderSize, kPayloadAlign);
     const usize payload_size = *reinterpret_cast<const usize*>(data_ptr);
+    FPAG_DCHECK(reinterpret_cast<uintptr_t>(data_ptr) % 8 == 0);
     const DeserializeFunction deserializer =
         *reinterpret_cast<const DeserializeFunction*>(data_ptr + sizeof(usize));
     const LogLevel level = *reinterpret_cast<const LogLevel*>(
@@ -169,8 +173,13 @@ bool BackendWorker::process_batch() {
         deserializer(data_ptr, payload_size, format_buf_ + format_buf_offset,
                      kFormatBufSize - format_buf_offset);
 
-    queue_.discard(payload_size);
-    remaining_size -= payload_size;
+    queue_.discard(payload_size, kPayloadAlign);
+
+    const char* const new_head = queue_.head_ptr();
+    const i64 consumed_bytes = static_cast<i64>(new_head - old_head);
+    FPAG_DCHECK_GE(consumed_bytes, 0);
+
+    remaining_size -= consumed_bytes;
 
     const std::string_view msg{format_buf_ + format_buf_offset, formatted_size};
     entries_buf_.emplace_back(LogEntry{

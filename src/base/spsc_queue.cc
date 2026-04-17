@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <thread>
 
@@ -64,6 +65,7 @@ void SpscQueue::init(usize capacity, Mode mode) {
 
   data_ = static_cast<char*>(mem::allocate_aliased_pages(capacity_));
   FPAG_DCHECK_MSG(data_, "SpscQueue: failed to allocate memory for queue data");
+  FPAG_DCHECK(reinterpret_cast<uintptr_t>(data_) % 8 == 0);
 }
 
 void SpscQueue::reset() {
@@ -79,45 +81,59 @@ void SpscQueue::reset() {
   tail_cache_ = 0;
 }
 
-const char* SpscQueue::peek(usize size) {
+const char* SpscQueue::peek(usize size, usize align) {
   FPAG_DCHECK_GE(size_consumer(), size);
-
-  return head_ptr();  // `data_` is double buffered; safe
+  const usize aligned_head = base::round_up(head_cache_, align);
+  FPAG_DCHECK_GE(size_consumer(), size + aligned_head - head_cache_);
+  // return head_ptr();  // `data_` is double buffered; safe
+  return data_ +
+         (aligned_head & capacity_mask());  // `data_` is double buffered; safe
 }
 
-void SpscQueue::discard(usize size) {
-  head_cache_ += size;
+void SpscQueue::discard(usize size, usize align) {
+  usize aligned_head = base::round_up(head_cache_, align);
+  head_cache_ = aligned_head + size;
   head_.store(head_cache_, std::memory_order_release);
 }
 
-SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest, usize size) {
+SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest,
+                                            usize size,
+                                            usize align) {
   FPAG_DCHECK_LE(size, capacity_);
 
   if (size_consumer() < size) {
     return DequeueStatus::kEmpty;
   }
 
-  const char* src = peek(size);
+  const char* src = peek(size, align);
   std::memcpy(dest, src, size);
 
-  discard(size);
+  discard(size, align);
   return DequeueStatus::kOk;
 }
 
-SpscQueue::EnqueueStatus SpscQueue::reserve(usize size, void** out) {
+SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
+                                            void** out,
+                                            usize align) {
   FPAG_DCHECK_LE(size, capacity_);
+
+  const usize current_tail = tail_cache_;
+  const usize aligned_tail = base::round_up(current_tail, align);
+  const usize padding = aligned_tail - current_tail;
+  const usize total_needed = size + padding;
 
   if (available_producer() < size) [[unlikely]] {
     if (mode_ == Mode::kDrop) {
       return EnqueueStatus::kDropped;
     }
-
-    while (available_producer() < size) {
-      wait_for_space_producer(size);
-    }
+    wait_for_space_producer(total_needed);
   }
 
-  *out = static_cast<void*>(tail_ptr());
+  // Advance only `tail_cache_` to `aligned_tail`, not for `tail_`.
+  tail_cache_ = aligned_tail;
+  *out = static_cast<void*>(data_ + (aligned_tail & capacity_mask()));
+
+  FPAG_DCHECK(reinterpret_cast<uintptr_t>(*out) % align == 0);
   return EnqueueStatus::kOk;
 }
 
@@ -126,10 +142,12 @@ void SpscQueue::commit(usize size) {
   tail_.store(tail_cache_, std::memory_order_release);
 }
 
-SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data, usize size) {
+SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data,
+                                            usize size,
+                                            usize align) {
   FPAG_DCHECK_LE(size, capacity_);
   void* buf = nullptr;
-  EnqueueStatus status = reserve(size, &buf);
+  EnqueueStatus status = reserve(size, &buf, align);
   if (status != EnqueueStatus::kOk) [[unlikely]] {
     return status;
   }
@@ -139,20 +157,8 @@ SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data, usize size) {
   return EnqueueStatus::kOk;
 }
 
-inline usize SpscQueue::capacity_mask() const {
-  return capacity_ - 1;
-}
-
 inline usize SpscQueue::available_producer() const {
   return capacity_ - size_producer();
-}
-
-inline const char* SpscQueue::head_ptr() const {
-  return data_ + (head_ & capacity_mask());
-}
-
-inline char* SpscQueue::tail_ptr() {
-  return data_ + (tail_ & capacity_mask());
 }
 
 void SpscQueue::wait_for_space_producer(usize size) const {

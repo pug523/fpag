@@ -44,18 +44,18 @@ class SpscQueue {
   void reset();
 
   // Zero-copied consumer interface
-  const char* peek(usize size);
-  void discard(usize size);
+  const char* peek(usize size, usize align = 1);
+  void discard(usize size, usize align = 1);
 
   // Copied dequeue (wrapper of peek/discard)
-  DequeueStatus dequeue(void* dest, usize size);
+  DequeueStatus dequeue(void* dest, usize size, usize align = 1);
 
   // Zero-copied producer interface
-  EnqueueStatus reserve(usize size, void** out);
+  EnqueueStatus reserve(usize size, void** out, usize align = 1);
   void commit(usize size);
 
   // Copied enqueue (wrapper of reserve/commit)
-  EnqueueStatus enqueue(const void* new_data, usize size);
+  EnqueueStatus enqueue(const void* new_data, usize size, usize align = 1);
 
   inline usize capacity() const { return capacity_; }
   inline usize size() const {
@@ -72,19 +72,21 @@ class SpscQueue {
     return tail_cache_ - head_.load(std::memory_order_relaxed);
   }
 
+  inline const char* head_ptr() const {
+    return data_ + (head_.load(std::memory_order_acquire) & capacity_mask());
+  }
+
+  inline char* tail_ptr() {
+    return data_ + (tail_.load(std::memory_order_acquire) & capacity_mask());
+  }
+
   static constexpr usize kDefaultCapacity = 1 << 12;                  // 4 KiB
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
 
  private:
-  inline usize capacity_mask() const;
+  inline usize capacity_mask() const { return capacity_ - 1; }
 
   inline usize available_producer() const;
-
-  // For consumer
-  inline const char* head_ptr() const;
-
-  // For producer
-  inline char* tail_ptr();
 
   void wait_for_space_producer(usize size) const;
 

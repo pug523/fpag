@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 #include <string_view>
 #include <type_traits>
 
+#include "base/debug/check.h"
 #include "base/numeric.h"
 #include "base/spsc_queue.h"
 #include "logging/async/codec/codec.h"
@@ -42,7 +44,7 @@ class Serializer {
 
     if constexpr (sizeof...(Args) == 0) {
       void* out_ptr = nullptr;
-      queue->reserve(kPayloadHeaderSize, &out_ptr);
+      queue->reserve(kPayloadHeaderSize, &out_ptr, kPayloadAlign);
       write_header(static_cast<char*>(out_ptr), kPayloadHeaderSize,
                    kDeserializeFunc, level, fmt);
       queue->commit(kPayloadHeaderSize);
@@ -51,7 +53,7 @@ class Serializer {
           (Codec<std::decay_t<Args>>::serialized_size() + ...);
       constexpr usize kTotalPayloadSize = kPayloadHeaderSize + kArgsSize;
       void* out_ptr = nullptr;
-      queue->reserve(kTotalPayloadSize, &out_ptr);
+      queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
       write_header(static_cast<char*>(out_ptr), kTotalPayloadSize,
                    kDeserializeFunc, level, fmt);
 
@@ -82,7 +84,7 @@ class Serializer {
       void* out_ptr = nullptr;
       const usize total_payload_size =
           kPayloadHeaderSize + args_serialized_size;
-      queue->reserve(total_payload_size, &out_ptr);
+      queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
       write_header(static_cast<char*>(out_ptr), total_payload_size,
                    kDeserializeFunc, level, fmt);
       std::memcpy(static_cast<char*>(out_ptr) + kPayloadHeaderSize, args_buf,
@@ -100,6 +102,8 @@ class Serializer {
       LogLevel level,
       str::format_string<Args...> fmt_string) {
     char* out_cursor = out_ptr;
+
+    FPAG_DCHECK(reinterpret_cast<uintptr_t>(out_cursor) % 8 == 0);
 
     std::memcpy(out_cursor, &total_payload_size, sizeof(total_payload_size));
     out_cursor += sizeof(total_payload_size);
