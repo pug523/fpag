@@ -43,6 +43,7 @@ local function stdlib_config()
     return { }
 end
 
+local subdirs = "src tests benchmarks"
 local function source_files()
     local files = os.files("src/**.cc")
     table.join2(files, os.files("src/**.h"))
@@ -59,7 +60,7 @@ local function source_files()
     return files
 end
 
-add_requires("xxhash v0.8.3", { system = false })
+add_requires("xxhash v0.8.3", { system = false, configs = stdlib_config() })
 if has_config("tests") then
     add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
 end
@@ -100,7 +101,7 @@ task("lint")
     set_menu({ usage = "xmake lint", description = "lint using cpplint & clang-format" })
     on_run( function ()
         os.run("uv sync")
-        print(os.iorun("uv run cpplint --recursive src tests"):trim())
+        print(os.iorun("uv run cpplint --recursive " .. subdirs):trim())
         local files = source_files()
         if #files > 0 then
             os.runv("clang-format", table.join({ "--dry-run", "--fail-on-incomplete-format", "-i" }, files))
@@ -108,7 +109,7 @@ task("lint")
     end)
 task_end()
 
--- events
+-- Events
 after_build( function (target)
   if has_config("timetrace") then
     local trace_dir = path.join(os.projectdir(), "out/timetrace")
@@ -151,90 +152,88 @@ after_run( function (target)
   end
 end)
 
--- targets
-target("fpag.root_config")
-  set_kind("phony", { public = true })
-  set_languages("c++23", { public = true })
-  set_warnings("all", "extra", "error", "pedantic", { public = true })
+-- Rules
+rule("fpag.common_config")
+  on_load(function (target)
+    target:set("languages", "c++23", { public = true })
+    target:set("warnings", "all", "extra", "error", "pedantic", { public = true })
+    target:set("encodings", "source:utf-8", "utf-8")
 
-  set_encodings("source:utf-8", "utf-8")
+    target:add("includedirs", "src", "third_party", { public = true })
+    target:add("defines", "FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
+    target:add("defines", "__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
 
-  add_includedirs("src", "third_party", { public = true })
-  add_defines("FPAG_PROJECT_VERSION=\"" .. project_version .. "\"", { public = true })
-  add_defines("__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS", { public = true })
+    target:set("exceptions", "none", { public = true })
+    target:add("cxxflags", "-fno-exceptions", "-fno-rtti", { public = true })
 
-  set_exceptions("none", { public = true })
-  add_cxxflags("-fno-exceptions", "-fno-rtti", { public = true })
+    if is_clang or is_gcc then
+      target:add("cxxflags", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
+      target:add("cxxflags", "-fstack-protector-strong", { public = true })
 
-  if is_clang or is_gcc then
-    add_cxxflags("-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
-    add_cxxflags("-fstack-protector-strong", { public = true })
-
-    if is_mode("debug") and not is_plat("windows") then
-      add_cxxflags("-rdynamic", { public = true })
-      add_ldflags("-rdynamic", { public = true })
+      if is_mode("debug") and not is_plat("windows") then
+        target:add("cxxflags", "-rdynamic", { public = true })
+        target:add("ldflags", "-rdynamic", { public = true })
+      end
     end
-  end
 
-  if is_plat("linux") then
+    if is_plat("linux") then
+      if is_mode("debug") then
+        target:add("ldflags", "-Wl,--build-id", { public = true })
+      end
+    end
+
     if is_mode("debug") then
-      add_ldflags("-Wl,--build-id", { public = true })
+      target:set("symbols", "debug", { public = true })
+      target:set("optimize", "none", { public = true })
+      target:add("cxxflags", "-fno-omit-frame-pointer", "-g3", { public = true })
+      target:add("defines", "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
+    elseif is_mode("release") then
+      target:set("symbols", "hidden", { public = true })
+      target:set("optimize", "fastest", { public = true })
+      target:set("strip", "all", { public = true })
     end
-  elseif is_plat("macosx") then
-  elseif is_plat("windows") then
-  end
 
-  if is_mode("debug") then
-    set_symbols("debug", { public = true })
-    set_optimize("none", { public = true })
-    add_cxxflags("-fno-omit-frame-pointer", "-g3", { public = true })
-    add_defines("LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP", { public = true })
-  elseif is_mode("release") then
-    set_symbols("hidden", { public = true })
+    if is_clang and has_config("stdlib") then
+      target:add("cxxflags", "-stdlib=" .. get_config("stdlib"), { public = true })
+      target:add("ldflags", "-stdlib=" .. get_config("stdlib"), { public = true })
+    end
 
-    -- set_optimize("smallest", { public = true })
-    -- set_optimize("faster", { public = true })
-    set_optimize("fastest", { public = true })
+    if has_config("sanitizers") and is_mode("debug") and not is_plat("windows") then
+      target:set("policy", "build.sanitizer.address", true)
+      target:set("policy", "build.sanitizer.undefined", true)
+      target:set("policy", "build.sanitizer.leak", true)
+    end
 
-    set_strip("all", { public = true })
-  end
+    if has_config("xray") and is_mode("debug") then
+      target:add("cxxflags", "-fxray-instrument", "-fxray-instruction-threshold=200", { public = true })
+      target:add("ldflags", "-fxray-instrument", { public = true })
+    end
 
-  if is_clang and has_config("stdlib") then
-    add_cxxflags("-stdlib=" .. get_config("stdlib"), { public = true })
-    add_ldflags("-stdlib=" .. get_config("stdlib"), { public = true })
-  end
+    if has_config("coverage") and not is_plat("windows") then
+      target:add("cxxflags", "-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
+      target:add("ldflags", "-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
+    end
 
-  if has_config("sanitizers") and is_mode("debug") and not is_plat("windows") then
-    set_policy("build.sanitizer.address", true)
-    -- set_policy("build.sanitizer.memory", true)
-    set_policy("build.sanitizer.undefined", true)
-    set_policy("build.sanitizer.leak", true)
-    -- add_cxflags("-fsanitize=thread")
-  end
-  if has_config("xray") and is_mode("debug") then
-    add_cxxflags("-fxray-instrument", "-fxray-instruction-threshold=200", { public = true })
-    add_ldflags("-fxray-instrument", { public = true })
-  end
-  if has_config("coverage") and not is_plat("windows") then
-    add_cxxflags("-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
-    add_ldflags("-fprofile-instr-generate", "-fcoverage-mapping", { public = true })
-  end
-  if has_config("optreport") and is_mode("release") then
-    add_cxxflags("-fsave-optimization-record", { public = true })
-  end
-  if has_config("timetrace") then
-    add_cxxflags("-ftime-trace", { public = true })
-  end
-  if has_config("native") and not is_cross() and is_mode("release") then
-    add_cxxflags("-march=native", { public = true })
-  end
-  if has_config("unitybuild") then
-    add_rules("c++.unity_build", { batchsize = 12 })
-  end
-target_end()
+    if has_config("optreport") and is_mode("release") then
+      target:add("cxxflags", "-fsave-optimization-record", { public = true })
+    end
 
+    if has_config("timetrace") then
+      target:add("cxxflags", "-ftime-trace", { public = true })
+    end
+
+    if has_config("native") and not is_cross() and is_mode("release") then
+      target:add("cxxflags", "-march=native", { public = true })
+    end
+
+    if has_config("unitybuild") then
+      target:add("rules", "c++.unity_build", { batchsize = 12 })
+    end
+  end)
+
+-- targets
 target("fpag")
-  add_deps("fpag.root_config", { public = false })
+  add_rules("fpag.common_config", { public = false })
   set_kind("$(kind)")
   add_files("src/**.cc")
   add_packages("xxhash", { public = true })
@@ -266,7 +265,8 @@ target_end()
 
 target("tests")
   set_enabled(has_config("tests"))
-  add_deps("fpag.root_config", "fpag")
+  add_rules("fpag.common_config", { public = false })
+  add_deps("fpag")
   set_kind("binary")
   add_files("tests/**.cc")
   add_packages("catch2")
@@ -280,7 +280,8 @@ target_end()
 
 target("benchmarks")
   set_enabled(has_config("benchmarks"))
-  add_deps("fpag.root_config", "fpag")
+  add_rules("fpag.common_config", { public = false })
+  add_deps("fpag")
   set_kind("binary")
   add_files("benchmarks/**.cc")
   add_packages("benchmark")
