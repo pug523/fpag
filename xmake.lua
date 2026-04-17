@@ -31,12 +31,16 @@ add_rules("plugin.compile_commands.autoupdate", { outputdir = "out" })
 
 set_targetdir("out/$(plat)-$(arch)-$(mode)")
 
-local is_gcc = is_config("toolchain", "gcc")
-local is_clang = is_config("toolchain", "clang", "llvm")
+local function is_clang()
+    return is_config("toolchain", "clang", "llvm") or (not is_config("toolchain", "gcc") and (is_plat("macosx", "iphoneos") or is_host("macosx")))
+end
+local function is_gcc()
+    return is_config("toolchain", "gcc") or (not is_config("toolchain", "clang", "llvm") and is_plat("linux"))
+end
 
 -- Helper functions
 local function stdlib_config()
-    if is_clang and not is_plat("windows") and has_config("stdlib") then
+    if is_clang() and not is_plat("windows") and has_config("stdlib") then
         local std = get_config("stdlib")
         return { cxxflags = "-stdlib=" .. std, ldflags = "-stdlib=" .. std }
     end
@@ -65,7 +69,7 @@ if has_config("tests") then
     add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
 end
 if has_config("benchmarks") then
-    add_requires("benchmark v1.9.5", { system = false, configs = table.join(stdlib_config(), { exceptions = false, cxflags = "-DBENCHMARK_USE_LIBCXX=" .. (is_clang and not is_plat("windows") and has_config("stdlib") and "ON" or "OFF"), }) })
+    add_requires("benchmark v1.9.5", { system = false, configs = table.join(stdlib_config(), { exceptions = false, cxflags = "-DBENCHMARK_USE_LIBCXX=" .. (is_clang() and not is_plat("windows") and has_config("stdlib") and "ON" or "OFF"), }) })
 end
 if has_config("libunwind") and is_plat("linux") then
   add_requires("libunwind v1.8.3", { system = false, configs = stdlib_config() })
@@ -166,7 +170,7 @@ rule("fpag.common_config")
     target:set("exceptions", "none", { public = true })
     target:add("cxxflags", "-fno-exceptions", "-fno-rtti", { public = true })
 
-    if is_clang or is_gcc then
+    if is_clang() or is_gcc() then
       target:add("cxxflags", "-Wconversion", "-Wsign-conversion", "-Wnull-dereference", "-Wformat=2", "-Wundef", { public = true })
       target:add("cxxflags", "-fstack-protector-strong", { public = true })
 
@@ -193,7 +197,7 @@ rule("fpag.common_config")
       target:set("strip", "all", { public = true })
     end
 
-    if is_clang and has_config("stdlib") then
+    if is_clang() and has_config("stdlib") then
       target:add("cxxflags", "-stdlib=" .. get_config("stdlib"), { public = true })
       target:add("ldflags", "-stdlib=" .. get_config("stdlib"), { public = true })
     end
@@ -273,7 +277,7 @@ target("tests")
   add_includedirs("tests", { public = true })
 
   -- catch2 uses c2y extension in their macro
-  if is_clang then add_cxxflags("-Wno-c2y-extensions") end
+  if is_clang() then add_cxxflags("-Wno-c2y-extensions") end
 
   set_default(false)
 target_end()
