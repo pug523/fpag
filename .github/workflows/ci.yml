@@ -19,7 +19,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+        with:
+          # https://github.com/astral-sh/uv/tags
+          version: "0.10.7"
+          enable-cache: true
+
+      - name: sync python dependencies with uv
+        run: uv sync
+        shell: bash
+
+      - name: lint
+        shell: bash
+        run: |
+          xmake config --toolchain=llvm
+          xmake check api
+          xmake check clang
+
+          # runs `uv sync && uv run cpplint`
+          xmake lint
   build:
+    needs: lint
     strategy:
       matrix:
         include:
@@ -110,7 +137,7 @@ jobs:
 
       - name: build
         shell: bash
-        run: xmake build
+        run: xmake build -w
 
       - name: build tests and run
         shell: bash
@@ -121,11 +148,3 @@ jobs:
         with:
           name: "${{ matrix.os }}"
           path: out/*
-
-      - name: analyze statically
-        if: matrix.os == 'ubuntu-24.04'
-        shell: bash
-        run: |
-          xmake check api
-          xmake check clang
-          xmake lint
