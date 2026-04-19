@@ -92,6 +92,7 @@ class SyncLogger {
       return;
     }
 
+    // TODO: Add memory buffer as member field to enable log buffering.
     char stack_buf[kLocalStackBufSize];
     const str::format_to_n_result result = str::format_to_n(
         stack_buf, kLocalStackBufSize, fmt, std::forward<Args>(args)...);
