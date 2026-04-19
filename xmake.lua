@@ -26,10 +26,8 @@ set_policy("build.optimization.lto", has_config("lto"))
 set_policy("build.c++.msvc.runtime", "MD")
 
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
-add_rules("plugin.compile_commands.autoupdate", { outputdir = "out" })
+add_rules("plugin.compile_commands.autoupdate")
 
-
--- set_targetdir("out/$(plat)-$(arch)-$(mode)")
 
 local function is_clang()
     return is_config("toolchain", "clang", "llvm") or (not is_config("toolchain", "gcc") and (is_plat("macosx", "iphoneos") or is_host("macosx")))
