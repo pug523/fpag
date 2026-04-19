@@ -301,24 +301,21 @@ on_load(function(target)
   )
   target:add(
     "defines",
-    "__STDC_CONSTANT_MACROS",
-    "__STDC_FORMAT_MACROS",
+    { "__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS" },
     { public = true }
   )
 
   target:set("exceptions", "none", { public = true })
-  target:add("cxxflags", "-fno-exceptions", "-fno-rtti", { public = true })
+  target:add("cxxflags", { "-fno-exceptions", "-fno-rtti" }, { public = true })
 
   if is_clang() or is_gcc() then
-    target:add(
-      "cxxflags",
+    target:add("cxxflags", {
       "-Wconversion",
       "-Wsign-conversion",
       "-Wnull-dereference",
       "-Wformat=2",
       "-Wundef",
-      { public = true }
-    )
+    }, { public = true })
     target:add("cxxflags", "-fstack-protector-strong", { public = true })
 
     if is_mode("debug") and not is_plat("windows") then
@@ -339,8 +336,7 @@ on_load(function(target)
     target:add("cxxflags", "-fno-omit-frame-pointer", "-g3", { public = true })
     target:add(
       "defines",
-      "LLVM_ENABLE_STATS",
-      "LLVM_ENABLE_DUMP",
+      { "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP" },
       { public = true }
     )
   elseif is_mode("release") then
@@ -373,14 +369,12 @@ on_load(function(target)
   if coverage(target) then
     target:add(
       "cxxflags",
-      "-fprofile-instr-generate",
-      "-fcoverage-mapping",
+      { "-fprofile-instr-generate", "-fcoverage-mapping" },
       { public = true }
     )
     target:add(
       "ldflags",
-      "-fprofile-instr-generate",
-      "-fcoverage-mapping",
+      { "-fprofile-instr-generate", "-fcoverage-mapping" },
       { public = true }
     )
   end
