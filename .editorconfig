@@ -12,8 +12,9 @@ trim_trailing_whitespace = true
 max_line_length = 80
 
 [*.py]
+# black formatter
 indent_size = 4
-max_line_length = 88 # black formatter
+max_line_length = 88
 
 [*.md]
 # double whitespace at end of line
