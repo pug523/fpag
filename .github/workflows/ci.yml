@@ -36,6 +36,20 @@ jobs:
         run: uv sync
         shell: bash
 
+      - name: setup xmake
+        uses: xmake-io/github-action-setup-xmake@3a1a5dddfc7fa625d9a698738334bf55655a861a
+        with:
+          # https://github.com/xmake-io/xmake/tags
+          xmake-version: "3.0.7"
+          actions-cache-folder: ".xmake-cache"
+          actions-cache-key: "${{ matrix.os }}-xmake"
+          package-cache: true
+          package-cache-key: "${{ matrix.os }}-packages"
+          build-cache: true
+          build-cache-path: "build/.build_cache"
+          build-cache-key: "${{ matrix.os }}-build"
+          project-path: "."
+
       - name: lint
         shell: bash
         run: |
