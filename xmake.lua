@@ -157,20 +157,27 @@ local function source_files()
 end
 
 add_requires("xxhash v0.8.3", { system = false, configs = stdlib_config() })
+
 if has_config("tests") then
   add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
 end
+
 if has_config("benchmarks") then
   add_requires("benchmark v1.9.5", {
     system = false,
     configs = table.join(stdlib_config(), {
       exceptions = false,
-      cxflags = "-DBENCHMARK_USE_LIBCXX=" .. (is_clang() and not is_plat(
-        "windows"
-      ) and has_config("stdlib") and "ON" or "OFF"),
+      cxflags = "-DBENCHMARK_USE_LIBCXX="
+        .. (
+          stdlib_config()
+            and (has_config("stdlib") and get_config("stdlib") == "libc++")
+            and "ON"
+          or "OFF"
+        ),
     }),
   })
 end
+
 if libunwind() then
   add_requires(
     "libunwind v1.8.3",
@@ -426,9 +433,7 @@ if is_plat("windows") then
 end
 
 add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
-
 add_configfiles("build_info.h")
-
 set_default(true)
 target_end()
 
@@ -440,12 +445,10 @@ set_kind("binary")
 add_files("tests/**.cc")
 add_packages("catch2")
 add_includedirs("tests", { public = true })
-
 -- catch2 uses c2y extension in their macro
 if is_clang() then
   add_cxxflags("-Wno-c2y-extensions")
 end
-
 set_default(false)
 target_end()
 
@@ -457,6 +460,5 @@ set_kind("binary")
 add_files("benchmarks/**.cc")
 add_packages("benchmark")
 add_includedirs("benchmarks", { public = true })
-
 set_default(false)
 target_end()
