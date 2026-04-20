@@ -4,12 +4,18 @@
 
 #pragma once
 
-#include <new>
-
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 namespace mem {
 
-constexpr usize kCacheLineSize = std::hardware_destructive_interference_size;
+#if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
+constexpr usize kCacheLineSize = 64;
+#elif FPAG_BUILD_FLAG(IS_ARCH_32_BITS)
+constexpr usize kCacheLineSize = 32;
+#else
+#error "Unsupported cpu architecture"
+// constexpr usize kCacheLineSize = 64;
+#endif
 
 }  // namespace mem
