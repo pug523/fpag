@@ -438,7 +438,7 @@ if is_plat("windows") then
   add_links("dbghelp", "onecore")
 end
 
-add_headerfiles("src/(include/**.h)")
+add_headerfiles("(include/**.h)")
 add_configfiles("build_info.h")
 set_default(true)
 target_end()
