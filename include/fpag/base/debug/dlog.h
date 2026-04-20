@@ -50,6 +50,6 @@ inline void dlog_internal(const char* file,
 #else
 
 #define DLOG(fmt, ...) \
-  noop(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
+  NOOP(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 
 #endif  // FPAG_BUILD_FLAG(IS_DEBUG)
