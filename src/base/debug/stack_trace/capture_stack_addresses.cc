@@ -2,11 +2,11 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/capture_stack_addresses.h"
+#include "fpag/base/debug/stack_trace/capture_stack_addresses.h"
 
-#include "base/numeric.h"
-#include "build/attributes.h"
-#include "build/build_config.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/attributes.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(USE_LIBUNWIND)
 #include <libunwind.h>

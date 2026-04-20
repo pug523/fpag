@@ -2,10 +2,10 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "mem/page_allocator.h"
+#include "fpag/mem/page_allocator.h"
 
-#include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/numeric.h"
 
 namespace mem {
 

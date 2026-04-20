@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "logging/async/backend_worker.h"
+#include "fpag/logging/async/backend_worker.h"
 
 #include <atomic>
 #include <chrono>
@@ -12,14 +12,14 @@
 #include <thread>
 #include <utility>
 
-#include "base/debug/check.h"
-#include "base/numeric.h"
-#include "base/spsc_queue.h"
-#include "base/time_util.h"
-#include "logging/async/deserializer.h"
-#include "logging/log_entry.h"
-#include "logging/log_level.h"
-#include "logging/sink/sink.h"
+#include "fpag/base/debug/check.h"
+#include "fpag/base/numeric.h"
+#include "fpag/base/spsc_queue.h"
+#include "fpag/base/time_util.h"
+#include "fpag/logging/async/deserializer.h"
+#include "fpag/logging/log_entry.h"
+#include "fpag/logging/log_level.h"
+#include "fpag/logging/sink/sink.h"
 
 namespace logging {
 

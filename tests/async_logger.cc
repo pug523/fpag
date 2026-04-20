@@ -2,14 +2,14 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "logging/async/async_logger.h"
+#include "fpag/logging/async/async_logger.h"
 
 #include <memory>
 #include <string>
 
-#include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
-#include "logging/sink/stdout_sink.h"
+#include "fpag/base/numeric.h"
+#include "fpag/logging/sink/stdout_sink.h"
 
 namespace logging {
 

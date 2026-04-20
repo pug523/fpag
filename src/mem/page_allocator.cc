@@ -2,13 +2,13 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "mem/page_allocator.h"
+#include "fpag/mem/page_allocator.h"
 
 #include <cstdint>
 
-#include "base/debug/check.h"
-#include "base/numeric.h"
-#include "build/build_config.h"
+#include "fpag/base/debug/check.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>

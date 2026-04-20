@@ -2,15 +2,15 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/demangle.h"
+#include "fpag/base/debug/stack_trace/demangle.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include <string_view>
 
-#include "base/numeric.h"
-#include "build/build_config.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <cxxabi.h>

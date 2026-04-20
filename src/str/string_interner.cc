@@ -2,12 +2,12 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "str/string_interner.h"
+#include "fpag/str/string_interner.h"
 
 #include <string_view>
 
-#include "str/string_pool.h"
-#include "str/string_pool_id.h"
+#include "fpag/str/string_pool.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace str {
 

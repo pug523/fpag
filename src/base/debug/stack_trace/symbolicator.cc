@@ -2,15 +2,15 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/symbolicator.h"
+#include "fpag/base/debug/stack_trace/symbolicator.h"
 
 #include <cstdint>
 #include <cstring>
 #include <utility>
 
-#include "base/debug/stack_trace/demangle.h"
-#include "base/numeric.h"
-#include "build/build_config.h"
+#include "fpag/base/debug/stack_trace/demangle.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <dlfcn.h>
@@ -28,7 +28,7 @@
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
 // TODO: Add support for Linux/Android stack trace file / line / column
 // resolution provided by DWARF parser.
-// #include "base/debug/dwarf/provider.h"
+// #include "fpag/base/debug/dwarf/provider.h"
 #endif
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX)
@@ -37,7 +37,7 @@
 #include <memory>
 #include <string>
 
-#include "str/format_util.h"
+#include "fpag/str/format_util.h"
 #endif
 
 namespace base {

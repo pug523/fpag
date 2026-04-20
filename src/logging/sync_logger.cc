@@ -2,18 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "logging/sync_logger.h"
+#include "fpag/logging/sync_logger.h"
 
 #include <algorithm>
 #include <atomic>
 #include <memory>
 #include <utility>
 
-#include "base/console.h"
-#include "logging/log_level.h"
-#include "logging/sink/sink.h"
-#include "logging/sink/stdout_sink.h"
-#include "mem/page_allocator.h"
+#include "fpag/base/console.h"
+#include "fpag/logging/log_level.h"
+#include "fpag/logging/sink/sink.h"
+#include "fpag/logging/sink/stdout_sink.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace logging {
 

@@ -2,14 +2,14 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/module_map.h"
+#include "fpag/base/debug/stack_trace/module_map.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 
-#include "base/numeric.h"
-#include "build/build_config.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
 #include <dlfcn.h>

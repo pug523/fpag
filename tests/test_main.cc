@@ -2,11 +2,11 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/console.h"
-#include "base/debug/signal_handler.h"
-#include "base/debug/terminate_handler.h"
-#include "base/numeric.h"
 #include "catch2/catch_session.hpp"
+#include "fpag/base/console.h"
+#include "fpag/base/debug/signal_handler.h"
+#include "fpag/base/debug/terminate_handler.h"
+#include "fpag/base/numeric.h"
 
 #define CATCH_CONFIG_RUNNER
 

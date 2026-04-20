@@ -2,14 +2,14 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/fatal.h"
+#include "fpag/base/debug/fatal.h"
 
 #include <cstdlib>
 #include <string_view>
 
-#include "base/numeric.h"
-#include "build/build_config.h"
-#include "logging/sync_logger.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
+#include "fpag/logging/sync_logger.h"
 
 #if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #include <intrin.h>

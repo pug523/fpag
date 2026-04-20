@@ -2,15 +2,15 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "str/string_pool.h"
+#include "fpag/str/string_pool.h"
 
 #include <atomic>
 #include <cstring>
 #include <string_view>
 #include <utility>
 
-#include "base/numeric.h"
-#include "str/string_pool_id.h"
+#include "fpag/base/numeric.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace str {
 

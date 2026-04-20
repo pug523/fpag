@@ -2,16 +2,16 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "mem/arena.h"
+#include "fpag/mem/arena.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 
-#include "base/numeric.h"
 #include "catch2/catch_test_macros.hpp"
-#include "mem/arena_ptr.h"
-#include "mem/page_allocator.h"
+#include "fpag/base/numeric.h"
+#include "fpag/mem/arena_ptr.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace mem {
 

@@ -2,11 +2,11 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "logging/async/async_logger.h"
+#include "fpag/logging/async/async_logger.h"
 
-#include "base/numeric.h"
 #include "benchmark/benchmark.h"
-#include "logging/log_level.h"
+#include "fpag/base/numeric.h"
+#include "fpag/logging/log_level.h"
 
 namespace logging {
 

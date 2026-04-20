@@ -2,18 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/check.h"
+#include "fpag/base/debug/check.h"
 
 #include <cstdio>
 #include <cstring>
 #include <string_view>
 
-#include "base/debug/fatal.h"
-#include "base/debug/stack_trace/stack_trace.h"
-#include "base/debug/string.h"
-#include "base/io_util.h"
-#include "base/numeric.h"
-#include "logging/sync_logger.h"
+#include "fpag/base/debug/fatal.h"
+#include "fpag/base/debug/stack_trace/stack_trace.h"
+#include "fpag/base/debug/string.h"
+#include "fpag/base/io_util.h"
+#include "fpag/base/numeric.h"
+#include "fpag/logging/sync_logger.h"
 
 namespace base::internal {
 

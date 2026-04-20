@@ -2,18 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/stack_trace.h"
+#include "fpag/base/debug/stack_trace/stack_trace.h"
 
 #include <string>
 #include <vector>
 
-#include "base/debug/check.h"
-#include "base/debug/stack_trace/capture_stack_addresses.h"
-#include "base/debug/stack_trace/formatter.h"
-#include "base/debug/stack_trace/stack_frame.h"
-#include "base/debug/stack_trace/symbolicator.h"
-#include "base/numeric.h"
-#include "logging/sync_logger.h"
+#include "fpag/base/debug/check.h"
+#include "fpag/base/debug/stack_trace/capture_stack_addresses.h"
+#include "fpag/base/debug/stack_trace/formatter.h"
+#include "fpag/base/debug/stack_trace/stack_frame.h"
+#include "fpag/base/debug/stack_trace/symbolicator.h"
+#include "fpag/base/numeric.h"
+#include "fpag/logging/sync_logger.h"
 
 namespace base {
 

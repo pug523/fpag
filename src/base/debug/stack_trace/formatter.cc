@@ -2,15 +2,15 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/stack_trace/formatter.h"
+#include "fpag/base/debug/stack_trace/formatter.h"
 
 #include <cstdint>
 #include <string>
 #include <string_view>
 
-#include "base/debug/stack_trace/stack_frame.h"
-#include "base/numeric.h"
-#include "str/format_util.h"
+#include "fpag/base/debug/stack_trace/stack_frame.h"
+#include "fpag/base/numeric.h"
+#include "fpag/str/format_util.h"
 
 namespace base {
 

@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/spsc_queue.h"
+#include "fpag/base/spsc_queue.h"
 
 #include <atomic>
 #include <chrono>
@@ -10,11 +10,11 @@
 #include <cstring>
 #include <thread>
 
-#include "base/debug/check.h"
-#include "base/math_util.h"
-#include "base/numeric.h"
-#include "build/build_config.h"
-#include "mem/page_allocator.h"
+#include "fpag/base/debug/check.h"
+#include "fpag/base/math_util.h"
+#include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace base {
 

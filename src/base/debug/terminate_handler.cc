@@ -2,13 +2,13 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/terminate_handler.h"
+#include "fpag/base/debug/terminate_handler.h"
 
 #include <exception>
 
-#include "base/debug/fatal.h"
-#include "base/debug/stack_trace/stack_trace.h"
-#include "logging/sync_logger.h"
+#include "fpag/base/debug/fatal.h"
+#include "fpag/base/debug/stack_trace/stack_trace.h"
+#include "fpag/logging/sync_logger.h"
 
 namespace base {
 

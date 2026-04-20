@@ -300,7 +300,7 @@ on_load(function(target)
   )
   target:set("encodings", "source:utf-8", "utf-8")
 
-  target:add("includedirs", "src", "third_party", { public = true })
+  target:add("includedirs", "src", "include", "third_party", { public = true })
   target:add(
     "defines",
     'FPAG_PROJECT_VERSION="' .. project_version .. '"',
@@ -437,7 +437,7 @@ if is_plat("windows") then
   add_links("dbghelp", "onecore")
 end
 
-add_headerfiles("src/(**.h)", { prefixdir = "fpag" })
+add_headerfiles("src/(include/**.h)")
 add_configfiles("build_info.h")
 set_default(true)
 target_end()

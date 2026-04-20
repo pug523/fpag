@@ -2,9 +2,9 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "base/debug/signal_handler.h"
+#include "fpag/base/debug/signal_handler.h"
 
-#include "build/build_config.h"
+#include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>
@@ -26,10 +26,10 @@
 #include <ctime>
 #include <thread>
 
-#include "base/debug/fatal.h"
-#include "base/debug/stack_trace/stack_trace.h"
-#include "base/numeric.h"
-#include "logging/sync_logger.h"
+#include "fpag/base/debug/fatal.h"
+#include "fpag/base/debug/stack_trace/stack_trace.h"
+#include "fpag/base/numeric.h"
+#include "fpag/logging/sync_logger.h"
 
 namespace base {
 
