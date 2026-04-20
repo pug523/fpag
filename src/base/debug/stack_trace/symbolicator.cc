@@ -74,7 +74,9 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
                      "addr2line -e {} -f -p -C {:x} 2>/dev/null\0",
                      dl.dli_fname, offset);
 
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command, "r"), pclose);
+    const auto deleter = [](FILE* f) { pclose(f); };
+    std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"), deleter);
+
     if (pipe) {
       char buffer[kBufSize];
 
