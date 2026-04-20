@@ -290,13 +290,6 @@ after_run(function(target)
   end
 end)
 
--- Define macros on global context
-if has_config("fmtlib") then
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=1")
-else
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=0")
-end
-
 -- Rules
 rule("fpag.common_config")
 on_load(function(target)
@@ -411,14 +404,17 @@ add_files("src/**.cc")
 add_packages("xxhash", { public = true })
 
 if libunwind() then
-  add_packages("libunwind")
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1")
+  add_packages("libunwind", { public = false })
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1", { public = false })
 else
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0")
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0", { public = false })
 end
 
 if has_config("fmtlib") then
   add_packages("fmt", { public = true })
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=1", { public = true })
+else
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=0", { public = true })
 end
 
 if is_plat("windows") then
