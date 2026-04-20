@@ -186,7 +186,7 @@ if libunwind() then
   )
 end
 if has_config("fmtlib") then
-  add_requires("fmt", { system = false, configs = stdlib_config() })
+  add_requires("fmt 12.1.0", { system = false, configs = stdlib_config() })
 end
 
 -- Tasks
