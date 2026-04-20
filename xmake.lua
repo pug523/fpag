@@ -293,28 +293,20 @@ end)
 -- Rules
 rule("fpag.common_config")
 on_load(function(target)
-  target:set("languages", "c++23", { public = true })
-  target:set(
-    "warnings",
-    { "all", "extra", "error", "pedantic" },
-    { public = true }
-  )
+  target:set("languages", "c++23")
+  target:set("warnings", { "all", "extra", "error", "pedantic" })
   target:set("encodings", "source:utf-8", "utf-8")
 
-  target:add("includedirs", "src", "include", "third_party", { public = true })
+  target:add("includedirs", "src", "include", "third_party")
   target:add(
     "defines",
     'FPAG_PROJECT_VERSION="' .. project_version .. '"',
     { public = true }
   )
-  target:add(
-    "defines",
-    { "__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS" },
-    { public = true }
-  )
+  target:add("defines", { "__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS" })
 
-  target:set("exceptions", "none", { public = true })
-  target:add("cxxflags", { "-fno-exceptions", "-fno-rtti" }, { public = true })
+  target:set("exceptions", "none")
+  target:add("cxxflags", { "-fno-exceptions", "-fno-rtti" })
 
   if is_clang() or is_gcc() then
     target:add("cxxflags", {
@@ -323,45 +315,45 @@ on_load(function(target)
       "-Wnull-dereference",
       "-Wformat=2",
       "-Wundef",
-    }, { public = true })
-    target:add("cxxflags", "-fstack-protector-strong", { public = true })
+    })
+    target:add("cxxflags", "-fstack-protector-strong")
 
     if is_mode("debug") and not is_plat("windows") then
-      target:add("cxxflags", "-rdynamic", { public = true })
-      target:add("ldflags", "-rdynamic", { public = true })
+      target:add("cxxflags", "-rdynamic")
+      target:add("ldflags", "-rdynamic")
     end
   end
 
   -- some libraries use c2y extension in their macro
   if is_clang() then
-    target:add("cxxflags", "-Wno-c2y-extensions", { public = true })
+    target:add("cxxflags", "-Wno-c2y-extensions")
   end
 
   if is_plat("linux") then
     if is_mode("debug") then
-      target:add("ldflags", "-Wl,--build-id", { public = true })
+      target:add("ldflags", "-Wl,--build-id")
     end
   end
 
   if is_mode("debug") then
-    target:set("symbols", "debug", { public = true })
-    target:set("optimize", "none", { public = true })
-    target:add("cxxflags", "-fno-omit-frame-pointer", "-g3", { public = true })
+    target:set("symbols", "debug")
+    target:set("optimize", "none")
+    target:add("cxxflags", { "-fno-omit-frame-pointer", "-g3" })
     target:add(
       "defines",
       { "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP" },
       { public = true }
     )
   elseif is_mode("release") then
-    target:set("symbols", "hidden", { public = true })
-    target:set("optimize", "fastest", { public = true })
-    target:set("strip", "all", { public = true })
+    target:set("symbols", "hidden")
+    target:set("optimize", "fastest")
+    target:set("strip", "all")
   end
 
   if is_clang() and has_config("stdlib") then
     local sl = get_config("stdlib")
-    target:add("cxxflags", "-stdlib=" .. sl, { public = true })
-    target:add("ldflags", "-stdlib=" .. sl, { public = true })
+    target:add("cxxflags", "-stdlib=" .. sl)
+    target:add("ldflags", "-stdlib=" .. sl)
   end
 
   if sanitizers() then
@@ -373,31 +365,22 @@ on_load(function(target)
   if xray() then
     target:add(
       "cxxflags",
-      { "-fxray-instrument", "-fxray-instruction-threshold=200" },
-      { public = true }
+      { "-fxray-instrument", "-fxray-instruction-threshold=200" }
     )
-    target:add("ldflags", "-fxray-instrument", { public = true })
+    target:add("ldflags", "-fxray-instrument")
   end
 
   if coverage(target) then
-    target:add(
-      "cxxflags",
-      { "-fprofile-instr-generate", "-fcoverage-mapping" },
-      { public = true }
-    )
-    target:add(
-      "ldflags",
-      { "-fprofile-instr-generate", "-fcoverage-mapping" },
-      { public = true }
-    )
+    target:add("cxxflags", { "-fprofile-instr-generate", "-fcoverage-mapping" })
+    target:add("ldflags", { "-fprofile-instr-generate", "-fcoverage-mapping" })
   end
 
   if optreport() then
-    target:add("cxxflags", "-fsave-optimization-record", { public = true })
+    target:add("cxxflags", "-fsave-optimization-record")
   end
 
   if has_config("timetrace") then
-    target:add("cxxflags", "-ftime-trace", { public = true })
+    target:add("cxxflags", "-ftime-trace")
   end
 
   if
@@ -405,7 +388,7 @@ on_load(function(target)
     and not target:is_cross()
     and not is_mode("debug")
   then
-    target:add("cxxflags", "-march=native", { public = true })
+    target:add("cxxflags", "-march=native")
   end
 
   if has_config("unitybuild") then
@@ -422,9 +405,9 @@ add_packages("xxhash", { public = true })
 
 if libunwind() then
   add_packages("libunwind")
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1")
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1", { public = true })
 else
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0")
+  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0", { public = true })
 end
 
 if has_config("fmtlib") then
