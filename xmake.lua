@@ -331,6 +331,11 @@ on_load(function(target)
     end
   end
 
+  -- some libraries use c2y extension in their macro
+  if is_clang() then
+    add_cxxflags("-Wno-c2y-extensions", { public = true })
+  end
+
   if is_plat("linux") then
     if is_mode("debug") then
       target:add("ldflags", "-Wl,--build-id", { public = true })
@@ -445,10 +450,6 @@ set_kind("binary")
 add_files("tests/**.cc")
 add_packages("catch2")
 add_includedirs("tests", { public = true })
--- catch2 uses c2y extension in their macro
-if is_clang() then
-  add_cxxflags("-Wno-c2y-extensions")
-end
 set_default(false)
 target_end()
 
