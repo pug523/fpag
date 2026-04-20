@@ -358,7 +358,7 @@ on_load(function(target)
     target:set("strip", "all", { public = true })
   end
 
-  if stdlib_config() then
+  if is_clang() and has_config("stdlib") then
     local sl = get_config("stdlib")
     target:add("cxxflags", "-stdlib=" .. sl, { public = true })
     target:add("ldflags", "-stdlib=" .. sl, { public = true })
