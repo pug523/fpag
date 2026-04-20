@@ -333,7 +333,7 @@ on_load(function(target)
 
   -- some libraries use c2y extension in their macro
   if is_clang() then
-    add_cxxflags("-Wno-c2y-extensions", { public = true })
+    target:add("cxxflags", "-Wno-c2y-extensions", { public = true })
   end
 
   if is_plat("linux") then
