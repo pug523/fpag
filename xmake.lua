@@ -90,7 +90,8 @@ set_policy("build.optimization.lto", has_config("lto"))
 set_policy("build.c++.msvc.runtime", "MD")
 
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
-add_rules("plugin.compile_commands.autoupdate", { outputdir = "build/" })
+-- add_rules("plugin.compile_commands.autoupdate", { outputdir = "build/" })
+add_rules("plugin.compile_commands.autoupdate")
 
 -- Helper functions
 local function coverage(target)
@@ -217,7 +218,7 @@ on_run(function()
     os.runv(
       "clang-tidy",
       table.join(
-        { "--use-color", "--fix", "--config-file=./.clang-tidy" },
+        { "--use-color", "--fix", "--config-file=./.clang-tidy", "-p=./build/" },
         files
       )
     )
