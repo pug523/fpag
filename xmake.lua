@@ -350,11 +350,6 @@ on_load(function(target)
     target:set("symbols", "debug")
     target:set("optimize", "none")
     target:add("cxxflags", { "-fno-omit-frame-pointer", "-g3" })
-    target:add(
-      "defines",
-      { "LLVM_ENABLE_STATS", "LLVM_ENABLE_DUMP" },
-      { public = true }
-    )
   elseif is_mode("release") then
     target:set("symbols", "hidden")
     target:set("optimize", "fastest")
