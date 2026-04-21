@@ -4,7 +4,6 @@
 
 #include "fpag/base/debug/check.h"
 
-#include <cstdio>
 #include <cstring>
 #include <string_view>
 
@@ -14,6 +13,7 @@
 #include "fpag/base/io_util.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/sync_logger.h"
+#include "fpag/str/format_util.h"
 
 namespace base::internal {
 
@@ -75,7 +75,7 @@ void raw_check_fail_impl(const char* expr,
   ::base::write(kStderrFd, ":", 1);
 
   char line_buf[32];
-  std::snprintf(line_buf, sizeof(line_buf), "%d", line);
+  str::format_to_n(line_buf, sizeof(line_buf), "{}", line);
   ::base::write(kStderrFd, line_buf, std::strlen(line_buf));
 
   ::base::write(kStderrFd, " (", const_strlen(" ("));

@@ -4,8 +4,6 @@
 
 #include "fpag/base/debug/stack_trace/symbolicator.h"
 
-#include <stdio.h>
-
 #include <cstdint>
 #include <cstring>
 #include <utility>
@@ -34,7 +32,8 @@
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX)
 // TODO: Remove this section when we implement DWARF parser.
-#include <cstdio>
+#include <stdio.h>
+
 #include <memory>
 #include <string>
 

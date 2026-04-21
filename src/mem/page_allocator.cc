@@ -4,8 +4,6 @@
 
 #include "fpag/mem/page_allocator.h"
 
-#include <cstdio>
-
 #include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
@@ -13,6 +11,7 @@
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+#include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #else
@@ -23,6 +22,8 @@
 #include <fcntl.h>
 #include <mach/vm_statistics.h>
 #include <sys/posix_shm.h>
+
+#include "fpag/str/format_util.h"
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -177,8 +178,8 @@ void* allocate_aliased_pages(usize size) {
 
 #elif FPAG_BUILD_FLAG(IS_OS_MAC)
   char shm_name[64];
-  std::snprintf(shm_name, sizeof(shm_name), "/fpag_shm_%d_%llu", getpid(),
-                static_cast<u64>(reinterpret_cast<uintptr_t>(&size)));
+  str::format_to_n(shm_name, sizeof(shm_name), "fpag_shm_{}_{}", getpid(),
+                   static_cast<u64>(reinterpret_cast<uintptr_t>(&size)));
 
   const i32 fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
   if (fd == -1) {
