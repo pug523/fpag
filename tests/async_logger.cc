@@ -43,7 +43,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     // const std::string s_for_ref = "hello ref";
     // logger.info("formatting ref: {}", logging::RefArg(s_for_ref));
 
-    logger.fatal("f");
+    logger.fatal("fatal test");
     // logger.error("e");
     // logger.warn("w");
     // logger.info("i");

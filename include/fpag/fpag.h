@@ -6,7 +6,7 @@
 
 // clang-format off
 // IWYU pragma: begin_exports
-#include "fpag/build/attributes.h"
+#include "fpag/base/attributes.h"
 #include "fpag/build/build_config.h"
 
 #include "fpag/base/console.h"

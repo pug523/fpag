@@ -9,9 +9,9 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "catch2/matchers/catch_matchers.hpp"
+#include "fpag/base/attributes.h"
 #include "fpag/base/debug/stack_trace/stack_frame.h"
 #include "fpag/base/numeric.h"
-#include "fpag/build/attributes.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)

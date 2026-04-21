@@ -5,8 +5,8 @@
 #include "fpag/base/debug/stack_trace/capture_stack_addresses.h"
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
-#include "fpag/build/attributes.h"
 #include "fpag/build/build_flag.h"
 
 namespace base {
