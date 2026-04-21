@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <bits/time.h>
-#include <time.h>
-
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX)
+#include <bits/time.h>
+#include <time.h>
+
 #include <ctime>
 #else
 #include <chrono>
