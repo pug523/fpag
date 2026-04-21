@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <string_view>
 #include <type_traits>
 
 #include "fpag/base/debug/check.h"

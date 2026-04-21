@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <string>
 #include <string_view>
 
 #include "fpag/base/numeric.h"

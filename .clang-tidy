@@ -48,7 +48,7 @@ Checks: >
   -performance-no-int-to-ptr,
   readability-identifier-naming,
   readability-redundant-member-init
-HeaderFilterRegex: '^.*(src|tests)[\\/].*$'
+HeaderFilterRegex: '^.*[\\/](src|tests)[\\/].*$'
 SystemHeaders:    false
 WarningsAsErrors: '*'
 ExtraArgsBefore:
@@ -90,4 +90,4 @@ CheckOptions:
   - key:          modernize-loop-convert.MakeReverseRangeHeader
     value:        1
   - key: misc-include-cleaner.IgnoreHeaders
-    value:        '^.*(third_party|src[\\/]build|include|catch2).*$'
+    value:        '^.*(third_party|include[\\/]build).*$'

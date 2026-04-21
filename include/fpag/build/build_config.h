@@ -576,4 +576,4 @@
 #define FPAG_BUILD_FLAG_INTERNAL_HAVE_MIPS_MSA_INTRINSICS() (0)
 #endif
 // clang-format on
-// NOLINTEND)
+// NOLINTEND(whitespace/line_length)

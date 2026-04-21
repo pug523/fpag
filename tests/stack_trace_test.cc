@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
+#include "catch2/matchers/catch_matchers.hpp"
 #include "fpag/base/debug/stack_trace/stack_frame.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/attributes.h"

@@ -7,7 +7,6 @@
 #include <atomic>
 #include <memory>
 #include <thread>
-#include <utility>
 #include <vector>
 
 #include "fpag/base/numeric.h"
@@ -42,6 +41,9 @@ class BackendWorker {
            InternalStatus::kRunning;
   }
 
+  // cpplint's issue: it suggests `#include <utility>` because of `swap`
+  // method's name.
+  // NOLINTNEXTLINE(build/include_what_you_use)
   void swap(BackendWorker&& other) noexcept;
 
   inline base::SpscQueue* queue() { return &queue_; }

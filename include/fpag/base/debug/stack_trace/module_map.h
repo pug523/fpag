@@ -7,8 +7,6 @@
 #include <cstdint>
 #include <string>
 
-#include "fpag/build/build_config.h"
-
 namespace base {
 
 // Describes the loaded module (shared library or executable) that contains a

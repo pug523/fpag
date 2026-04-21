@@ -139,11 +139,12 @@ local function stdlib_config()
   return {}
 end
 
-local subdirs = "src tests benchmarks"
+local subdirs = "src include tests benchmarks"
 
 local function source_files()
   local files = os.files("src/**.cc")
   table.join2(files, os.files("src/**.h"))
+  table.join2(files, os.files("include/**.h"))
 
   if has_config("tests") then
     table.join2(files, os.files("tests/**.cc"))
@@ -157,15 +158,22 @@ local function source_files()
   return files
 end
 
-add_requires("xxhash v0.8.3", { system = false, configs = stdlib_config() })
+add_requires(
+  "xxhash v0.8.3",
+  { system = false, external = true, configs = stdlib_config() }
+)
 
 if has_config("tests") then
-  add_requires("catch2 v3.13.0", { system = false, configs = stdlib_config() })
+  add_requires(
+    "catch2 v3.13.0",
+    { system = false, external = true, configs = stdlib_config() }
+  )
 end
 
 if has_config("benchmarks") then
   add_requires("benchmark v1.9.5", {
     system = false,
+    external = true,
     configs = table.join(stdlib_config(), {
       exceptions = false,
       cxflags = "-DBENCHMARK_USE_LIBCXX="
@@ -182,11 +190,14 @@ end
 if libunwind() then
   add_requires(
     "libunwind v1.8.3",
-    { system = false, configs = stdlib_config() }
+    { system = false, external = true, configs = stdlib_config() }
   )
 end
 if has_config("fmtlib") then
-  add_requires("fmt 12.1.0", { system = false, configs = stdlib_config() })
+  add_requires(
+    "fmt 12.1.0",
+    { system = false, external = false, configs = stdlib_config() }
+  )
 end
 
 -- Tasks
@@ -218,7 +229,7 @@ on_run(function()
     os.runv(
       "clang-tidy",
       table.join(
-        { "--use-color", "--fix", "--config-file=./.clang-tidy", "-p=./build/" },
+        { "--use-color", "--fix", "--config-file=./.clang-tidy" },
         files
       )
     )

@@ -4,7 +4,7 @@
 
 #include "fpag/mem/page_allocator.h"
 
-#include <cstdint>
+#include <stdio.h>
 
 #include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"

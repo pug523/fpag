@@ -16,6 +16,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/base/spsc_queue.h"
 #include "fpag/base/time_util.h"
+#include "fpag/build/build_flag.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"

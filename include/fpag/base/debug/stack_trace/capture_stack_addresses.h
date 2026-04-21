@@ -5,7 +5,6 @@
 #pragma once
 
 #include "fpag/base/numeric.h"
-#include "fpag/build/build_config.h"
 
 namespace base {
 

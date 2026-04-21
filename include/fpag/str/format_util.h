@@ -5,9 +5,10 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <utility>
 
+#include "fmt/base.h"
+#include "fmt/format.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 

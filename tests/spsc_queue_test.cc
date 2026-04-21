@@ -4,11 +4,7 @@
 
 #include "fpag/base/spsc_queue.h"
 
-#include <cstdint>
-#include <string>
-#include <vector>
 
-#include "catch2/catch_approx.hpp"
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 

@@ -9,7 +9,7 @@
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(USE_LIBUNWIND)
-#include <libunwind.h>
+#include <libunwind.h>  // IWYU pragma: keep
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <execinfo.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -33,11 +33,11 @@ namespace {
 FPAG_NOINLINE usize capture_stack_addresses_libunwind(void** out_frames,
                                                       usize max_depth,
                                                       usize skip) {
+  // NOLINTBEGIN(misc-include-cleaner)
   unw_context_t context;
   if (unw_getcontext(&context) < 0) {
     return 0;
   }
-
   unw_cursor_t cursor;
   if (unw_init_local(&cursor, &context) < 0) {
     return 0;
@@ -61,6 +61,7 @@ FPAG_NOINLINE usize capture_stack_addresses_libunwind(void** out_frames,
 
     out_frames[count++] = reinterpret_cast<void*>(ip);
   } while (unw_step(&cursor) > 0);
+  // NOLINTEND(misc-include-cleaner)
 
   return count;
 }

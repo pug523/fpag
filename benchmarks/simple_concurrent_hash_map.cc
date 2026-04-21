@@ -4,7 +4,6 @@
 
 #include "fpag/base/simple_concurrent_hash_map.h"
 
-#include <string>
 #include <thread>
 #include <vector>
 

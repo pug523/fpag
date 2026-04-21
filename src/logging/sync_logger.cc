@@ -4,8 +4,6 @@
 
 #include "fpag/logging/sync_logger.h"
 
-#include <algorithm>
-#include <atomic>
 #include <memory>
 #include <utility>
 

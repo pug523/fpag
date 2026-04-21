@@ -6,7 +6,6 @@
 
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "fpag/base/debug/stack_trace/stack_frame.h"
 #include "fpag/base/numeric.h"

@@ -8,7 +8,6 @@
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
-#include <iterator>
 #include <string_view>
 #include <utility>
 
@@ -42,14 +41,14 @@ inline void dlog_internal(const char* file,
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
-#define DLOG(fmt, ...)              \
+#define FPAG_DLOG(fmt, ...)         \
   ::base::internal::dlog_internal(  \
       __FILE__, __LINE__, __func__, \
       fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 
 #else
 
-#define DLOG(fmt, ...) \
+#define FPAG_DLOG(fmt, ...) \
   NOOP(fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 
 #endif  // FPAG_BUILD_FLAG(IS_DEBUG)

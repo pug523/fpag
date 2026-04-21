@@ -15,9 +15,9 @@ void dlog_impl(std::string_view formatted_msg,
                const char* file,
                i32 line,
                const char* func) {
-  logging::global_sync_logger().debug("{}   [on {} ({}:{})]", formatted_msg,
-                                      func, file, line);
-  logging::global_sync_logger().flush();
+  logging::SyncLogger& l = logging::global_sync_logger();
+  l.debug("{}   [on {} ({}:{})]", formatted_msg, func, file, line);
+  l.flush();
 }
 
 }  // namespace base::internal

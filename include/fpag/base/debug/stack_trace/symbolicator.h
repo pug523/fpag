@@ -5,7 +5,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"

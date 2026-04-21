@@ -5,7 +5,6 @@
 #include "fpag/logging/async/async_logger.h"
 
 #include <memory>
-#include <string>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"

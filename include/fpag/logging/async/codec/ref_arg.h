@@ -21,8 +21,7 @@ struct RefArg {
 template <typename T>
 struct str::formatter<logging::RefArg<T>> : str::formatter<T> {
   template <typename FormatContext>
-  auto format(const logging::RefArg<T>& r,
-              FormatContext& ctx) const {  // NOLINT
+  auto format(const logging::RefArg<T>& r, FormatContext& ctx) const {
     return str::formatter<T>::format(*r.obj, ctx);
   }
 };

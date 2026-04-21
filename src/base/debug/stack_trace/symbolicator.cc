@@ -4,6 +4,8 @@
 
 #include "fpag/base/debug/stack_trace/symbolicator.h"
 
+#include <stdio.h>
+
 #include <cstdint>
 #include <cstring>
 #include <utility>
@@ -14,7 +16,6 @@
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <dlfcn.h>
-#include <execinfo.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
 // <dbghelp.h> must be included after <windows.h>.
 // clang-format off

@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <bits/time.h>
+#include <time.h>
+
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
@@ -20,7 +23,7 @@ inline u64 current_timestamp_ns() noexcept {
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return static_cast<u64>(ts.tv_sec) * 1000000000ull +
-         static_cast<usize>(ts.tv_nsec);
+         static_cast<u64>(ts.tv_nsec);
 #else
   return static_cast<u64>(
       std::chrono::steady_clock::now().time_since_epoch().count());
