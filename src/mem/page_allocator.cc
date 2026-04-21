@@ -11,7 +11,6 @@
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-#include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #else
@@ -152,6 +151,8 @@ void* allocate_aliased_pages(usize size) {
   if (fd == -1) {
     return allocate_pages(size);
   }
+  // The definition header for `off_t` varies depending on the environment.
+  // NOLINTNEXTLINE(misc-include-cleaner)
   if (ftruncate(fd, static_cast<off_t>(size)) == -1) {
     close(fd);
     return allocate_pages(size);
@@ -188,6 +189,7 @@ void* allocate_aliased_pages(usize size) {
   // Unlink immediately so it's only accessible via fd and cleaned up on close.
   shm_unlink(shm_name);
 
+  // NOLINTNEXTLINE(misc-include-cleaner)
   if (ftruncate(fd, static_cast<off_t>(size)) == -1) {
     close(fd);
     return allocate_pages(size);
