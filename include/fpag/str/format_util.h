@@ -7,13 +7,13 @@
 #include <string>
 #include <utility>
 
-#include "fmt/base.h"
-#include "fmt/format.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(USE_FMTLIB)
-#include <fmt/core.h>
+#include "fmt/base.h"
+#include "fmt/core.h"
+#include "fmt/format.h"
 #else
 #include <format>
 #include <iterator>

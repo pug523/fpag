@@ -15,9 +15,9 @@
 #endif
 
 #if FPAG_BUILD_FLAG(USE_FMTLIB)
-#include <fmt/chrono.h>   // IWYU pragma: keep
-#include <fmt/ostream.h>  // IWYU pragma: keep
-#include <fmt/std.h>      // IWYU pragma: keep
+#include "fmt/chrono.h"   // IWYU pragma: keep
+#include "fmt/ostream.h"  // IWYU pragma: keep
+#include "fmt/std.h"      // IWYU pragma: keep
 #endif
 
 #include <signal.h>

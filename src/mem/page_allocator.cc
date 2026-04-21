@@ -4,7 +4,7 @@
 
 #include "fpag/mem/page_allocator.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
@@ -23,8 +23,6 @@
 #include <fcntl.h>
 #include <mach/vm_statistics.h>
 #include <sys/posix_shm.h>
-
-#include <cstdio>
 #endif
 
 #ifndef MAP_ANONYMOUS
