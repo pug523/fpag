@@ -62,14 +62,15 @@ namespace base::internal {
     }                                             \
   } while (false)
 
-#define FPAG_CHECK_OP_EVALUATE(lhs, rhs, op, failed) \
-  do {                                               \
-    auto&& _lhs = (lhs);                             \
-    auto&& _rhs = (rhs);                             \
-    /* FPAG_ASSUME(_lhs op _rhs); */                 \
-    if (!(_lhs op _rhs)) [[unlikely]] {              \
-      failed;                                        \
-    }                                                \
+#define FPAG_CHECK_OP_EVALUATE(lhs, rhs, op, failed)      \
+  do {                                                    \
+    auto&& _lhs = (lhs);                                  \
+    using _LhsType = std::remove_cvref_t<decltype(_lhs)>; \
+    auto&& _rhs = static_cast<_LhsType>(rhs);             \
+    /* FPAG_ASSUME(_lhs op _rhs); */                      \
+    if (!(_lhs op _rhs)) [[unlikely]] {                   \
+      failed;                                             \
+    }                                                     \
   } while (false)
 
 #define FPAG_CHECK(expr)                                       \
