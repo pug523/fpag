@@ -27,7 +27,7 @@ jobs:
           - os: ubuntu-24.04
             plat: linux
             arch: x86_64
-            stdlib: libstdc++
+            stdlib: libc++
             sanitizers: y
             libunwind: y
           - os: windows-2025-vs2026
@@ -50,41 +50,55 @@ jobs:
       CXX: clang++
       XMAKE_COLORTERM: color256
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: install uv
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libc++-dev libc++abi-dev clang clang-format clang-tidy
+
+      - name: Install uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
         with:
           # https://github.com/astral-sh/uv/tags
-          version: "0.10.7"
+          version: 0.10.7
           enable-cache: true
 
-      - name: sync python dependencies with uv
+      - name: Sync python dependencies with uv
         run: uv sync
         shell: bash
 
-      - name: setup xmake
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@4d0316e3a1f3f3c1a7a424368dc64f860c345402
+        with:
+          key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.cc }}-llvm-ccache
+          max-size: 4G
+          job-summary: ""
+
+      - name: Setup mold
+        if: runner.os == 'Linux'
+        uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444
+        with:
+          mold-version: 2.41.0
+          make-default: true
+
+      - name: Setup xmake
         uses: xmake-io/github-action-setup-xmake@3a1a5dddfc7fa625d9a698738334bf55655a861a
         with:
           # https://github.com/xmake-io/xmake/tags
-          xmake-version: "3.0.8"
-          actions-cache-folder: ".xmake-cache"
-          actions-cache-key: "${{ matrix.os }}-xmake"
+          xmake-version: 3.0.8
+          actions-cache-folder: .xmake-cache
+          actions-cache-key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-xmake
           package-cache: true
-          package-cache-key: "${{ matrix.os }}-packages"
+          package-cache-key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-packages
           build-cache: true
-          build-cache-path: "build/.build_cache"
-          build-cache-key: "${{ matrix.os }}-build"
-          project-path: "."
+          build-cache-path: build/.build_cache
+          build-cache-key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-build
+          project-path: .
 
-      - name: install llvm tools
-        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0
-        with:
-          # https://github.com/KyleMayes/install-llvm-action/blob/master/assets.json
-          version: "21.1.8"
-
-      - name: setup environment variables
+      - name: Setup environment variables
         shell: bash
         run: |
           if [[ "${{ matrix.plat }}" == "macosx" ]]; then
@@ -95,7 +109,7 @@ jobs:
             echo "CXXFLAGS=-isysroot $SDK" >> $GITHUB_ENV
           fi
 
-      - name: configure
+      - name: Configure
         shell: bash
         run: |
           xmake config -c -y \
@@ -109,28 +123,27 @@ jobs:
             -p "${{ matrix.plat }}" \
             -a "${{ matrix.arch }}"
 
-      - name: build
+      - name: Build
         shell: bash
-        run: xmake build -w
+        run: |
+          ccache -z
+          xmake build -w
+          ccache -s
 
-      - name: build tests and run
+      - name: Build tests and run
         shell: bash
         run: xmake run tests
 
-      - name: upload build artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: "${{ matrix.plat }}-${{ matrix.arch }}"
-          path: "build/${{ matrix.plat }}/${{ matrix.arch }}/**"
+          name: ${{ matrix.plat }}-${{ matrix.arch }}
+          path: build/${{ matrix.plat }}/${{ matrix.arch }}/**
 
-      - name: analyze statically
-        if: matrix.os == 'ubuntu-24.04'
+      - name: Analyze statically
+        if: runner.os == 'Linux'
         shell: bash
         run: |
-          # needs toolchain("llvm")
-          # runs clang-tidy
-          # runs uv run cpplint
-
           xmake check api
           xmake check clang
           xmake lint
