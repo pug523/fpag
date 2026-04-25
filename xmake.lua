@@ -206,7 +206,7 @@ set_menu({ usage = "xmake format", description = "format source code" })
 on_run(function()
   local files = source_files()
   if #files > 0 then
-    os.runv(
+    os.execv(
       "clang-format",
       table.join({
         "--fail-on-incomplete-format",
@@ -216,8 +216,8 @@ on_run(function()
       }, files)
     )
   end
-  os.run("uv sync")
-  print(os.iorun("uv run scripts/header_license.py"):trim())
+  os.exec("uv sync")
+  os.exec("uv run scripts/header_license.py")
 end)
 task_end()
 
@@ -226,7 +226,7 @@ set_menu({ usage = "xmake tidy", description = "Run clang-tidy --fix" })
 on_run(function()
   local files = source_files()
   if #files > 0 then
-    os.runv(
+    os.execv(
       "clang-tidy",
       table.join(
         { "--use-color", "--fix", "--config-file=./.clang-tidy" },
@@ -243,11 +243,11 @@ set_menu({
   description = "lint using cpplint & clang-format",
 })
 on_run(function()
-  os.run("uv sync")
-  print(os.iorun("uv run cpplint --recursive " .. subdirs):trim())
+  os.exec("uv sync")
+  os.exec("uv run cpplint --recursive " .. subdirs)
   local files = source_files()
   if #files > 0 then
-    os.runv(
+    os.execv(
       "clang-format",
       table.join({ "--dry-run", "--fail-on-incomplete-format", "-i" }, files)
     )
@@ -281,18 +281,21 @@ end)
 
 after_run(function(target)
   if coverage(target) then
+    local coverage_dir = path.join("build", "coverage", target:name())
     local profraw = path.join(target:targetdir(), "default.profraw")
     local profdata = path.join(target:targetdir(), "default.profdata")
-    local coverage_dir = "build/coverage"
 
-    os.runv("llvm-profdata", { "merge", "-sparse", profraw, "-o", profdata })
-    os.runv("llvm-cov", {
-      "show",
-      target:targetfile(),
-      "-instr-profile=" .. profdata,
-      "-format=html",
-      "-output-dir=" .. coverage_dir,
-    })
+    os.execv("llvm-profdata", { "merge", "-sparse", profraw, "-o", profdata })
+    os.execv(
+      "llvm-cov",
+      table.join({
+        "show",
+        target:targetfile(),
+        "-instr-profile=" .. profdata,
+        "-format=html",
+        "-output-dir=" .. coverage_dir,
+      }, subdirs)
+    )
 
     cprint(
       "${green}coverage report generated at: "
