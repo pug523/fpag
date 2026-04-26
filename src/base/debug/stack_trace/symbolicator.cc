@@ -70,34 +70,38 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
     if (dl.dli_fname[0] == '/') {
       offset -= reinterpret_cast<uintptr_t>(dl.dli_fbase);
     }
-    str::format_to_n(command, sizeof(command),
-                     "addr2line -e {} -f -p -C {:x} 2>/dev/null\0",
-                     dl.dli_fname, offset);
+    const auto result = str::format_to_n(
+        command, sizeof(command), "addr2line -e {} -f -p -C {:x} 2>/dev/null",
+        dl.dli_fname, offset);
+    if (static_cast<usize>(result.size) < sizeof(command)) {
+      command[result.size] = '\0';
 
-    const auto deleter = [](FILE* f) { pclose(f); };
-    std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"), deleter);
+      const auto deleter = [](FILE* f) { pclose(f); };
+      std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"),
+                                                    deleter);
 
-    if (pipe) {
-      char buffer[kBufSize];
+      if (pipe) {
+        char buffer[kBufSize];
 
-      if (fgets(buffer, sizeof(buffer), pipe.get())) {
-        std::string output(buffer);
-        if (!output.empty() && output.back() == '\n') {
-          output.pop_back();
-        }
+        if (fgets(buffer, sizeof(buffer), pipe.get())) {
+          std::string output(buffer);
+          if (!output.empty() && output.back() == '\n') {
+            output.pop_back();
+          }
 
-        const usize at_pos = output.find(" at ");
-        if (at_pos != std::string::npos) {
-          std::string file_line = output.substr(at_pos + 4);
-          const usize colon_pos = file_line.find_last_of(':');
+          const usize at_pos = output.find(" at ");
+          if (at_pos != std::string::npos) {
+            std::string file_line = output.substr(at_pos + 4);
+            const usize colon_pos = file_line.find_last_of(':');
 
-          if (colon_pos != std::string::npos) {
-            std::string file = file_line.substr(0, colon_pos);
-            std::string line_str = file_line.substr(colon_pos + 1);
+            if (colon_pos != std::string::npos) {
+              std::string file = file_line.substr(0, colon_pos);
+              std::string line_str = file_line.substr(colon_pos + 1);
 
-            if (file != "??" && !line_str.empty() && line_str[0] != '?') {
-              info.file = std::move(file);
-              info.line = static_cast<u32>(std::stoi(line_str));
+              if (file != "??" && !line_str.empty() && line_str[0] != '?') {
+                info.file = std::move(file);
+                info.line = static_cast<u32>(std::stoi(line_str));
+              }
             }
           }
         }
