@@ -48,7 +48,8 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      XMAKE_COLORTERM: truecolor
+      COLORTERM: 256color
+      XMAKE_COLORTERM: 256color
       XMAKE_ROOT: true
     steps:
       - name: Checkout repository
