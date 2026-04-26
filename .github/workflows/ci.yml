@@ -73,7 +73,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@4d0316e3a1f3f3c1a7a424368dc64f860c345402
         with:
-          key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.cc }}-llvm-ccache
+          key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.cc }}-fpag-ccache
           max-size: 4G
           job-summary: ""
 
@@ -97,6 +97,12 @@ jobs:
           build-cache-path: build/.build_cache
           build-cache-key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-build
           project-path: .
+
+      - name: Install LLVM tools
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0
+        with:
+          # https://github.com/KyleMayes/install-llvm-action/blob/master/assets.json
+          version: 21.1.8
 
       - name: Setup environment variables
         shell: bash
