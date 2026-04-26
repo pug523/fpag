@@ -94,30 +94,6 @@ add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.compile_commands.autoupdate")
 
 -- Helper functions
-local function coverage(target)
-  return has_config("coverage")
-    and target:name() == "tests"
-    and not is_plat("windows")
-end
-
-local function optreport()
-  return has_config("optreport") and not is_mode("debug")
-end
-
-local function sanitizers()
-  return has_config("sanitizers")
-    and is_mode("debug")
-    and not is_plat("windows")
-end
-
-local function xray()
-  return has_config("xray") and not is_mode("release")
-end
-
-local function libunwind()
-  return has_config("libunwind") and is_plat("linux")
-end
-
 local function is_clang()
   return is_config("toolchain", "clang", "llvm")
     or (
@@ -137,6 +113,31 @@ local function stdlib_config()
     return { cxxflags = "-stdlib=" .. std, ldflags = "-stdlib=" .. std }
   end
   return {}
+end
+
+local function coverage(target)
+  return has_config("coverage")
+    and target:name() == "tests"
+    and not is_plat("windows")
+    and is_clang()
+end
+
+local function optreport()
+  return has_config("optreport") and not is_mode("debug")
+end
+
+local function sanitizers()
+  return has_config("sanitizers")
+    and is_mode("debug")
+    and not is_plat("windows")
+end
+
+local function xray()
+  return has_config("xray") and not is_mode("release")
+end
+
+local function libunwind()
+  return has_config("libunwind") and is_plat("linux")
 end
 
 local subdirs = { "src", "include", "tests", "benchmarks" }
