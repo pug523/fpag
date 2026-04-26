@@ -54,6 +54,8 @@ std::string format_frames(const StackTraceFrame* frames,
                           std::string_view prefix,
                           const FrameFormatOptions& opts) {
   std::string out;
+  out.reserve(count * 128);
+
   if (!prefix.empty()) {
     out = str::format("{}\n", prefix);
   }

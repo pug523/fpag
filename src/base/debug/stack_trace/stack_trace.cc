@@ -12,8 +12,9 @@
 #include "fpag/base/debug/stack_trace/formatter.h"
 #include "fpag/base/debug/stack_trace/stack_frame.h"
 #include "fpag/base/debug/stack_trace/symbolicator.h"
+#include "fpag/base/debug/string.h"
+#include "fpag/base/io_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/logging/sync_logger.h"
 
 namespace base {
 
@@ -70,10 +71,9 @@ void StackTrace::collect_trace() {
 }
 
 void StackTrace::print_trace(std::string_view prefix) const {
-  logging::SyncLogger& logger = logging::global_sync_logger();
-
   if (status_ == StackTraceStatus::Failed) [[unlikely]] {
-    logger.error("stack trace collection failed");
+    constexpr const char* kError = "stack trace collection failed";
+    ::base::write(kStderrFd, kError, const_strlen(kError));
     return;
   }
 
@@ -82,7 +82,7 @@ void StackTrace::print_trace(std::string_view prefix) const {
       "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
-  logger.info("\n{}", out);
+  ::base::write(kStdoutFd, out.data(), out.size());
 }
 
 std::string StackTrace::to_string() const {
