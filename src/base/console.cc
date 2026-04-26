@@ -4,6 +4,10 @@
 
 #include "fpag/base/console.h"
 
+#include <cstdlib>
+#include <string_view>
+
+#include "fpag/base/color_mode.h"
 #include "fpag/base/debug/fatal.h"
 #include "fpag/build/build_config.h"
 
@@ -45,18 +49,43 @@ bool check_ansi_sequence_available(Stream stream) {
   }
   return true;
 #else
-  if (stream == Stream::Stdout) {
-    return isatty(STDOUT_FILENO);
-  } else if (stream == Stream::Stderr) {
-    return isatty(STDERR_FILENO);
+  switch (stream) {
+    case Stream::Stdout: return isatty(STDOUT_FILENO) != 0;
+    case Stream::Stderr: return isatty(STDERR_FILENO) != 0;
+    default: FPAG_UNREACHABLE();
   }
-  FPAG_UNREACHABLE();
 #endif
+}
+
+ColorMode determine_color_mode(Stream stream) {
+  if (!is_ansi_available(stream) || std::getenv("NO_COLOR")) {
+    return ColorMode::Off;
+  }
+
+  const char* const color_term_env = std::getenv("COLORTERM");
+  if (color_term_env) {
+    const std::string_view color_term{color_term_env};
+    if (color_term == "truecolor" || color_term == "24bit") {
+      return ColorMode::AnsiTrueColor;
+    }
+    if (color_term == "256color") {
+      return ColorMode::Ansi256;
+    }
+  }
+
+  const char* const term_env = std::getenv("TERM");
+  if (term_env) {
+    const std::string_view term{term_env};
+    if (term.find("256color") != std::string_view::npos) {
+      return ColorMode::Ansi256;
+    }
+  }
+  return ColorMode::Ansi16;
 }
 
 }  // namespace
 
-bool is_ansi_escape_sequence_available(Stream stream) {
+bool is_ansi_available(Stream stream) {
   static const bool out = check_ansi_sequence_available(Stream::Stdout);
   static const bool err = check_ansi_sequence_available(Stream::Stderr);
   switch (stream) {
@@ -66,15 +95,25 @@ bool is_ansi_escape_sequence_available(Stream stream) {
   }
 }
 
+ColorMode console_color_mode(Stream stream) {
+  static const ColorMode out = determine_color_mode(Stream::Stdout);
+  static const ColorMode err = determine_color_mode(Stream::Stderr);
+  switch (stream) {
+    case Stream::Stdout: return out;
+    case Stream::Stderr: return err;
+    default: FPAG_UNREACHABLE();
+  }
+}
+
 void register_console() {
-  // Set console mode to utf-8
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
+  // Set console mode to utf-8
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
 #endif
   // Call these once to initialize the static variable
-  is_ansi_escape_sequence_available(Stream::Stdout);
-  is_ansi_escape_sequence_available(Stream::Stderr);
+  console_color_mode(Stream::Stdout);
+  console_color_mode(Stream::Stderr);
 }
 
 }  // namespace base

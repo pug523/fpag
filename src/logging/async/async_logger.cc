@@ -64,7 +64,7 @@ AsyncLogger& global_async_logger() {
     l.init(kDefaultLogLevel);
     l.register_sink(std::make_unique<StdoutSink>(
         static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
-        is_ansi_escape_sequence_available(base::Stream::Stdout), true));
+        base::console_color_mode(base::Stream::Stdout), true));
     l.start_backend_worker();
     return l;
   }();

@@ -7,6 +7,7 @@
 #include <cstring>
 #include <string_view>
 
+#include "fpag/base/color_mode.h"
 #include "fpag/base/debug/check.h"
 #include "fpag/base/io_util.h"
 #include "fpag/base/numeric.h"
@@ -20,11 +21,11 @@ class StdoutSink final : public Sink {
  public:
   explicit StdoutSink(char* buffer_ptr = nullptr,
                       usize buffer_capacity = 0,
-                      bool use_ansi_style = true,
+                      base::ColorMode color_mode = base::ColorMode::Ansi16,
                       bool use_buffer = false)
       : buffer_(buffer_ptr),
         capacity_(buffer_capacity),
-        use_ansi_style_(use_ansi_style),
+        color_mode_(color_mode),
         use_buffer_(use_buffer) {
     if (use_buffer) {
       FPAG_DCHECK(buffer_);
@@ -34,7 +35,7 @@ class StdoutSink final : public Sink {
 
   void log(const LogEntry& entry) override {
     // Prefix is " info: ", "error: ", etc.
-    const std::string_view prefix = log_prefix(entry.level, use_ansi_style_);
+    const std::string_view prefix = log_prefix(entry.level, color_mode_);
 
     if (!use_buffer_) {
       directly_write(prefix, entry.message);
@@ -79,7 +80,7 @@ class StdoutSink final : public Sink {
   char* buffer_;
   usize capacity_;
   usize offset_ = 0;
-  bool use_ansi_style_;
+  base::ColorMode color_mode_;
   bool use_buffer_;
 };
 

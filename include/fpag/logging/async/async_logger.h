@@ -28,7 +28,7 @@ class AsyncLogger {
   AsyncLogger(AsyncLogger&& other) noexcept = default;
   AsyncLogger& operator=(AsyncLogger&& other) noexcept = default;
 
-  void init(LogLevel min_level = LogLevel::Info,
+  void init(LogLevel min_level = kDefaultLogLevel,
             usize queue_capacity = base::SpscQueue::kDefaultCapacity,
             base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault);
   void register_sink(std::unique_ptr<Sink> sink);

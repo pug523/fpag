@@ -4,20 +4,15 @@
 
 #pragma once
 
-#include "fpag/base/color_mode.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
 
-enum class Stream : u8 {
-  Stdout,
-  Stderr,
+enum class ColorMode : u8 {
+  Off = 0,
+  Ansi16 = 1,
+  Ansi256 = 2,
+  AnsiTrueColor = 3,
 };
-
-bool is_ansi_available(Stream stream);
-
-ColorMode console_color_mode(Stream stream);
-
-void register_console();
 
 }  // namespace base

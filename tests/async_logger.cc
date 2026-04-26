@@ -7,24 +7,38 @@
 #include <memory>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/sink/stdout_sink.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace logging {
 
 TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   AsyncLogger logger;
-  logger.init();
-  logger.register_sink(std::make_unique<StdoutSink>());
+  logger.init(LogLevel::Trace);
+  logger.register_sink(std::make_unique<StdoutSink>(
+      static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
+      base::console_color_mode(base::Stream::Stdout), true));
   logger.start_backend_worker();
 
   SECTION("simple logging") {
-    logger.info("without formatting");
+    logger.trace("tracing");
+    logger.debug("debug log!");
+    logger.info("without formatting info");
+    logger.warn("sample warning");
+    logger.error("some error");
+    logger.fatal("fatal test");
+
     i32 i = 8000;
     logger.info("formatting i32: {}", i);
 
     f32 f = 3.14f;
     logger.info("formatting float: {}", f);
+
+    i32 color =
+        static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
+    logger.info("color mode: {}", color);
 
     // const char* s = "hello cstring";
     // logger.info("formatting cstring: {}", s);
@@ -42,13 +56,6 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
 
     // const std::string s_for_ref = "hello ref";
     // logger.info("formatting ref: {}", logging::RefArg(s_for_ref));
-
-    logger.fatal("fatal test");
-    // logger.error("e");
-    // logger.warn("w");
-    // logger.info("i");
-    // logger.debug("d");
-    // logger.trace("t");
 
     logger.flush();
   }
