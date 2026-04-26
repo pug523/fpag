@@ -12,6 +12,7 @@
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
+#define _CRT_SECURE_NO_WARNINGS
 #include <io.h>
 #include <windows.h>
 #else
