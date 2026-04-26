@@ -9,6 +9,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
+#include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/stdout_sink.h"
 #include "fpag/mem/page_allocator.h"
 
