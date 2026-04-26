@@ -37,7 +37,12 @@ def apply_license(file_path: Path):
 
 def main():
     base_dir = Path(__file__).resolve().parent.parent
-    target_dirs = [base_dir / "src", base_dir / "tests", base_dir / "benchmarks"]
+    target_dirs = [
+        base_dir / "src",
+        base_dir / "include",
+        base_dir / "tests",
+        base_dir / "benchmarks",
+    ]
 
     for target in target_dirs:
         if not target.is_dir():
