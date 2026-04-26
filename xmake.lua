@@ -139,7 +139,7 @@ local function stdlib_config()
   return {}
 end
 
-local subdirs = "src include tests benchmarks"
+local subdirs = { "src", "include", "tests", "benchmarks" }
 
 local function source_files()
   local files = os.files("src/**.cc")
@@ -244,7 +244,7 @@ set_menu({
 })
 on_run(function()
   os.exec("uv sync")
-  os.exec("uv run cpplint --recursive " .. subdirs)
+  os.execv("uv", table.join({ "run", "cpplint", "--recursive" }, subdirs))
   local files = source_files()
   if #files > 0 then
     os.execv(
@@ -286,6 +286,7 @@ after_run(function(target)
     local profdata = path.join(target:targetdir(), "default.profdata")
 
     os.execv("llvm-profdata", { "merge", "-sparse", profraw, "-o", profdata })
+    -- os.execv("llvm-profdata", { "merge", "-o", profdata, profraw })
     os.execv(
       "llvm-cov",
       table.join({
