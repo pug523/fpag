@@ -2,13 +2,6 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/console.h"
-
-#include <cstdlib>
-#include <string_view>
-
-#include "fpag/base/color_mode.h"
-#include "fpag/base/debug/fatal.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -18,6 +11,13 @@
 #else
 #include <unistd.h>
 #endif
+
+#include <cstdlib>
+#include <string_view>
+
+#include "fpag/base/color_mode.h"
+#include "fpag/base/console.h"
+#include "fpag/base/debug/fatal.h"
 
 namespace base {
 
