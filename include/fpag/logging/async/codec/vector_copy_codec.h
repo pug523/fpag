@@ -18,20 +18,15 @@ struct Codec<std::vector<T, Allocator>> {
 
   static usize encode(char* const out, const std::vector<T, Allocator>& in) {
     constexpr DecodeFunction<std::vector<T, Allocator>> kDecoderPtr = &decode;
-    std::memcpy(out, reinterpret_cast<const void*>(kDecoderPtr),
-                sizeof(kDecoderPtr));
-
     const usize arg_size = sizeof(T) * in.size();
-    std::memcpy(out + sizeof(kDecoderPtr), in.data(), arg_size);
-
-    const usize written = sizeof(kDecoderPtr) + arg_size;
-    return written;
+    std::memcpy(out, in.data(), arg_size);
+    return arg_size;
   }
 
   static std::vector<T, Allocator> decode(const char* data, usize size) {
     std::vector<T, Allocator> result;
     result.resize(size / sizeof(T));
-    std::memcpy(result.data(), data + sizeof(void*), size);
+    std::memcpy(result.data(), data, size);
     return result;
   }
 

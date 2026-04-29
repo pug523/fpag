@@ -14,22 +14,16 @@
 namespace logging {
 
 template <>
-struct Codec<std::string> {
+struct Codec<std::string_view> {
   using DecodedType = std::string_view;
 
-  static usize encode(char* const out, const std::string_view& in) {
-    constexpr DecodeFunction<std::string_view> kDecoderPtr = &decode;
-    std::memcpy(out, reinterpret_cast<const void*>(kDecoderPtr),
-                sizeof(kDecoderPtr));
-
+  inline static usize encode(char* const out, const std::string_view in) {
     const usize arg_size = in.size();
-    std::memcpy(out + sizeof(kDecoderPtr), in.data(), arg_size);
-
-    const usize written = sizeof(kDecoderPtr) + arg_size;
-    return written;
+    std::memcpy(out, in.data(), arg_size);
+    return arg_size;
   }
 
-  static std::string_view decode(const char* data, usize size) {
+  inline static std::string_view decode(const char* data, usize size) {
     return std::string_view{data, size};
   }
 
@@ -37,26 +31,37 @@ struct Codec<std::string> {
 };
 
 template <>
-struct Codec<const char*> {
-  using DecodedType = std::string_view;
+struct Codec<std::string> {
+  using DecodedType = Codec<std::string_view>::DecodedType;
 
-  static usize encode(char* const out, const char* const in) {
-    constexpr DecodeFunction<std::string_view> kDecoderPtr = &decode;
-    std::memcpy(out, reinterpret_cast<const void*>(kDecoderPtr),
-                sizeof(kDecoderPtr));
-
-    const usize arg_size = std::strlen(in);
-    std::memcpy(out + sizeof(kDecoderPtr), in, arg_size);
-
-    const usize written = sizeof(kDecoderPtr) + arg_size;
-    return written;
+  inline static usize encode(char* const out, const std::string& in) {
+    return Codec<std::string_view>::encode(out, std::string_view{in});
   }
 
   static std::string_view decode(const char* data, usize size) {
-    return std::string_view{data, size};
+    return Codec<std::string_view>::decode(data, size);
   }
 
-  static consteval bool is_fixed_size() { return false; }
+  static consteval bool is_fixed_size() {
+    return Codec<std::string_view>::is_fixed_size();
+  }
+};
+
+template <>
+struct Codec<const char*> {
+  using DecodedType = Codec<std::string_view>::DecodedType;
+
+  inline static usize encode(char* const out, const char* const in) {
+    return Codec<std::string_view>::encode(out, std::string_view{in});
+  }
+
+  static std::string_view decode(const char* data, usize size) {
+    return Codec<std::string_view>::decode(data, size);
+  }
+
+  static consteval bool is_fixed_size() {
+    return Codec<std::string_view>::is_fixed_size();
+  }
 };
 
 }  // namespace logging

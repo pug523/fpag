@@ -60,11 +60,11 @@ class Deserializer {
 
         if constexpr (C::is_fixed_size()) {
           // Has no size slot.
-          constexpr usize kSerializedSize = C::serialized_size();
-          FPAG_DCHECK_LE(kSerializedSize, remaining_size);
-          R arg = C::decode(data_cursor, kSerializedSize);
-          data_cursor += kSerializedSize;
-          remaining_size -= kSerializedSize;
+          constexpr usize kBodySize = C::body_size();
+          FPAG_DCHECK_LE(kBodySize, remaining_size);
+          R arg = C::decode(data_cursor, kBodySize);
+          data_cursor += kBodySize;
+          remaining_size -= kBodySize;
           return arg;
         } else {
           // Has size slot.

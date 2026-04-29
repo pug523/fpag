@@ -4,14 +4,17 @@
 
 #pragma once
 
+
 #include "fmt/base.h"
 
 namespace logging {
 
 template <typename T>
 struct RefArg {
-  explicit RefArg(const T& o) : obj(&o) {}
+  RefArg() = default;
   ~RefArg() = default;
+
+  explicit RefArg(const T& o) : obj(&o) {}
 
   const T* obj = nullptr;
 };

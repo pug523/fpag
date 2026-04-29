@@ -78,6 +78,7 @@ class BackendWorker {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                        InternalStatus::kRunning,
                        "BackendWorker is not running");
+    flush();
     internal_status_.store(InternalStatus::kStopping,
                            std::memory_order_release);
     if (thread_) [[likely]] {

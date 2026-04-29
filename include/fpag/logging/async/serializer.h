@@ -55,13 +55,11 @@ class Serializer {
       queue->commit(Deserializer::kPayloadHeaderSize);
     } else if constexpr (kAreAllArgsFixedSize) {
       constexpr usize kArgsSize =
-          (Codec<std::decay_t<Args>>::serialized_size() + ...);
+          (Codec<std::decay_t<Args>>::body_size() + ...);
       constexpr usize kTotalPayloadSize =
           Deserializer::kPayloadHeaderSize + kArgsSize;
       void* out_ptr = nullptr;
       queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
-      // write_header(static_cast<char*>(out_ptr), kTotalPayloadSize,
-      //              kDeserializeFunc, level, fmt_str);
 
       write_header(static_cast<char*>(out_ptr), kTotalPayloadSize,
                    kDeserializeFunc, level, fmt_str);
@@ -72,7 +70,7 @@ class Serializer {
       ([&] {
         using Codec = Codec<std::decay_t<decltype(args)>>;
         Codec::encode(arg_out_cursor, args);
-        arg_out_cursor += Codec::serialized_size();
+        arg_out_cursor += Codec::body_size();
       }(), ...);
       // clang-format on
 
@@ -82,7 +80,7 @@ class Serializer {
     } else {
       constexpr usize kDynamicSizeArgsBufSize = 4096;
       char args_buf[kDynamicSizeArgsBufSize];
-      usize args_serialized_size = 0;
+      usize args_body_size = 0;
 
       char* arg_out_cursor = args_buf;
       // clang-format off
@@ -92,23 +90,23 @@ class Serializer {
         const usize written = Codec::encode(arg_out_cursor + sizeof(written), args);
         std::memcpy(arg_out_cursor, &written, sizeof(written));
 
-        args_serialized_size += sizeof(written) + written;
+        args_body_size += sizeof(written) + written;
         arg_out_cursor += sizeof(written) + written;
 
-        FPAG_DCHECK_LE(args_serialized_size, kDynamicSizeArgsBufSize);
+        FPAG_DCHECK_LE(args_body_size, kDynamicSizeArgsBufSize);
       }(), ...);
       // NOLINTEND(whitespace/braces,whitespace/line_length)
       // clang-format on
 
       void* out_ptr = nullptr;
       const usize total_payload_size =
-          Deserializer::kPayloadHeaderSize + args_serialized_size;
+          Deserializer::kPayloadHeaderSize + args_body_size;
       queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
       write_header(static_cast<char*>(out_ptr), total_payload_size,
                    kDeserializeFunc, level, fmt_str);
       std::memcpy(
           static_cast<char*>(out_ptr) + Deserializer::kPayloadHeaderSize,
-          args_buf, args_serialized_size);
+          args_buf, args_body_size);
 
       queue->commit(total_payload_size);
     }
