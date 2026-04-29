@@ -7,6 +7,7 @@
 #include "benchmark/benchmark.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/log_level.h"
+#include "fpag/logging/sink/null_sink.h"
 
 namespace logging {
 
@@ -16,8 +17,8 @@ namespace {
 void async_logger_log_literal_string(benchmark::State& state) {
   const u64 capacity = 1 << 20;
   const u32 num_ops = 100000;
-  AsyncLogger logger;
-  logger.init(LogLevel::Info, capacity);
+  AsyncLogger<NullSink, LogLevel::Info> logger;
+  logger.init({}, capacity);
   logger.start_backend_worker();
   for (auto _ : state) {
     for (u32 i = 0; i < num_ops; ++i) {
