@@ -48,12 +48,6 @@ set_showmenu(true)
 set_description("use libunwind for stack tracing")
 option_end()
 
-option("fmtlib")
-set_default(true)
-set_showmenu(true)
-set_description("use fmtlib for formatting (use std::format if false)")
-option_end()
-
 option("unitybuild")
 set_default(false)
 set_showmenu(true)
@@ -194,12 +188,11 @@ if libunwind() then
     { system = false, external = true, configs = stdlib_config() }
   )
 end
-if has_config("fmtlib") then
-  add_requires(
-    "fmt 12.1.0",
-    { system = false, external = false, configs = stdlib_config() }
-  )
-end
+
+add_requires(
+  "fmt 12.1.0",
+  { system = false, external = false, configs = stdlib_config() }
+)
 
 -- Tasks
 task("format")
@@ -319,7 +312,12 @@ on_load(function(target)
     'FPAG_PROJECT_VERSION="' .. project_version .. '"',
     { public = true }
   )
-  target:add("defines", { "__STDC_CONSTANT_MACROS", "__STDC_FORMAT_MACROS" })
+  target:add("defines", {
+    "__STDC_CONSTANT_MACROS",
+    "__STDC_FORMAT_MACROS",
+    "FMT_USE_CONSTEXPR=1",
+    "FMT_USE_CONSTEVAL=1",
+  })
 
   target:set("exceptions", "none")
   target:add("cxxflags", { "-fno-exceptions", "-fno-rtti" })
@@ -421,12 +419,7 @@ else
   add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0", { public = false })
 end
 
-if has_config("fmtlib") then
-  add_packages("fmt", { public = true })
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=1", { public = true })
-else
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_FMTLIB()=0", { public = true })
-end
+add_packages("fmt", { public = true })
 
 if is_plat("windows") then
   add_links("dbghelp", "onecore")
