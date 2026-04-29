@@ -34,7 +34,6 @@
 #include "fpag/mem/concurrent_arena.h"
 #include "fpag/mem/page_allocator.h"
 
-#include "fpag/str/format_util.h"
 #include "fpag/str/string_interner.h"
 #include "fpag/str/string_pool.h"
 // IWYU pragma: end_exports

@@ -13,7 +13,7 @@ struct StringPoolId {
   usize length;
 };
 
-constexpr usize kInvalidOffset = static_cast<usize>(-1);
+constexpr usize kInvalidOffset = 0xFFFFFFFFFFFFFFFF;
 constexpr StringPoolId kInvalidStringPoolId = {kInvalidOffset, 0};
 constexpr StringPoolId kEmptyStringId = {0, 0};
 

@@ -22,7 +22,7 @@
 #include <mach/vm_statistics.h>
 #include <sys/posix_shm.h>
 
-#include "fpag/str/format_util.h"
+#include "fmt/format.h"
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -179,7 +179,7 @@ void* allocate_aliased_pages(usize size) {
 
 #elif FPAG_BUILD_FLAG(IS_OS_MAC)
   char shm_name[64];
-  str::format_to_n(shm_name, sizeof(shm_name), "fpag_shm_{}_{}", getpid(),
+  fmt::format_to_n(shm_name, sizeof(shm_name), "fpag_shm_{}_{}", getpid(),
                    static_cast<u64>(reinterpret_cast<uintptr_t>(&size)));
 
   const i32 fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
