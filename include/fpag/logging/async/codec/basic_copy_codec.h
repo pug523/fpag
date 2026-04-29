@@ -30,6 +30,8 @@ struct Codec<T, std::enable_if_t<std::is_trivially_copyable_v<T>>> {
 
   static T decode(const char* data, usize size) {
     T result;
+
+    // Skip decoder function
     std::memcpy(&result, data + sizeof(void*), size);
     return result;
   }

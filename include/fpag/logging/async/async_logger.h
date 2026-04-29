@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <memory>
 #include <utility>
 
 #include "fpag/base/numeric.h"
@@ -13,10 +12,10 @@
 #include "fpag/logging/async/serializer.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/sink.h"
-#include "fpag/str/format_util.h"
 
 namespace logging {
 
+template <IsSink S, LogLevel min_level>
 class AsyncLogger {
  public:
   AsyncLogger() = default;
@@ -25,79 +24,66 @@ class AsyncLogger {
   AsyncLogger(const AsyncLogger&) = delete;
   AsyncLogger& operator=(const AsyncLogger&) = delete;
 
-  AsyncLogger(AsyncLogger&& other) noexcept = default;
-  AsyncLogger& operator=(AsyncLogger&& other) noexcept = default;
+  AsyncLogger(AsyncLogger&&) noexcept = default;
+  AsyncLogger& operator=(AsyncLogger&&) noexcept = default;
 
-  void init(LogLevel min_level = kDefaultLogLevel,
-            usize queue_capacity = base::SpscQueue::kDefaultCapacity,
-            base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault);
-  void register_sink(std::unique_ptr<Sink> sink);
-  void start_backend_worker();
-  void stop_backend_worker();
-  void force_stop_backend_worker();
-  void flush();
-  void reset();
+  inline void init(
+      S&& sink,
+      usize queue_capacity = base::SpscQueue::kDefaultCapacity,
+      base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault) {
+    worker_.init(std::move(sink), queue_capacity, mode);
+  }
+  inline void start_backend_worker() { worker_.start(); }
+  inline void stop_backend_worker() { worker_.stop(); }
+  inline void force_stop_backend_worker() { worker_.force_stop(); }
+  inline void flush() { worker_.flush(); }
+  inline void reset() { worker_.reset(); }
 
-  template <typename... Args>
-  inline constexpr void trace(str::format_string<Args&&...> fmt,
-                              Args&&... args) {
-    log(LogLevel::Trace, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void trace(Format fmt, Args&&... args) {
+    log<LogLevel::Trace>(fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  inline constexpr void debug(str::format_string<Args&&...> fmt,
-                              Args&&... args) {
-    log(LogLevel::Debug, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void debug(Format fmt, Args&&... args) {
+    log<LogLevel::Debug>(fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  inline constexpr void info(str::format_string<Args&&...> fmt,
-                             Args&&... args) {
-    log(LogLevel::Info, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void info(Format fmt, Args&&... args) {
+    log<LogLevel::Info>(fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  inline constexpr void warn(str::format_string<Args&&...> fmt,
-                             Args&&... args) {
-    log(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void warn(Format fmt, Args&&... args) {
+    log<LogLevel::Warn>(fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  inline constexpr void error(str::format_string<Args&&...> fmt,
-                              Args&&... args) {
-    log(LogLevel::Error, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void error(Format fmt, Args&&... args) {
+    log<LogLevel::Error>(fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  inline constexpr void fatal(str::format_string<Args&&...> fmt,
-                              Args&&... args) {
-    log(LogLevel::Fatal, fmt, std::forward<Args>(args)...);
+  template <typename Format, typename... Args>
+  inline void fatal(Format fmt, Args&&... args) {
+    log<LogLevel::Fatal>(fmt, std::forward<Args>(args)...);
   }
 
  private:
-  inline constexpr bool should_log(LogLevel level) {
-    return level >= min_level_;
+  inline static consteval bool should_log(LogLevel level) {
+    return level >= min_level;
   }
 
-  // Local stack buffer size used for formatting log messages.
-  // This affects the maximum log message size.
-  constexpr static usize kLocalStackBufSize = 4096;
-
-  template <typename... Args>
-  inline constexpr void log(LogLevel level,
-                            str::format_string<Args&&...> fmt,
-                            Args&&... args) {
-    if (!should_log(level)) {
+  template <LogLevel level, typename Format, typename... Args>
+  inline void log(Format format, Args&&... args) {
+    if constexpr (!should_log(level)) {
       return;
     }
-    Serializer<Args&&...>::serialize_to(level, worker_.queue(), fmt,
-                                        std::forward<Args>(args)...);
+    Serializer<Format, Args&&...>::serialize_to(level, worker_.queue(), format,
+                                                std::forward<Args>(args)...);
   }
 
-  BackendWorker worker_;
-  LogLevel min_level_;
+  BackendWorker<S> worker_;
 };
-
-AsyncLogger& global_async_logger();
 
 }  // namespace logging

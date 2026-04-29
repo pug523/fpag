@@ -17,7 +17,7 @@ template <>
 struct Codec<std::string> {
   using DecodedType = std::string_view;
 
-  static usize encode(char* const out, const std::string& in) {
+  static usize encode(char* const out, const std::string_view& in) {
     constexpr DecodeFunction<std::string_view> kDecoderPtr = &decode;
     std::memcpy(out, reinterpret_cast<const void*>(kDecoderPtr),
                 sizeof(kDecoderPtr));

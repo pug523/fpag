@@ -4,14 +4,23 @@
 
 #pragma once
 
+#include <concepts>
+
 #include "fpag/logging/log_entry.h"
 
 namespace logging {
 
+template <typename Derived>
+class Sink;
+
+template <typename T>
+concept IsSink = std::derived_from<T, Sink<T>>;
+
+template <typename Derived>
 class Sink {
  public:
-  Sink() = default;
-  virtual ~Sink() = default;
+  explicit Sink() = default;
+  ~Sink() = default;
 
   Sink(const Sink&) = delete;
   Sink& operator=(const Sink&) = delete;
@@ -19,8 +28,8 @@ class Sink {
   Sink(Sink&&) noexcept = default;
   Sink& operator=(Sink&&) noexcept = default;
 
-  virtual void log(const LogEntry& entry) = 0;
-  virtual void flush() = 0;
+  void log(const LogEntry& entry) { static_cast<Derived*>(this)->log(entry); }
+  void flush() { static_cast<Derived*>(this)->flush(); }
 };
 
 }  // namespace logging

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "fpag/str/format_util.h"
+#include "fmt/base.h"
 
 namespace logging {
 
@@ -19,10 +19,10 @@ struct RefArg {
 }  // namespace logging
 
 template <typename T>
-struct str::formatter<logging::RefArg<T>> : str::formatter<T> {
+struct fmt::formatter<logging::RefArg<T>> : fmt::formatter<T> {
   template <typename FormatContext>
   auto format(const logging::RefArg<T>& r, FormatContext& ctx) const {
-    return str::formatter<T>::format(*r.obj, ctx);
+    return fmt::formatter<T>::format(*r.obj, ctx);
   }
 };
 

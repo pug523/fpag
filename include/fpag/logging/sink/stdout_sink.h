@@ -17,7 +17,7 @@
 
 namespace logging {
 
-class StdoutSink final : public Sink {
+class StdoutSink final : public Sink<StdoutSink> {
  public:
   explicit StdoutSink(char* buffer_ptr = nullptr,
                       usize buffer_capacity = 0,
@@ -33,7 +33,12 @@ class StdoutSink final : public Sink {
     }
   }
 
-  void log(const LogEntry& entry) override {
+  ~StdoutSink() = default;
+
+  StdoutSink(StdoutSink&&) noexcept = default;
+  StdoutSink& operator=(StdoutSink&&) noexcept = default;
+
+  void log(const LogEntry& entry) {
     // Prefix is " info: ", "error: ", etc.
     const std::string_view prefix = log_prefix(entry.level, color_mode_);
 
@@ -60,7 +65,7 @@ class StdoutSink final : public Sink {
     }
   }
 
-  void flush() override {
+  void flush() {
     if (offset_ > 0 && use_buffer_) [[likely]] {
       base::write(base::kStdoutFd, buffer_, offset_);
       offset_ = 0;
