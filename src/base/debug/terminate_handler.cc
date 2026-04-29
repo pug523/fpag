@@ -7,15 +7,15 @@
 #include <exception>
 
 #include "fpag/base/debug/fatal.h"
+#include "fpag/base/debug/logger.h"
 #include "fpag/base/debug/stack_trace/stack_trace.h"
-#include "fpag/logging/sync_logger.h"
 
 namespace base {
 
 namespace {
 
 void terminate_handler() {
-  logging::global_sync_logger().fatal("Program terminated unexpectedly");
+  debug_logger().fatal("Program terminated unexpectedly");
   print_stack_trace_from_here();
   internal::fatal_crash_impl();
 }

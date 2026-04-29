@@ -8,11 +8,15 @@
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
+#include <iterator>
 #include <string_view>
 #include <utility>
 
+#include "fmt/base.h"
+#include "fmt/compile.h"
+#include "fmt/core.h"
+#include "fmt/format.h"
 #include "fpag/base/numeric.h"
-#include "fpag/str/format_util.h"
 #endif
 
 namespace base::internal {
@@ -23,16 +27,15 @@ void dlog_impl(std::string_view formatted_msg,
                i32 line,
                const char* func);
 
-template <typename... Args>
+template <typename CompiledFormat, typename... Args>
 inline void dlog_internal(const char* file,
                           i32 line,
                           const char* func,
-                          str::format_string<Args...> fmt,
+                          CompiledFormat fmt,
                           Args&&... args) {
-  char buf[512];
-  const str::format_to_n_result result =
-      str::format_to_n(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
-  const std::string_view formatted_msg(buf, static_cast<usize>(result.size));
+  fmt::memory_buffer out;
+  fmt::format_to(std::back_inserter(out), fmt, std::forward<Args>(args)...);
+  const std::string_view formatted_msg(out.data(), out.size());
   dlog_impl(formatted_msg, file, line, func);
 }
 #endif
@@ -41,10 +44,11 @@ inline void dlog_internal(const char* file,
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
-#define FPAG_DLOG(fmt, ...)         \
-  ::base::internal::dlog_internal(  \
-      __FILE__, __LINE__, __func__, \
-      fmt __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
+// NOLINTBEGIN(whitespace/parens)
+#define FPAG_DLOG(fmt, ...)                                     \
+  ::base::internal::dlog_internal(__FILE__, __LINE__, __func__, \
+                                  FMT_COMPILE(fmt) __VA_OPT__(, ) __VA_ARGS__)
+// NOLINTEND(whitespace/parens)
 
 #else
 

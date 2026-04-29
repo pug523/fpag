@@ -7,9 +7,10 @@
 #include <cstdlib>
 #include <string_view>
 
+#include "fmt/compile.h"
+#include "fpag/base/debug/logger.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
-#include "fpag/logging/sync_logger.h"
 
 #if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #include <intrin.h>
@@ -39,8 +40,9 @@ void unreachable_impl(const char* file,
                       i32 line,
                       const char* func,
                       std::string_view msg) {
-  logging::SyncLogger& logger = logging::global_sync_logger();
-  logger.fatal("UNREACHABLE\n{}\n  at {}:{} ({})", msg, file, line, func);
+  DebugLogger& logger = debug_logger();
+  logger.fatal(FMT_COMPILE("UNREACHABLE\n{}\n  at {}:{} ({})"), msg, file, line,
+               func);
   logger.flush();
   fatal_crash_impl();
 }

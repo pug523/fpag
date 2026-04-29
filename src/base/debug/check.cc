@@ -7,13 +7,14 @@
 #include <cstring>
 #include <string_view>
 
+#include "fmt/base.h"
+#include "fmt/compile.h"
 #include "fpag/base/debug/fatal.h"
+#include "fpag/base/debug/logger.h"
 #include "fpag/base/debug/stack_trace/stack_trace.h"
 #include "fpag/base/debug/string.h"
 #include "fpag/base/io_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/logging/sync_logger.h"
-#include "fpag/str/format_util.h"
 
 namespace base::internal {
 
@@ -22,13 +23,14 @@ void check_fail_impl(const char* expr,
                      i32 line,
                      const char* func,
                      std::string_view msg) {
-  logging::SyncLogger& logger = logging::global_sync_logger();
+  DebugLogger& logger = debug_logger();
   if (msg.empty()) {
-    logger.fatal("Check failed!\nExpected: '{}'\n  at {}:{} ({})", expr, file,
-                 line, func);
+    logger.fatal(FMT_COMPILE("Check failed!\nExpected: '{}'\n  at {}:{} ({})"),
+                 expr, file, line, func);
   } else {
-    logger.fatal("Check failed!\nExpected: '{}'\n  at {}:{} ({})\n{}", expr,
-                 file, line, func, msg);
+    logger.fatal(
+        FMT_COMPILE("Check failed!\nExpected: '{}'\n  at {}:{} ({})\n{}"), expr,
+        file, line, func, msg);
   }
   print_stack_trace_from_here();
   logger.flush();
@@ -43,16 +45,17 @@ void check_op_fail_impl(const char* expected,
                         i32 line,
                         const char* func,
                         std::string_view msg) {
-  logging::SyncLogger& logger = logging::global_sync_logger();
+  DebugLogger& logger = debug_logger();
   if (msg.empty()) {
     logger.fatal(
-        "Check failed!\nExpected: '{}', Actual: {} vs {}\n  at {}:{} ({})",
+        FMT_COMPILE(
+            "Check failed!\nExpected: '{}', Actual: {} vs {}\n  at {}:{} ({})"),
         expected, lhs, rhs, file, line, func);
 
   } else {
-    logger.fatal(
-        "Check failed!\nExpected: '{}', Actual: {} vs {}\n  at {}:{} ({})\n{}",
-        expected, lhs, rhs, file, line, func, msg);
+    logger.fatal(FMT_COMPILE("Check failed!\nExpected: '{}', Actual: {} vs "
+                             "{}\n  at {}:{} ({})\n{}"),
+                 expected, lhs, rhs, file, line, func, msg);
   }
   print_stack_trace_from_here();
   logger.flush();
@@ -65,26 +68,34 @@ void raw_check_fail_impl(const char* expr,
                          i32 line,
                          const char* func,
                          std::string_view msg) {
-  ::base::write(kStderrFd, "fatal: RAW CHECK FAILED for '",
-                const_strlen("fatal: RAW CHECK FAILED for '"));
+  constexpr const char* kHeaderPrefix = "fatal: RAW CHECK FAILED for '";
+  constexpr const char* kHeaderSuffix = "'\n";
+  constexpr const char* kAt = " at ";
+  constexpr const char* kColon = " : ";
+  constexpr usize kLineBufSize = 64;
+  constexpr const char* kFuncPrefix = " (";
+  constexpr const char* kFuncSuffix = ")\n";
+  constexpr const char* kNewline = "\n";
+
+  ::base::write(kStderrFd, kHeaderPrefix, const_strlen(kHeaderPrefix));
   ::base::write(kStderrFd, expr, std::strlen(expr));
-  ::base::write(kStderrFd, "'\n", const_strlen("'\n"));
+  ::base::write(kStderrFd, kHeaderSuffix, const_strlen(kHeaderSuffix));
 
-  ::base::write(kStderrFd, " at ", const_strlen(" at "));
+  ::base::write(kStderrFd, kAt, const_strlen(kAt));
   ::base::write(kStderrFd, file, std::strlen(file));
-  ::base::write(kStderrFd, ":", 1);
+  ::base::write(kStderrFd, kColon, const_strlen(kColon));
 
-  char line_buf[32];
-  str::format_to_n(line_buf, sizeof(line_buf), "{}", line);
-  ::base::write(kStderrFd, line_buf, std::strlen(line_buf));
+  char line_buf[kLineBufSize];
+  auto result = fmt::format_to_n(line_buf, sizeof(line_buf), "{}", line);
+  ::base::write(kStderrFd, line_buf, result.size);
 
-  ::base::write(kStderrFd, " (", const_strlen(" ("));
+  ::base::write(kStderrFd, kFuncPrefix, const_strlen(kFuncPrefix));
   ::base::write(kStderrFd, func, std::strlen(func));
-  ::base::write(kStderrFd, ")\n", const_strlen(")\n"));
+  ::base::write(kStderrFd, kFuncSuffix, const_strlen(kFuncSuffix));
 
   if (!msg.empty()) {
     ::base::write(kStderrFd, msg.data(), msg.size());
-    ::base::write(kStderrFd, "\n", const_strlen("\n"));
+    ::base::write(kStderrFd, kNewline, const_strlen(kNewline));
   }
 
   fatal_crash_impl();

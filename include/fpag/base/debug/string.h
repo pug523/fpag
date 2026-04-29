@@ -5,36 +5,31 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
-#include <string>
 #include <string_view>
 #include <type_traits>
 
+#include "fmt/base.h"
+#include "fmt/format.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
+
+template <typename T, typename Char = char>
+concept Formattable = requires(T& val, fmt::format_context ctx) {
+  fmt::formatter<std::remove_cvref_t<T>, Char>().parse(
+      std::declval<fmt::basic_format_parse_context<Char>&>());
+  fmt::formatter<std::remove_cvref_t<T>, Char>().format(val, ctx);
+};
 
 template <typename T>
 concept StringViewable = requires(T t) { std::string_view{t}; };
 
 template <typename T>
-concept FormattableNumber = std::is_arithmetic_v<std::remove_cvref_t<T>>;
-
-template <typename T>
-concept PointerType = std::is_pointer_v<std::remove_cvref_t<T>> ||
-                      std::is_null_pointer_v<std::remove_cvref_t<T>>;
-
-template <typename T>
 inline constexpr auto to_debug_string(const T& value) {
   if constexpr (StringViewable<T>) {
     return std::string_view{value};
-  } else if constexpr (FormattableNumber<T>) {
-    return std::to_string(value);
-  } else if constexpr (PointerType<T>) {
-    if (!value) {
-      return std::string("0x0");
-    }
-    return std::to_string(reinterpret_cast<uintptr_t>(value));
+  } else if constexpr (Formattable<T>) {
+    return fmt::format("{}", value);
   } else {
     return std::string_view{"<unprintable>"};
   }

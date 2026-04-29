@@ -4,6 +4,8 @@
 
 #include "fpag/base/debug/signal_handler.h"
 
+#include "fmt/compile.h"
+#include "fpag/base/debug/logger.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -14,12 +16,6 @@
 #error "Unsupported platform for signal handling"
 #endif
 
-#if FPAG_BUILD_FLAG(USE_FMTLIB)
-#include "fmt/chrono.h"   // IWYU pragma: keep
-#include "fmt/ostream.h"  // IWYU pragma: keep
-#include "fmt/std.h"      // IWYU pragma: keep
-#endif
-
 #include <signal.h>
 
 #include <chrono>
@@ -28,10 +24,12 @@
 #include <ctime>
 #include <thread>
 
+#include "fmt/chrono.h"   // IWYU pragma: keep
+#include "fmt/ostream.h"  // IWYU pragma: keep
+#include "fmt/std.h"      // IWYU pragma: keep
 #include "fpag/base/debug/fatal.h"
 #include "fpag/base/debug/stack_trace/stack_trace.h"
 #include "fpag/base/numeric.h"
-#include "fpag/logging/sync_logger.h"
 
 namespace base {
 
@@ -75,16 +73,15 @@ void signal_handler(i32 signal_number) {
   using std::chrono::time_point;
   const time_point<std::chrono::system_clock> tp{std::chrono::seconds(now)};
 
-  // const std::string tid = str::format("{}", std::this_thread::get_id());
   const char* sig = signal_to_string(signal_number);
   const i32 pid = current_pid();
   const std::thread::id tid = std::this_thread::get_id();
 
-  logging::SyncLogger& logger = logging::global_sync_logger();
-  logger.fatal(R"(Aborted at {:%Y-%m-%d %H:%M:%S}
+  DebugLogger& logger = debug_logger();
+  logger.fatal(FMT_COMPILE(R"(Aborted at {:%Y-%m-%d %H:%M:%S}
 ({} in UNIX Time)
 {} Received by PID {}  (TID {})
-)",
+)"),
                tp, now, sig, pid, tid);
   print_stack_trace_from_here();
 

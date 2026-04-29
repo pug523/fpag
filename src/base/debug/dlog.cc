@@ -6,8 +6,9 @@
 
 #include <string_view>
 
+#include "fmt/compile.h"
+#include "fpag/base/debug/logger.h"
 #include "fpag/base/numeric.h"
-#include "fpag/logging/sync_logger.h"
 
 namespace base::internal {
 
@@ -15,9 +16,10 @@ void dlog_impl(std::string_view formatted_msg,
                const char* file,
                i32 line,
                const char* func) {
-  logging::SyncLogger& l = logging::global_sync_logger();
-  l.debug("{}   [on {} ({}:{})]", formatted_msg, func, file, line);
-  l.flush();
+  DebugLogger& logger = debug_logger();
+  logger.debug(FMT_COMPILE("{}   [on {} ({}:{})]"), formatted_msg, func, file,
+               line);
+  logger.flush();
 }
 
 }  // namespace base::internal

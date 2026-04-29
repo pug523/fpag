@@ -20,10 +20,12 @@ class SpscQueue {
 
     kDefault = kDrop,
   };
+
   enum class DequeueStatus : u8 {
     kOk,
     kEmpty,
   };
+
   enum class EnqueueStatus : u8 {
     kOk,
     kDropped,

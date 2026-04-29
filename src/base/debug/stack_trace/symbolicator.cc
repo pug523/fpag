@@ -8,6 +8,7 @@
 #include <cstring>
 #include <utility>
 
+#include "fmt/base.h"
 #include "fpag/base/debug/stack_trace/demangle.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
@@ -37,7 +38,6 @@
 #include <memory>
 #include <string>
 
-#include "fpag/str/format_util.h"
 #endif
 
 namespace base {
@@ -70,10 +70,10 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
     if (dl.dli_fname[0] == '/') {
       offset -= reinterpret_cast<uintptr_t>(dl.dli_fbase);
     }
-    const auto result = str::format_to_n(
+    const auto result = fmt::format_to_n(
         command, sizeof(command), "addr2line -e {} -f -p -C {:x} 2>/dev/null",
         dl.dli_fname, offset);
-    if (static_cast<usize>(result.size) < sizeof(command)) {
+    if (result.size < sizeof(command)) {
       command[result.size] = '\0';
 
       const auto deleter = [](FILE* f) { pclose(f); };
