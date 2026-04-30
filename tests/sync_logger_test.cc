@@ -10,6 +10,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
 #include "fpag/base/console.h"
+#include "fpag/base/debug/dlog.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"
@@ -104,6 +105,12 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
                 logging::RefArg(s_for_ref));
 
     logger.flush();
+  }
+
+  SECTION("dlog") {
+    FPAG_DLOG("dlog testing {}", 168);
+    i32 i = 8910;
+    FPAG_DLOG("dlog testing2 {}", i);
   }
 }
 
