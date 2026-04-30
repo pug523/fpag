@@ -3,8 +3,8 @@
 // which can be found in the LICENSE file.
 
 #include "benchmark/benchmark.h"
-#include "fpag/base/debug/dlog.h"
 #include "fpag/base/debug/logger.h"
+#include "fpag/base/numeric.h"
 #include "fpag/base/spsc_queue.h"
 
 namespace base {
