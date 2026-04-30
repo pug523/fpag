@@ -17,6 +17,8 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "fpag/base/numeric.h"
+#else
+#include "fpag/base/debug/common.h"
 #endif
 
 namespace base::internal {

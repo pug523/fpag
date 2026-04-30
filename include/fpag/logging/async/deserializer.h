@@ -19,12 +19,14 @@
 #include "fpag/logging/async/codec/codec.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_level.h"
+#include "fpag/str/string_interner.h"
 
 namespace logging {
 
 using DeserializeFunction = void (*)(const char* payload_head_ptr,
                                      usize total_payload_size,
-                                     format_buffer* fmt_buf);
+                                     format_buffer* fmt_buf,
+                                     const str::StringInterner* interner);
 
 // For function pointer alignment
 static constexpr usize kPayloadAlign = 8;
@@ -32,7 +34,7 @@ static constexpr usize kPayloadMinHeaderSize =
     sizeof(usize) + sizeof(DeserializeFunction) +
     base::round_up(sizeof(LogLevel), kPayloadAlign);
 
-template <typename Format, typename... Args>
+template <typename Format, bool kUseInterner, typename... Args>
 class Deserializer {
  public:
   using DecodedArgs =
@@ -86,7 +88,8 @@ class Deserializer {
   // Match with DeserializeFunction
   static void deserialize(const char* payload_head_ptr,
                           usize total_payload_size,
-                          format_buffer* fmt_buf) {
+                          format_buffer* fmt_buf,
+                          const str::StringInterner* interner) {
     // Already read total payload size and deserializer so skip them.
     const char* const read_head = payload_head_ptr + kPayloadMinHeaderSize;
 
@@ -103,19 +106,23 @@ class Deserializer {
           },
           decode_args(args_head, args_size));
     } else {
+      std::string_view fmt_view;
+      if constexpr (kUseInterner) {
+        using StrId = str::StringInterner::StringId;
+        const StrId id = *reinterpret_cast<const StrId*>(read_head);
+        fmt_view = interner->get(id);
+      } else {
+        fmt_view = *reinterpret_cast<const std::string_view*>(read_head);
+      }
+
       if constexpr (sizeof...(Args) == 0) {
-        // TODO: use string interner
         // Fast path, just do memcpy.
-        const std::string_view fmt_view =
-            *reinterpret_cast<const std::string_view*>(read_head);
         const usize old_size = fmt_buf->size();
-        fmt_buf->reserve(old_size + fmt_view.size());
+        fmt_buf->resize(old_size + fmt_view.size());
+
         std::memcpy(fmt_buf->data() + old_size, fmt_view.data(),
                     fmt_view.size());
-        fmt_buf->resize(old_size + fmt_view.size());
       } else {
-        const std::string_view fmt_view =
-            *reinterpret_cast<const std::string_view*>(read_head);
         const char* const args_head = read_head + sizeof(fmt_view);
         const usize args_size = total_payload_size - kPayloadHeaderSize;
 

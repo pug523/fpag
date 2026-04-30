@@ -29,7 +29,7 @@
 
 namespace logging {
 
-template <typename Format, typename... Args>
+template <typename Format, bool kUseInterner, typename... Args>
 class Serializer {
  public:
   Serializer() = delete;
@@ -42,7 +42,7 @@ class Serializer {
     constexpr bool kAreAllArgsFixedSize =
         (Codec<std::decay_t<Args>>::is_fixed_size() && ...);
 
-    using Deserializer = Deserializer<Format, Args...>;
+    using Deserializer = Deserializer<Format, kUseInterner, Args...>;
     static constexpr DeserializeFunction kDeserializeFunc =
         &Deserializer::deserialize;
     using Eqs = base::SpscQueue::EnqueueStatus;
@@ -145,13 +145,16 @@ class Serializer {
     std::memcpy(out_cursor, &level, sizeof(level));
     if constexpr (!fmt::is_compiled_string<Format>::value) {
       out_cursor += base::round_up(sizeof(level), kPayloadAlign);
+      static_assert(sizeof(str::StringInterner::StringId) ==
+                    sizeof(std::string_view));
+
       const std::string_view fmt_string = static_cast<std::string_view>(fmt);
-      (void)interner;
-      // TODO:
-      // interner->intern(fmt_string);
-      // const str::StringInterner::StringId id = interner->intern(fmt_string);
-      // std::memcpy(out_cursor, &id, sizeof(id));
-      std::memcpy(out_cursor, &fmt_string, sizeof(fmt_string));
+      if constexpr (kUseInterner) {
+        const str::StringInterner::StringId id = interner->intern(fmt_string);
+        std::memcpy(out_cursor, &id, sizeof(id));
+      } else {
+        std::memcpy(out_cursor, &fmt_string, sizeof(fmt_string));
+      }
     }
   }
 };

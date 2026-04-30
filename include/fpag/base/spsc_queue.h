@@ -85,6 +85,9 @@ class SpscQueue {
   inline usize head_cache() const { return head_cache_; }
   inline usize tail_cache() const { return tail_cache_; }
 
+  inline usize dropped_count() const { return dropped_count_; }
+  inline usize blocked_count() const { return blocked_count_; }
+
   static constexpr usize kDefaultCapacity = 1 << 12;                  // 4 KiB
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
 
@@ -98,6 +101,9 @@ class SpscQueue {
   char* data_ = nullptr;
   usize capacity_ = 0;
   Mode mode_ = Mode::kDefault;
+
+  usize dropped_count_ = 0;
+  usize blocked_count_ = 0;
 
   // Consumer
   alignas(mem::kCacheLineSize) std::atomic<usize> head_ = 0;

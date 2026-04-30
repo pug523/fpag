@@ -16,7 +16,7 @@
 
 namespace logging {
 
-template <IsSink S, LogLevel min_level>
+template <IsSink S, LogLevel min_level, bool kUseInterner = true>
 class AsyncLogger {
  public:
   AsyncLogger() : interner_(4096) {}
@@ -41,6 +41,13 @@ class AsyncLogger {
   inline void force_stop_backend_worker() { worker_.force_stop(); }
   inline void flush() { worker_.flush(); }
   inline void reset() { worker_.reset(); }
+
+  inline usize dropped_count() const {
+    return worker_.queue()->dropped_count();
+  }
+  inline usize blocked_count() const {
+    return worker_.queue()->blocked_count();
+  }
 
   template <typename Format, typename... Args>
   inline void trace(Format fmt, Args&&... args) {
@@ -82,9 +89,9 @@ class AsyncLogger {
     if constexpr (!should_log(level)) {
       return;
     }
-    Serializer<Format, Args&&...>::serialize_to(level, &interner_,
-                                                worker_.queue(), format,
-                                                std::forward<Args>(args)...);
+    Serializer<Format, kUseInterner, Args&&...>::serialize_to(
+        level, &interner_, worker_.queue(), format,
+        std::forward<Args>(args)...);
   }
 
   BackendWorker<S> worker_;

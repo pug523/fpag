@@ -199,7 +199,7 @@ class BackendWorker {
 
       // Deserialize args and format into format buffer.
       format_buffer format_buf;
-      deserializer(data_ptr, payload_size, &format_buf);
+      deserializer(data_ptr, payload_size, &format_buf, interner_);
 
       queue_.discard(payload_size, kPayloadAlign);
 
