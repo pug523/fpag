@@ -124,9 +124,12 @@ SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
 
   if (available_producer() < size) [[unlikely]] {
     if (mode_ == Mode::kDrop) {
+      ++dropped_count_;
       return EnqueueStatus::kDropped;
+    } else {
+      ++blocked_count_;
+      wait_for_space_producer(total_needed);
     }
-    wait_for_space_producer(total_needed);
   }
 
   // Advance only `tail_cache_` to `aligned_tail`, not for `tail_`.

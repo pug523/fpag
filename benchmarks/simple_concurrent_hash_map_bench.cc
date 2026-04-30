@@ -2,13 +2,12 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/simple_concurrent_hash_map.h"
-
 #include <thread>
 #include <vector>
 
 #include "benchmark/benchmark.h"
 #include "fpag/base/numeric.h"
+#include "fpag/base/simple_concurrent_hash_map.h"
 
 namespace base {
 
