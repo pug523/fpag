@@ -72,13 +72,6 @@ jobs:
         run: uv sync
         shell: bash
 
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@4d0316e3a1f3f3c1a7a424368dc64f860c345402
-        with:
-          key: ${{ matrix.os }}-${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.cc }}-fpag-ccache
-          max-size: 4G
-          job-summary: ""
-
       - name: Setup mold
         if: runner.os == 'Linux'
         uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444
@@ -134,9 +127,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          ccache -z
           xmake build -w
-          ccache -s
 
       - name: Build tests and run
         shell: bash
