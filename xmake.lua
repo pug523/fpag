@@ -302,7 +302,7 @@ end)
 -- Rules
 rule("fpag.common_config")
 on_load(function(target)
-  target:set("languages", "c++23")
+  target:set("languages", "c++20")
   target:set("warnings", { "all", "extra", "error", "pedantic" })
   target:set("encodings", "source:utf-8", "utf-8")
 
