@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 #include "fmt/base.h"
 
 namespace logging {

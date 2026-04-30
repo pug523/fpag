@@ -6,21 +6,13 @@
 
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/stdout_sink.h"
-#include "fpag/logging/sync_logger.h"
+#include "fpag/logging/sync/sync_logger.h"
 
 namespace base {
 
 using DebugLogger =
     logging::SyncLogger<logging::StdoutSink, logging::LogLevel::Debug>;
 
-inline DebugLogger& debug_logger() {
-  static DebugLogger logger = [] {
-    DebugLogger l;
-    l.init(logging::StdoutSink());
-    return l;
-  }();
-
-  return logger;
-}
+DebugLogger& debug_logger();
 
 }  // namespace base

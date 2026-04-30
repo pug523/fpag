@@ -97,21 +97,6 @@ class SyncLogger {
     });
   }
 
-  template <LogLevel level, typename Format>
-  inline constexpr void log(Format format) {
-    if constexpr (!should_log(level)) {
-      return;
-    }
-
-    const std::string_view msg{format};
-    sink_.log(LogEntry{
-        .level = level,
-        .message = msg,
-        .timestamp_ns = base::current_timestamp_ns(),
-    });
-    return;
-  }
-
   S sink_;
 };
 

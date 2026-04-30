@@ -23,6 +23,7 @@
 #include "fpag/logging/async/codec/basic_copy_codec.h"
 #include "fpag/logging/async/codec/string_copy_codec.h"
 #include "fpag/logging/async/codec/vector_copy_codec.h"
+#include "fpag/str/string_interner.h"
 // clang-format on
 // NOLINTEND
 
@@ -34,6 +35,7 @@ class Serializer {
   Serializer() = delete;
 
   static void serialize_to(LogLevel level,
+                           str::StringInterner* interner,
                            base::SpscQueue* queue,
                            Format fmt,
                            Args&&... args) {
@@ -43,15 +45,19 @@ class Serializer {
     using Deserializer = Deserializer<Format, Args...>;
     static constexpr DeserializeFunction kDeserializeFunc =
         &Deserializer::deserialize;
-
-    const std::string_view fmt_str = static_cast<std::string_view>(fmt);
+    using Eqs = base::SpscQueue::EnqueueStatus;
 
     if constexpr (sizeof...(Args) == 0) {
       void* out_ptr = nullptr;
-      queue->reserve(Deserializer::kPayloadHeaderSize, &out_ptr, kPayloadAlign);
+      const Eqs status = queue->reserve(Deserializer::kPayloadHeaderSize,
+                                        &out_ptr, kPayloadAlign);
+      if (status == Eqs::kDropped) [[unlikely]] {
+        return;
+      }
+
       write_header(static_cast<char*>(out_ptr),
                    Deserializer::kPayloadHeaderSize, kDeserializeFunc, level,
-                   fmt_str);
+                   fmt, interner);
       queue->commit(Deserializer::kPayloadHeaderSize);
     } else if constexpr (kAreAllArgsFixedSize) {
       constexpr usize kArgsSize =
@@ -59,10 +65,14 @@ class Serializer {
       constexpr usize kTotalPayloadSize =
           Deserializer::kPayloadHeaderSize + kArgsSize;
       void* out_ptr = nullptr;
-      queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
+      const Eqs status =
+          queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
+      if (status == Eqs::kDropped) [[unlikely]] {
+        return;
+      }
 
       write_header(static_cast<char*>(out_ptr), kTotalPayloadSize,
-                   kDeserializeFunc, level, fmt_str);
+                   kDeserializeFunc, level, fmt, interner);
 
       char* arg_out_cursor =
           static_cast<char*>(out_ptr) + Deserializer::kPayloadHeaderSize;
@@ -101,9 +111,14 @@ class Serializer {
       void* out_ptr = nullptr;
       const usize total_payload_size =
           Deserializer::kPayloadHeaderSize + args_body_size;
-      queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
+      const Eqs status =
+          queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
+      if (status == Eqs::kDropped) [[unlikely]] {
+        return;
+      }
+
       write_header(static_cast<char*>(out_ptr), total_payload_size,
-                   kDeserializeFunc, level, fmt_str);
+                   kDeserializeFunc, level, fmt, interner);
       std::memcpy(
           static_cast<char*>(out_ptr) + Deserializer::kPayloadHeaderSize,
           args_buf, args_body_size);
@@ -117,7 +132,8 @@ class Serializer {
                                             usize total_payload_size,
                                             DeserializeFunction func,
                                             LogLevel level,
-                                            std::string_view fmt_string) {
+                                            Format fmt,
+                                            str::StringInterner* interner) {
     char* out_cursor = out_ptr;
 
     FPAG_DCHECK(reinterpret_cast<uintptr_t>(out_cursor) % 8 == 0);
@@ -129,6 +145,12 @@ class Serializer {
     std::memcpy(out_cursor, &level, sizeof(level));
     if constexpr (!fmt::is_compiled_string<Format>::value) {
       out_cursor += base::round_up(sizeof(level), kPayloadAlign);
+      const std::string_view fmt_string = static_cast<std::string_view>(fmt);
+      (void)interner;
+      // TODO:
+      // interner->intern(fmt_string);
+      // const str::StringInterner::StringId id = interner->intern(fmt_string);
+      // std::memcpy(out_cursor, &id, sizeof(id));
       std::memcpy(out_cursor, &fmt_string, sizeof(fmt_string));
     }
   }

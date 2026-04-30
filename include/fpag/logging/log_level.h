@@ -19,7 +19,9 @@ enum class LogLevel : u8 {
   Warn = 3,
   Error = 4,
   Fatal = 5,
-  MaxValue = Fatal,
+
+  Off = 6,
+  All = 0,
 };
 
 static constexpr std::string_view kPlainPrefixes[] = {

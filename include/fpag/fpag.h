@@ -28,7 +28,7 @@
 #include "fpag/base/debug/stack_trace/stack_trace.h"
 
 #include "fpag/logging/async/async_logger.h"
-#include "fpag/logging/sync_logger.h"
+#include "fpag/logging/sync/sync_logger.h"
 
 #include "fpag/mem/arena.h"
 #include "fpag/mem/concurrent_arena.h"

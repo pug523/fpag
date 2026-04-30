@@ -82,6 +82,9 @@ class SpscQueue {
     return data_ + (tail_.load(std::memory_order_acquire) & capacity_mask());
   }
 
+  inline usize head_cache() const { return head_cache_; }
+  inline usize tail_cache() const { return tail_cache_; }
+
   static constexpr usize kDefaultCapacity = 1 << 12;                  // 4 KiB
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
 

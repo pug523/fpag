@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "fpag/base/debug/check.h"
+#include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/spsc_queue.h"
 #include "fpag/base/time_util.h"
@@ -22,6 +23,7 @@
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/sink.h"
+#include "fpag/str/string_interner.h"
 
 namespace logging {
 
@@ -43,6 +45,7 @@ class BackendWorker {
   }
 
   void init(S&& sink,
+            const str::StringInterner* interner,
             usize queue_capacity = base::SpscQueue::kDefaultCapacity,
             base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault) {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
@@ -50,10 +53,12 @@ class BackendWorker {
                        "BackendWorker is not idling");
 
     sink_ = std::move(sink);
+    interner_ = interner;
     queue_.init(queue_capacity, mode);
 
     internal_status_.store(InternalStatus::kInitialized,
                            std::memory_order_release);
+    FPAG_DCHECK(interner_);
   }
 
   void reset() {
@@ -63,6 +68,7 @@ class BackendWorker {
     }
     internal_status_.store(InternalStatus::kNotInitialized,
                            std::memory_order_release);
+    interner_ = nullptr;
     queue_.reset();
   }
 
@@ -172,14 +178,13 @@ class BackendWorker {
       return false;
     }
 
-    i64 remaining_size = static_cast<i64>(queue_size);
+    usize current_head = queue_.head_cache();
+    const usize target_head = current_head + queue_size;
 
     // Precompute timestamp once per batch
     const u64 timestamp_ns = base::current_timestamp_ns();
 
-    while (remaining_size > 0) {
-      const char* const old_head = queue_.head_ptr();
-
+    while (current_head < target_head) {
       const char* const data_ptr =
           queue_.peek(kPayloadMinHeaderSize, kPayloadAlign);
       const usize payload_size = *reinterpret_cast<const usize*>(data_ptr);
@@ -191,7 +196,6 @@ class BackendWorker {
           data_ptr + sizeof(usize) + sizeof(DeserializeFunction));
 
       FPAG_DCHECK_GE(payload_size, kPayloadMinHeaderSize);
-      FPAG_DCHECK_GE(payload_size, payload_size);
 
       // Deserialize args and format into format buffer.
       format_buffer format_buf;
@@ -199,11 +203,8 @@ class BackendWorker {
 
       queue_.discard(payload_size, kPayloadAlign);
 
-      const char* const new_head = queue_.head_ptr();
-      const i64 consumed_bytes = static_cast<i64>(new_head - old_head);
-      FPAG_DCHECK_GE(consumed_bytes, 0);
-
-      remaining_size -= consumed_bytes;
+      const usize aligned_head = base::round_up(current_head, kPayloadAlign);
+      current_head = aligned_head + payload_size;
 
       const std::string_view msg{format_buf.data(), format_buf.size()};
       sink_.log(LogEntry{
@@ -269,6 +270,7 @@ class BackendWorker {
   base::SpscQueue queue_;
   S sink_;
   std::unique_ptr<std::thread> thread_ = nullptr;
+  const str::StringInterner* interner_ = nullptr;
 
   std::atomic<InternalStatus> internal_status_{InternalStatus::kNotInitialized};
   std::atomic<bool> flush_requested_{false};

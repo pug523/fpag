@@ -12,13 +12,14 @@
 #include "fpag/logging/async/serializer.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/sink.h"
+#include "fpag/str/string_interner.h"
 
 namespace logging {
 
 template <IsSink S, LogLevel min_level>
 class AsyncLogger {
  public:
-  AsyncLogger() = default;
+  AsyncLogger() : interner_(4096) {}
   ~AsyncLogger() { reset(); }
 
   AsyncLogger(const AsyncLogger&) = delete;
@@ -29,9 +30,11 @@ class AsyncLogger {
 
   inline void init(
       S&& sink,
+      usize interner_map_capacity = 16 * 1024,
       usize queue_capacity = base::SpscQueue::kDefaultCapacity,
       base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault) {
-    worker_.init(std::move(sink), queue_capacity, mode);
+    interner_.init(interner_map_capacity);
+    worker_.init(std::move(sink), &interner_, queue_capacity, mode);
   }
   inline void start_backend_worker() { worker_.start(); }
   inline void stop_backend_worker() { worker_.stop(); }
@@ -79,11 +82,13 @@ class AsyncLogger {
     if constexpr (!should_log(level)) {
       return;
     }
-    Serializer<Format, Args&&...>::serialize_to(level, worker_.queue(), format,
+    Serializer<Format, Args&&...>::serialize_to(level, &interner_,
+                                                worker_.queue(), format,
                                                 std::forward<Args>(args)...);
   }
 
   BackendWorker<S> worker_;
+  str::StringInterner interner_;
 };
 
 }  // namespace logging

@@ -23,7 +23,8 @@ class StringInterner {
 
   using StringId = StringPoolId;
 
-  explicit StringInterner(usize map_init_capacity) : map_(map_init_capacity) {}
+  explicit StringInterner(usize map_init_capacity = 0)
+      : map_(map_init_capacity) {}
   ~StringInterner() = default;
 
   StringInterner(const StringInterner&) = delete;
@@ -31,6 +32,8 @@ class StringInterner {
 
   StringInterner(StringInterner&&) noexcept = delete;
   StringInterner& operator=(StringInterner&&) noexcept = delete;
+
+  void init(usize map_capacity) { map_.reserve(map_capacity); }
 
   // Interns the string and returns a stable StringId.
   StringId intern(const std::string_view str);
