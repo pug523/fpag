@@ -36,6 +36,9 @@ inline void dlog_internal(const char* file,
                           CompiledFormat fmt,
                           Args&&... args) {
   fmt::memory_buffer out;
+  // cpplint's issue: it suggests `#include <utility>` for `std::forward` but it
+  // is already included.
+  // NOLINTNEXTLINE(build/include_what_you_use)
   fmt::format_to(std::back_inserter(out), fmt, std::forward<Args>(args)...);
   const std::string_view formatted_msg(out.data(), out.size());
   dlog_impl(formatted_msg, file, line, func);
