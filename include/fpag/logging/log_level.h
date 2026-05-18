@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "fpag/base/color_mode.h"
+#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
@@ -72,6 +73,7 @@ inline constexpr std::string_view log_prefix(LogLevel level,
     case C::Ansi16: return kAnsi16Prefixes[l];
     case C::Ansi256: return kAnsi256Prefixes[l];
     case C::AnsiTrueColor: return kAnsiTrueColorPrefixes[l];
+    default: FPAG_UNREACHABLE();
   }
 }
 
