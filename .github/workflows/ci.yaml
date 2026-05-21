@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: &ci_paths
+      - include/**
+      - src/**
+      - tests/**
+      - benchmarks/**
+      - third_party/**
+      - scripts/**
+      - .github/actions/setup/**
+      - .github/workflows/ci.yaml
+      - xmake.lua
+      - .clang-tidy
+      - CPPLINT.cfg
+      - uv.lock
+  pull_request:
+    branches: [main]
+    paths: *ci_paths
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and test (${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.build_type }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [debug, release]
+        cc: [clang]
+        cxx: [clang++]
+        os:
+          - ubuntu-24.04
+          - macos-26
+          - windows-2025-vs2026
+        include:
+          - os: ubuntu-24.04
+            plat: linux
+            arch: x86_64
+            stdlib: libc++
+          - os: macos-26
+            plat: macosx
+            arch: arm64
+            stdlib: libc++
+          - os: windows-2025-vs2026
+            plat: windows
+            arch: x64
+            stdlib: msvc
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+      COLORTERM: 256color
+      XMAKE_COLORTERM: 256color
+      XMAKE_ROOT: y
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup build environment
+        uses: ./.github/actions/setup
+        with:
+          os: ${{ runner.os }}
+          plat: ${{ matrix.plat }}
+          arch: ${{ matrix.arch }}
+          cc: ${{ matrix.cc }}
+          cxx: ${{ matrix.cxx }}
+          build_type: ${{ matrix.build_type }}
+
+      - name: Configure
+        shell: bash
+        run: |
+          xmake config -y \
+            -m ${{ matrix.build_type }} \
+            --tests=y \
+            --benchmarks=y \
+            --toolchain=clang \
+            --stdlib="${{ matrix.stdlib }}" \
+            --sanitizers=y \
+            --libunwind=y \
+            -p "${{ matrix.plat }}" \
+            -a "${{ matrix.arch }}"
+
+      - name: Build
+        shell: bash
+        run: |
+          xmake build -w
+
+      - name: Build tests and run
+        shell: bash
+        run: xmake run tests
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ matrix.plat }}-${{ matrix.arch }}
+          path: build/${{ matrix.plat }}/${{ matrix.arch }}/**
+
+      - name: Analyze statically
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          xmake check api
+          xmake check clang
+          xmake lint
+
