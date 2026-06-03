@@ -29,9 +29,9 @@ using f64 = double;
 #include <unistd.h>
 using isize = ssize_t;
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
-#if FPAG_BUILD_FLAG(IS_ARCH_CPU_64_BITS)
+#if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
 using isize = i64;
-#elif FPAG_BUILD_FLAG(IS_ARCH_CPU_32_BITS)
+#elif FPAG_BUILD_FLAG(IS_ARCH_32_BITS)
 using isize = i32;
 #else
 #error "Unsupported cpu architecture"
