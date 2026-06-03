@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: ./.github/actions/setup
+        uses: pug523/actions_collection@main
         with:
           os: ${{ runner.os }}
           plat: ${{ matrix.plat }}
