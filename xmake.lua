@@ -121,9 +121,7 @@ local function optreport()
 end
 
 local function sanitizers()
-  return has_config("sanitizers")
-    and is_mode("debug")
-    and not is_plat("windows")
+  return has_config("sanitizers") and is_mode("debug") and is_plat("linux")
 end
 
 local function xray()
