@@ -352,7 +352,8 @@ on_load(function(target)
   if is_mode("debug") then
     target:set("symbols", "debug")
     target:set("optimize", "none")
-    target:add("cxxflags", { "-fno-omit-frame-pointer", "-g3" })
+    target:add("cxxflags", { "-fno-omit-frame-pointer", "-g1" })
+    -- target:add("cxxflags", { "-fno-omit-frame-pointer", "-g3" })
   elseif is_mode("release") then
     target:set("symbols", "hidden")
     target:set("optimize", "fastest")
