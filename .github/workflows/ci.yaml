@@ -10,7 +10,6 @@ on:
       - benchmarks/**
       - third_party/**
       - scripts/**
-      - .github/actions/setup/**
       - .github/workflows/ci.yaml
       - xmake.lua
       - .clang-tidy
