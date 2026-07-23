@@ -22,7 +22,6 @@ struct Config {
   std::string host = "127.0.0.1";
   bool verbose = false;
 };
-
 ARGS_FN_DEFINE(
     Config,
     parse_config,
@@ -32,10 +31,10 @@ ARGS_FN_DEFINE(
     ARGS_OPT(Config, port, 'p', "port", "Port to listen on", false),
     ARGS_OPT(Config, host, 'h', "host", "Host address", false),
     ARGS_FLAG(Config, verbose, 'V', "verbose", "Enable verbose logging"))
+
 struct AuthConfig {
   std::string token;
 };
-
 ARGS_FN_DEFINE(AuthConfig,
                parse_auth,
                "auth-app",
@@ -47,7 +46,6 @@ struct BundleConfig {
   bool a_flag = false;
   bool b_flag = false;
 };
-
 ARGS_FN_DEFINE(BundleConfig,
                parse_bundle,
                "bundle-app",
@@ -112,7 +110,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Mixed short and long options") {
-    const char* argv[] = {"app", "-p", "5000", "--host=10.0.0.1", "-v"};
+    const char* argv[] = {"app", "-p", "5000", "--host=10.0.0.1", "-V"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
     const auto res = parse_config(argc, argv);
