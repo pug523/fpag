@@ -54,7 +54,7 @@ FPAG_NOINLINE usize capture_stack_addresses_libunwind(void** out_frames,
       break;
     }
 
-    unw_word_t ip;
+    unw_word_t ip = 0;
     if (unw_get_reg(&cursor, UNW_REG_IP, &ip) < 0 || ip == 0) {
       break;
     }
