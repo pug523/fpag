@@ -30,6 +30,7 @@ jobs:
         build_type: [debug, release]
         cc: [clang]
         cxx: [clang++]
+        llvm_version: [22.1.8]
         os:
           - ubuntu-24.04
           - macos-26
@@ -61,14 +62,13 @@ jobs:
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: pug523/actions_collection/cxx_setup@ec5d233a5860ac4e0e492162ddfdc32398318105
+        uses: pug523/actions_collection/cxx_setup@71166c04bd1fe7e41517c83aea77b377c307e1e5
         with:
           os: ${{ runner.os }}
           plat: ${{ matrix.plat }}
           arch: ${{ matrix.arch }}
-          cc: ${{ matrix.cc }}
-          cxx: ${{ matrix.cxx }}
           build_type: ${{ matrix.build_type }}
+          llvm_version: ${{ matrix.llvm_version }}
 
       - name: Configure
         shell: bash
