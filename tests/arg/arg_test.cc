@@ -5,6 +5,8 @@
 #include "fpag/arg/arg.h"
 
 #include <optional>
+#include <span>
+#include <string>
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
@@ -16,13 +18,14 @@ TEST_CASE("Arg default state", "[arg][arg]") {
 
   CHECK(a.name() == "port");
   CHECK_FALSE(a.short_name().has_value());
-  CHECK(a.long_name().empty());
+  CHECK(a.long_name() == "port");
   CHECK(a.help().empty());
   CHECK_FALSE(a.is_required());
   CHECK_FALSE(a.is_flag());
 }
 
-TEST_CASE("Arg fluent builder on an rvalue chains all fields", "[arg][arg]") {
+TEST_CASE("ArgBuilder fluent API on an rvalue chains all fields",
+          "[arg][arg]") {
   const Arg a = ArgBuilder("port")
                     .short_name('p')
                     .long_name("port")
@@ -41,12 +44,12 @@ TEST_CASE("Arg fluent builder on an rvalue chains all fields", "[arg][arg]") {
   CHECK_FALSE(a.is_flag());
 }
 
-TEST_CASE("Arg fluent builder on a named lvalue also chains", "[arg][arg]") {
+TEST_CASE("ArgBuilder fluent API on a named lvalue also chains", "[arg][arg]") {
   ArgBuilder b("verbose");
-  const Arg a = b.short_name('v')
-                    .long_name("verbose")
-                    .help("Enable verbose")
-                    .is_flag(true)
+  const Arg a = std::move(b.short_name('v')
+                              .long_name("verbose")
+                              .help("Enable verbose")
+                              .is_flag(true))
                     .build();
 
   CHECK(a.name() == "verbose");
@@ -59,19 +62,20 @@ TEST_CASE("Arg fluent builder on a named lvalue also chains", "[arg][arg]") {
   CHECK_FALSE(a.is_required());
 }
 
-TEST_CASE("Arg required() defaults to true when called with no argument",
+TEST_CASE("ArgBuilder required() defaults to true when called with no argument",
           "[arg][arg]") {
   const Arg a = ArgBuilder("key").required().build();
   CHECK(a.is_required());
 }
 
-TEST_CASE("Arg is_flag() defaults to true when called with no argument",
+TEST_CASE("ArgBuilder is_flag() defaults to true when called with no argument",
           "[arg][arg]") {
   const Arg a = ArgBuilder("debug").is_flag().build();
   CHECK(a.is_flag());
 }
 
-TEST_CASE("Arg required(false) explicitly clears the flag", "[arg][arg]") {
+TEST_CASE("ArgBuilder required(false) explicitly clears the flag",
+          "[arg][arg]") {
   const Arg a = ArgBuilder("key").required(true).required(false).build();
   CHECK_FALSE(a.is_required());
 }
@@ -90,6 +94,58 @@ TEST_CASE("Arg move construction preserves all fields", "[arg][arg]") {
   CHECK(*s == 'h');  // NOLINT(bugprone-unchecked-optional-access)
   CHECK(b.long_name() == "host");
   CHECK(b.is_required());
+}
+
+TEST_CASE("ArgBuilder name() respects explicit name override on rvalue",
+          "[arg][arg]") {
+  // If 'name' is provided, it should be used instead of long_name
+  const Arg a = std::move(ArgBuilder("long-name").name("custom-name")).build();
+  CHECK(a.name() == "custom-name");
+  CHECK(a.long_name() == "long-name");
+}
+
+TEST_CASE("ArgBuilder name() respects explicit name override on lvalue",
+          "[arg][arg]") {
+  ArgBuilder b("long-name");
+  b.name("custom-name");
+  const Arg a = std::move(b).build();
+
+  CHECK(a.name() == "custom-name");
+  CHECK(a.long_name() == "long-name");
+}
+
+TEST_CASE("Arg default_value defaults to empty", "[arg][arg]") {
+  const Arg a = ArgBuilder("port").build();
+  CHECK(a.default_value().empty());
+}
+
+TEST_CASE("ArgBuilder allows setting default_value", "[arg][arg]") {
+  const Arg a = ArgBuilder("port").default_value("8080").build();
+  CHECK(a.default_value() == "8080");
+}
+
+TEST_CASE("Arg choices are stored and retrievable", "[arg][arg]") {
+  constexpr std::string modes[] = {"read", "write", "execute"};
+  const Arg a = ArgBuilder("mode").choices(modes).build();
+
+  const std::span<const std::string> choices = a.choices();
+  REQUIRE(choices.size() == 3);
+  CHECK(choices[0] == modes[0]);
+  CHECK(choices[1] == modes[1]);
+  CHECK(choices[2] == modes[2]);
+}
+
+TEST_CASE("Arg choices default to empty span", "[arg][arg]") {
+  const Arg a = ArgBuilder("port").build();
+  CHECK(a.choices().empty());
+}
+
+TEST_CASE("Arg fluent builder supports chaining choices", "[arg][arg]") {
+  constexpr std::string choices[] = {"info", "warn", "error"};
+  const Arg a = ArgBuilder("level").choices(choices).required().build();
+
+  CHECK(a.choices().size() == 3);
+  CHECK(a.is_required());
 }
 
 }  // namespace arg

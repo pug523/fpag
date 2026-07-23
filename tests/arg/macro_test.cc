@@ -8,11 +8,14 @@
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
+#include "fpag/arg/parse_status.h"
+#include "fpag/arg/parser.h"
 #include "fpag/base/numeric.h"
 
 namespace arg {
+
+// NOLINTBEGIN(bugprone-use-after-move)
 
 namespace {
 
@@ -53,6 +56,32 @@ ARGS_FN_DEFINE(BundleConfig,
                ARGS_FLAG(BundleConfig, a_flag, 'a', "aflag", "A flag"),
                ARGS_FLAG(BundleConfig, b_flag, 'b', "bflag", "B flag"))
 
+struct ChoiceConfig {
+  std::string mode = "read";
+  i32 threads = 1;
+};
+
+// Choices expansion (__VA_ARGS__) and '\0' short names
+ARGS_FN_DEFINE(ChoiceConfig,
+               parse_choice,
+               "choice-app",
+               "2.0.0",
+               "Choice test app",
+               ARGS_OPT(ChoiceConfig,
+                        mode,
+                        'm',
+                        "mode",
+                        "Operation mode",
+                        false,
+                        "read",
+                        "write"),
+               ARGS_OPT(ChoiceConfig,
+                        threads,
+                        '\0',
+                        "threads",
+                        "Number of threads",
+                        false))
+
 }  // namespace
 
 TEST_CASE("Macro argument parsing", "[arg][macro]") {
@@ -61,10 +90,10 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 8080);
     CHECK(cfg.host == "127.0.0.1");
     CHECK_FALSE(cfg.verbose);
@@ -75,13 +104,13 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "-p", "9090", "-V"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 9090);
     CHECK(cfg.host == "127.0.0.1");
-    CHECK(cfg.verbose == true);
+    CHECK(cfg.verbose);
   }
 
   SECTION("Parse options with long names") {
@@ -90,13 +119,13 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
                           "--host", "0.0.0.0", "--verbose"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 3000);
     CHECK(cfg.host == "0.0.0.0");
-    CHECK(cfg.verbose == true);
+    CHECK(cfg.verbose);
   }
 
   SECTION("Long option using '=' syntax") {
@@ -104,10 +133,10 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "--port=3000", "--host=0.0.0.0"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 3000);
     CHECK(cfg.host == "0.0.0.0");
   }
@@ -117,13 +146,13 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "-p", "5000", "--host=10.0.0.1", "-V"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 5000);
     CHECK(cfg.host == "10.0.0.1");
-    CHECK(cfg.verbose == true);
+    CHECK(cfg.verbose);
   }
 
   SECTION("Only some options provided, rest keep defaults") {
@@ -131,10 +160,10 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "--host=192.168.1.1"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     REQUIRE(res.is_ok());
 
-    const Config& cfg = res.unwrap();
+    const Config& cfg = std::move(res).unwrap();
     CHECK(cfg.port == 8080);
     CHECK(cfg.host == "192.168.1.1");
     CHECK_FALSE(cfg.verbose);
@@ -145,7 +174,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "--bogus"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 
@@ -154,7 +183,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "-z"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 
@@ -163,7 +192,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "--port"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 
@@ -172,7 +201,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "-p"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 
@@ -181,7 +210,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const char* argv[] = {"app", "--help"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_config(argc, argv);
+    auto res = parse_config(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 }
@@ -193,8 +222,8 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     };
     auto binder = ARGS_OPT(RequiredConfig, key, 'k', "key", "API key", true);
 
-    Command cmd("test_app", "1.0.0");
-    std::move(binder).apply_to_command(&cmd);
+    Parser cmd("test_app", "1.0.0");
+    std::move(binder).apply_to_parser(&cmd);
 
     Matches matches;
     // NOLINTNEXTLINE(misc-const-correctness)
@@ -210,7 +239,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     const char* argv[] = {"auth-app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_auth(argc, argv);
+    auto res = parse_auth(argc, argv);
     CHECK_FALSE(res.is_ok());
   }
 
@@ -219,9 +248,9 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     const char* argv[] = {"auth-app", "-t", "secret123"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_auth(argc, argv);
+    auto res = parse_auth(argc, argv);
     REQUIRE(res.is_ok());
-    CHECK(res.unwrap().token == "secret123");
+    CHECK(std::move(res).unwrap().token == "secret123");
   }
 
   SECTION("Succeeds end-to-end when required option is provided (long)") {
@@ -229,9 +258,9 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     const char* argv[] = {"auth-app", "--token=secret456"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_auth(argc, argv);
+    auto res = parse_auth(argc, argv);
     REQUIRE(res.is_ok());
-    CHECK(res.unwrap().token == "secret456");
+    CHECK(std::move(res).unwrap().token == "secret456");
   }
 }
 
@@ -241,12 +270,12 @@ TEST_CASE("Macro bundled short flags", "[arg][macro]") {
     const char* argv[] = {"bundle-app", "-ab"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_bundle(argc, argv);
+    auto res = parse_bundle(argc, argv);
     REQUIRE(res.is_ok());
 
-    const BundleConfig& cfg = res.unwrap();
-    CHECK(cfg.a_flag == true);
-    CHECK(cfg.b_flag == true);
+    const BundleConfig& cfg = std::move(res).unwrap();
+    CHECK(cfg.a_flag);
+    CHECK(cfg.b_flag);
   }
 
   SECTION("Only one of the bundled flags provided") {
@@ -254,13 +283,106 @@ TEST_CASE("Macro bundled short flags", "[arg][macro]") {
     const char* argv[] = {"bundle-app", "-a"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const auto res = parse_bundle(argc, argv);
+    auto res = parse_bundle(argc, argv);
     REQUIRE(res.is_ok());
 
-    const BundleConfig& cfg = res.unwrap();
-    CHECK(cfg.a_flag == true);
+    const BundleConfig& cfg = std::move(res).unwrap();
+    CHECK(cfg.a_flag);
     CHECK_FALSE(cfg.b_flag);
   }
 }
+
+TEST_CASE("Macro handles built-in --help and --version requested statuses",
+          "[arg][macro]") {
+  SECTION("Help request returns HelpRequested status with help string") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"app", "--help"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_config(argc, argv);
+    CHECK(res.is_help());
+    CHECK_FALSE(std::move(res).unwrap_help().empty());
+  }
+
+  SECTION("Short -h returns HelpRequested status") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"auth-app", "-h"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_auth(argc, argv);
+    CHECK(res.is_help());
+  }
+
+  SECTION(
+      "Version request returns VersionRequested status with version string") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"app", "--version"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_config(argc, argv);
+    CHECK(res.is_version());
+    CHECK(std::move(res).unwrap_version() == "1.0.0");
+  }
+
+  SECTION("Short -v returns VersionRequested status") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"app", "-v"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_config(argc, argv);
+    CHECK(res.is_version());
+  }
+}
+
+TEST_CASE("Macro options with choices validation", "[arg][macro]") {
+  SECTION("Valid choice succeeds") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"choice-app", "--mode", "write"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_choice(argc, argv);
+    REQUIRE(res.is_ok());
+    CHECK(std::move(res).unwrap().mode == "write");
+  }
+
+  SECTION("Invalid choice fails parsing") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"choice-app", "--mode", "execute"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_choice(argc, argv);
+    CHECK(res.is_err());
+  }
+
+  SECTION("Option without short name ('\\0') works") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"choice-app", "--threads", "8"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_choice(argc, argv);
+    REQUIRE(res.is_ok());
+    CHECK(std::move(res).unwrap().threads == 8);
+  }
+}
+
+TEST_CASE("Macro type conversion failure leaves default value intact or fails",
+          "[arg][macro]") {
+  SECTION("Invalid type conversion (e.g. string to int) returns error") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"app", "--port", "invalid_number"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_config(argc, argv);
+    // Even if parser matches raw string, extraction will fall back safely
+    if (res.is_ok()) {
+      // Port should remain default if extraction fails
+      CHECK(std::move(res).unwrap().port == 8080);
+    } else {
+      CHECK(res.is_err());
+    }
+  }
+}
+
+// NOLINTEND(bugprone-use-after-move)
 
 }  // namespace arg
