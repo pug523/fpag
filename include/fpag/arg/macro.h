@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include <utility>
 
 #include "fpag/arg/arg.h"

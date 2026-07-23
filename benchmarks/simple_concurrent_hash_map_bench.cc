@@ -64,7 +64,7 @@ void simple_concurrent_hash_map_concurrent_insert_multi_thread(
 
     for (u32 i = 0; i < num_threads; ++i) {
       threads.emplace_back([&map, i]() {
-        u32 const start = i * num_ops;
+        const u32 start = i * num_ops;
         for (u32 j = 0; j < num_ops; ++j) {
           map.insert(start + j, j);
         }
