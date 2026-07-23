@@ -67,7 +67,7 @@ class Deserializer {
           return arg;
         } else {
           // Has size slot.
-          usize body_size;
+          usize body_size = 0;
 
           FPAG_DCHECK_LE(sizeof(body_size), remaining_size);
           std::memcpy(&body_size, data_cursor, sizeof(body_size));

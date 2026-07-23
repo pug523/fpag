@@ -53,12 +53,12 @@ void StackTrace::collect_trace() {
   // string_view pointers. Worst case: 256 chars per frame (function + file).
   string_buffer_.reserve(count_ * 256);
 
-  Symbolicator sym;
+  const Symbolicator sym;
   for (usize i = 0; i < count_; ++i) {
     frames_[i].address = raw_addrs[i];
     frames_[i].index = i;
 
-    SymbolInfo info = sym.resolve(raw_addrs[i]);
+    const SymbolInfo info = sym.resolve(raw_addrs[i]);
 
     // Intern the strings so that string_view members remain valid.
     frames_[i].function = intern_string(info.function);

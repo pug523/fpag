@@ -27,12 +27,12 @@ i32 main(i32 argc, char** argv) {
 
   Catch::Session session;
 
-  i32 return_code = session.applyCommandLine(argc, argv);
+  const i32 return_code = session.applyCommandLine(argc, argv);
   if (return_code != 0) {
     return return_code;
   }
 
-  i32 result = session.run();
+  const i32 result = session.run();
 
   clean_up();
 

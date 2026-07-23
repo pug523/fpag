@@ -77,8 +77,8 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
       command[result.size] = '\0';
 
       const auto deleter = [](FILE* f) { pclose(f); };
-      std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"),
-                                                    deleter);
+      const std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"),
+                                                          deleter);
 
       if (pipe) {
         char buffer[kBufSize];
@@ -91,7 +91,7 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
 
           const usize at_pos = output.find(" at ");
           if (at_pos != std::string::npos) {
-            std::string file_line = output.substr(at_pos + 4);
+            const std::string file_line = output.substr(at_pos + 4);
             const usize colon_pos = file_line.find_last_of(':');
 
             if (colon_pos != std::string::npos) {

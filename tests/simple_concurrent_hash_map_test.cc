@@ -59,7 +59,7 @@ TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
     for (u32 i = 0; i < num_threads; ++i) {
       threads.emplace_back([&map, i]() {
         for (u32 j = 0; j < inserts_per_thread; ++j) {
-          u64 key = i * inserts_per_thread + j;
+          const u64 key = i * inserts_per_thread + j;
           map.insert(key, key * 10);
         }
       });

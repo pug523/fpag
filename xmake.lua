@@ -327,6 +327,8 @@ on_load(function(target)
       "-Wnull-dereference",
       "-Wformat=2",
       "-Wundef",
+      "-Wnon-virtual-dtor",
+      "-Woverloaded-virtual",
     })
     target:add("cxxflags", "-fstack-protector-strong")
 

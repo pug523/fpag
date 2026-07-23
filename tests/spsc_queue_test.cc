@@ -4,7 +4,6 @@
 
 #include "fpag/base/spsc_queue.h"
 
-
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
@@ -37,7 +36,8 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     constexpr i32 kDataIn = 42;
 
     void* ptr = nullptr;
-    SpscQueue::EnqueueStatus result = queue.reserve(sizeof(kDataIn), &ptr);
+    const SpscQueue::EnqueueStatus result =
+        queue.reserve(sizeof(kDataIn), &ptr);
     CHECK(result == SpscQueue::EnqueueStatus::kOk);
     *static_cast<i32*>(ptr) = kDataIn;
     queue.commit(sizeof(kDataIn));
@@ -60,7 +60,8 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     constexpr char kCharIn = 'A';
 
     void* ptr = nullptr;
-    SpscQueue::EnqueueStatus result = queue.reserve(sizeof(kCharIn), &ptr);
+    const SpscQueue::EnqueueStatus result =
+        queue.reserve(sizeof(kCharIn), &ptr);
     CHECK(result == SpscQueue::EnqueueStatus::kOk);
     *static_cast<char*>(ptr) = kCharIn;
     queue.commit(sizeof(kCharIn));
@@ -78,13 +79,14 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
   SECTION("Automatic enqueue and dequeue single int") {
     constexpr i32 kDataIn = 42;
 
-    SpscQueue::EnqueueStatus result = queue.enqueue(&kDataIn, sizeof(kDataIn));
+    const SpscQueue::EnqueueStatus result =
+        queue.enqueue(&kDataIn, sizeof(kDataIn));
     CHECK(result == SpscQueue::EnqueueStatus::kOk);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kDataIn));
     CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kDataIn));
 
-    i32 data_out;
+    i32 data_out = 0;
     queue.dequeue(static_cast<void*>(&data_out), sizeof(data_out));
     CHECK(queue.empty());
     CHECK(queue.size() == 0);
@@ -95,13 +97,14 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
   SECTION("Automatic enqueue and dequeue single char") {
     constexpr char kCharIn = 'A';
 
-    SpscQueue::EnqueueStatus result = queue.enqueue(&kCharIn, sizeof(kCharIn));
+    const SpscQueue::EnqueueStatus result =
+        queue.enqueue(&kCharIn, sizeof(kCharIn));
     CHECK(result == SpscQueue::EnqueueStatus::kOk);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kCharIn));
     CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kCharIn));
 
-    char char_out;
+    char char_out = 0;
     queue.dequeue(&char_out, sizeof(kCharIn));
     CHECK(queue.empty());
     CHECK(char_out == kCharIn);

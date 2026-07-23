@@ -91,7 +91,7 @@ const char* SpscQueue::peek(usize size, usize align) {
 }
 
 void SpscQueue::discard(usize size, usize align) {
-  usize aligned_head = base::round_up(head_cache_, align);
+  const usize aligned_head = base::round_up(head_cache_, align);
   head_cache_ = aligned_head + size;
   head_.store(head_cache_, std::memory_order_release);
 }
@@ -150,7 +150,7 @@ SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data,
                                             usize align) {
   FPAG_DCHECK_LE(size, capacity_);
   void* buf = nullptr;
-  EnqueueStatus status = reserve(size, &buf, align);
+  const EnqueueStatus status = reserve(size, &buf, align);
   if (status != EnqueueStatus::kOk) [[unlikely]] {
     return status;
   }

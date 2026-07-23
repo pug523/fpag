@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <utility>
 
 #include "fpag/base/numeric.h"
@@ -30,7 +31,7 @@ class AsyncLogger {
 
   inline void init(
       S&& sink,
-      usize interner_map_capacity = 16 * 1024,
+      usize interner_map_capacity = static_cast<usize>(16 * 1024),
       usize queue_capacity = base::SpscQueue::kDefaultCapacity,
       base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault) {
     interner_.init(interner_map_capacity);

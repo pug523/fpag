@@ -19,7 +19,7 @@ TEST_CASE("capture_stack_addresses basic functionality",
   SECTION("Capture at least one frame") {
     // Basic capture to ensure the function returns a non-zero value in a
     // standard environment.
-    usize captured = capture_stack_addresses(frames, kMaxDepth, 0);
+    const usize captured = capture_stack_addresses(frames, kMaxDepth, 0);
 
     CHECK(captured > 0);
     CHECK(captured <= kMaxDepth);
@@ -40,14 +40,15 @@ TEST_CASE("capture_stack_addresses basic functionality",
     void* small_frames[kSmallDepth];
 
     // Even if the stack is deep, it should only return up to kSmallDepth.
-    usize captured = capture_stack_addresses(small_frames, kSmallDepth, 0);
+    const usize captured =
+        capture_stack_addresses(small_frames, kSmallDepth, 0);
 
     CHECK(captured <= kSmallDepth);
   }
 
   SECTION("Handle zero max_depth") {
     void* no_frames[1];
-    usize captured = capture_stack_addresses(no_frames, 0, 0);
+    const usize captured = capture_stack_addresses(no_frames, 0, 0);
 
     CHECK(captured == 0);
   }
@@ -60,7 +61,7 @@ TEST_CASE("capture_stack_addresses basic functionality",
 FPAG_NOINLINE usize deep_stack_function(void** out_frames,
                                         usize max_depth,
                                         usize skip) {
-  usize result = capture_stack_addresses(out_frames, max_depth, skip);
+  const usize result = capture_stack_addresses(out_frames, max_depth, skip);
   return result;
 }
 
@@ -72,10 +73,11 @@ TEST_CASE("capture_stack_addresses skip functionality",
 
   SECTION("Skip shifts the captured addresses") {
     // Capture without extra skip.
-    usize count_normal = deep_stack_function(frames_normal, kMaxDepth, 0);
+    const usize count_normal = deep_stack_function(frames_normal, kMaxDepth, 0);
 
     // Capture skipping the DeepStackFunction itself.
-    usize count_skipped = deep_stack_function(frames_skipped, kMaxDepth, 1);
+    const usize count_skipped =
+        deep_stack_function(frames_skipped, kMaxDepth, 1);
 
     if (count_normal > 1 && count_skipped > 0) {
       // The first frame of the skipped capture should match
@@ -86,7 +88,8 @@ TEST_CASE("capture_stack_addresses skip functionality",
 
   SECTION("Excessive skip returns zero or minimal frames") {
     // Skipping more frames than likely exist in this test runner context.
-    usize captured = capture_stack_addresses(frames_normal, kMaxDepth, 1000);
+    const usize captured =
+        capture_stack_addresses(frames_normal, kMaxDepth, 1000);
 
     // Depending on implementation, this usually returns 0 if the stack is
     // exhausted.

@@ -24,7 +24,7 @@ namespace base {
 template <typename K, typename V, typename Hash = std::hash<K>>
 class SimpleConcurrentHashMap {
  public:
-  explicit SimpleConcurrentHashMap(u64 capacity = 1024 * 1024,
+  explicit SimpleConcurrentHashMap(u64 capacity = static_cast<u64>(1024 * 1024),
                                    const Hash& hasher = Hash())
       : hasher_(hasher) {
     reserve(capacity);

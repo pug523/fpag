@@ -74,7 +74,7 @@ TEST_CASE("StackTrace Collection and Strings", "[base][stack_trace]") {
     REQUIRE(trace.frames() == buffer.data());
 
     SECTION("String representation is not empty") {
-      std::string res = trace.to_string();
+      const std::string res = trace.to_string();
       REQUIRE_FALSE(res.empty());
     }
   }

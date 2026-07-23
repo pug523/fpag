@@ -18,5 +18,6 @@ IncludeBlocks: Regroup
 
 DerivePointerAlignment: false
 PointerAlignment: Left
+QualifierAlignment: Left
 
 SpaceBeforeParens: ControlStatements

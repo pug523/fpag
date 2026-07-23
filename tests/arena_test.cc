@@ -35,11 +35,11 @@ TEST_CASE("Arena basic allocation and alignment", "[base][arena]") {
     // Preservation with default alignment
     void* ptr1 = arena.alloc(1);
 
-    uintptr_t addr = reinterpret_cast<uintptr_t>(ptr1);
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(ptr1);
     CHECK(addr % alignof(std::max_align_t) == 0);
 
     void* ptr2 = arena.alloc(1);
-    uintptr_t addr2 = reinterpret_cast<uintptr_t>(ptr2);
+    const uintptr_t addr2 = reinterpret_cast<uintptr_t>(ptr2);
     CHECK(addr2 % alignof(std::max_align_t) == 0);
     CHECK(ptr1 != ptr2);
   }
@@ -85,7 +85,7 @@ TEST_CASE("Arena object creation", "[base][arena]") {
     };
 
     {
-      ArenaUniquePtr<NonTrivial> ptr = arena.create_managed<NonTrivial>();
+      const ArenaUniquePtr<NonTrivial> ptr = arena.create_managed<NonTrivial>();
       CHECK(!destroyed);
     }
     // Should be destroyed when arena goes out of scope.
@@ -100,7 +100,7 @@ TEST_CASE("Arena move semantics", "[base][arena]") {
     void* p = arena1.alloc(1024);
     CHECK(p != nullptr);
     const usize size_before = arena1.size();
-    Arena moved_arena(std::move(arena1));
+    const Arena moved_arena(std::move(arena1));
     CHECK(moved_arena.size() == size_before);
   }
 

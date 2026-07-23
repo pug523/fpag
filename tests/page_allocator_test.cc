@@ -36,7 +36,7 @@ TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
     REQUIRE(ptr != nullptr);
 
     // Commit the pages to make them usable.
-    bool success = commit_pages(ptr, size);
+    const bool success = commit_pages(ptr, size);
     CHECK(success);
 
     // Test accessibility.

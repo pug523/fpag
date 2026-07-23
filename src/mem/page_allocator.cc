@@ -147,7 +147,7 @@ void* allocate_aliased_pages(usize size) {
   return base ? base : allocate_pages(size);
 
 #elif FPAG_BUILD_FLAG(IS_OS_LINUX)
-  i32 fd = memfd_create("aliased_pages", 0);
+  const i32 fd = memfd_create("aliased_pages", 0);
   if (fd == -1) {
     return allocate_pages(size);
   }
@@ -165,9 +165,9 @@ void* allocate_aliased_pages(usize size) {
     return allocate_pages(size);
   }
   // Map the same physical pages twice, consecutively.
-  void* const view1 =
+  const void* const view1 =
       mmap(base, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-  void* const view2 =
+  const void* const view2 =
       mmap(static_cast<char*>(base) + size, size, PROT_READ | PROT_WRITE,
            MAP_SHARED | MAP_FIXED, fd, 0);
   close(fd);

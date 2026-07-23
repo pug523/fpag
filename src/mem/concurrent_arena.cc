@@ -66,8 +66,8 @@ void ConcurrentArena::reset() {
 void* ConcurrentArena::alloc(usize size, usize align) {
   FPAG_DCHECK(ptr_);
 
-  usize old_size;
-  usize new_size;
+  usize old_size = 0;
+  usize new_size = 0;
 
   // Bump pointer
   while (true) {

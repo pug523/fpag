@@ -62,7 +62,7 @@ bool lookup_module_for_address_linux(const void* address, ModuleInfo* out) {
     char path[256] = {};
 
     // Format: start-end perms offset dev inode [path]
-    i32 parsed =
+    const i32 parsed =
         ::sscanf(line, "%lx-%lx %7s %lx %x:%x %lu %255s", &start, &end, perms,
                  &file_offset, &dev_major, &dev_minor, &inode, path);
     if (parsed < 5) {
