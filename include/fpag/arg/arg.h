@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <utility>
 
@@ -12,13 +14,22 @@
 
 namespace arg {
 
-class ArgBuilder;
+struct ArgState {
+  std::optional<std::string_view> name;
+  std::string_view help;
+  std::string_view long_name;
+  std::string_view default_value;
+  std::span<const std::string_view> choices;
+  std::optional<char> short_name;
+  bool is_required = false;
+  bool is_flag = false;
+};
 
 // Represents a single command-line argument definition.
 // Use `ArgBuilder` to construct this class.
 class Arg {
  public:
-  Arg() = delete;
+  explicit constexpr Arg(const ArgState& state) : state_(state) {}
   ~Arg() = default;
 
   Arg(const Arg&) = delete;
@@ -27,43 +38,35 @@ class Arg {
   Arg(Arg&&) noexcept = default;
   Arg& operator=(Arg&&) noexcept = default;
 
-  constexpr std::string_view name() const { return name_; }
-  constexpr std::optional<char> short_name() const { return short_name_; }
-  constexpr std::string_view long_name() const { return long_name_; }
-  constexpr std::string_view help() const { return help_; }
-  constexpr bool is_required() const { return is_required_; }
-  constexpr bool is_flag() const { return is_flag_; }
+  inline constexpr std::string_view name() const {
+    return state_.name.value_or(state_.long_name);
+  }
+  inline constexpr std::optional<char> short_name() const {
+    return state_.short_name;
+  }
+  inline constexpr std::string_view long_name() const {
+    return state_.long_name;
+  }
+  inline constexpr std::string_view help() const { return state_.help; }
+  inline constexpr std::string_view default_value() const {
+    return state_.default_value;
+  }
+  inline constexpr std::span<const std::string_view> choices() const {
+    return state_.choices;
+  }
+  inline constexpr bool is_required() const { return state_.is_required; }
+  inline constexpr bool is_flag() const { return state_.is_flag; }
 
  private:
-  friend class ArgBuilder;
-
-  explicit constexpr Arg(std::string_view name,
-                         std::string_view help,
-                         std::string_view long_name,
-                         std::optional<char> short_name,
-                         bool is_required,
-                         bool is_flag)
-      : name_(name),
-        help_(help),
-        long_name_(long_name),
-        short_name_(short_name),
-        is_required_(is_required),
-        is_flag_(is_flag) {}
-
-  std::string_view name_;
-  std::string_view help_;
-  std::string_view long_name_;
-  std::optional<char> short_name_;
-  // Align to 64 B
-  [[maybe_unused]] i32 padding_ = 0;
-  bool is_required_ = false;
-  bool is_flag_ = false;
+  ArgState state_;
 };
 
 // Fluent builder for constructing an `Arg`.
 class ArgBuilder {
  public:
-  explicit constexpr ArgBuilder(std::string_view name) : name_(name) {}
+  explicit ArgBuilder(std::string_view long_name) {
+    state_.long_name = long_name;
+  }
   ~ArgBuilder() = default;
 
   ArgBuilder(const ArgBuilder&) = delete;
@@ -72,68 +75,109 @@ class ArgBuilder {
   ArgBuilder(ArgBuilder&&) noexcept = default;
   ArgBuilder& operator=(ArgBuilder&&) noexcept = default;
 
-  constexpr ArgBuilder& short_name(char c) & {
-    short_name_ = c;
+  inline constexpr ArgBuilder& short_name(char c) & {
+    state_.short_name = c;
     return *this;
   }
 
-  constexpr ArgBuilder&& short_name(char c) && {
-    short_name_ = c;
+  inline constexpr ArgBuilder&& short_name(char c) && {
+    state_.short_name = c;
     return std::move(*this);
   }
 
-  constexpr ArgBuilder& long_name(std::string_view n) & {
-    long_name_ = n;
+  inline constexpr ArgBuilder& long_name(std::string_view n) & {
+    state_.long_name = n;
     return *this;
   }
 
-  constexpr ArgBuilder&& long_name(std::string_view n) && {
-    long_name_ = n;
+  inline constexpr ArgBuilder&& long_name(std::string_view n) && {
+    state_.long_name = n;
     return std::move(*this);
   }
 
-  constexpr ArgBuilder& help(std::string_view h) & {
-    help_ = h;
+  inline constexpr ArgBuilder& name(std::string_view n) & {
+    state_.name = n;
     return *this;
   }
 
-  constexpr ArgBuilder&& help(std::string_view h) && {
-    help_ = h;
+  inline constexpr ArgBuilder& name(std::string_view n) && {
+    state_.name = n;
+    return *this;
+  }
+
+  inline constexpr ArgBuilder& help(std::string_view h) & {
+    state_.help = h;
+    return *this;
+  }
+
+  inline constexpr ArgBuilder&& help(std::string_view h) && {
+    state_.help = h;
     return std::move(*this);
   }
 
-  constexpr ArgBuilder& required(bool r = true) & {
-    is_required_ = r;
+  inline constexpr ArgBuilder& default_value(std::string_view d) & {
+    state_.default_value = d;
     return *this;
   }
 
-  constexpr ArgBuilder&& required(bool r = true) && {
-    is_required_ = r;
+  inline constexpr ArgBuilder&& default_value(std::string_view d) && {
+    state_.default_value = d;
     return std::move(*this);
   }
 
-  constexpr ArgBuilder& is_flag(bool f = true) & {
-    is_flag_ = f;
+  inline constexpr ArgBuilder& choices(
+      std::initializer_list<std::string_view> c = {}) & {
+    state_.choices = c;
     return *this;
   }
 
-  constexpr ArgBuilder&& is_flag(bool f = true) && {
-    is_flag_ = f;
+  inline constexpr ArgBuilder&& choices(
+      std::initializer_list<std::string_view> c = {}) && {
+    state_.choices = c;
+    return std::move(*this);
+  }
+
+  inline constexpr ArgBuilder& choices(std::span<const std::string_view> c) & {
+    state_.choices = c;
+    return *this;
+  }
+
+  inline constexpr ArgBuilder&& choices(
+      std::span<const std::string_view> c) && {
+    state_.choices = c;
+    return std::move(*this);
+  }
+
+  inline constexpr ArgBuilder& required(bool r = true) & {
+    state_.is_required = r;
+    return *this;
+  }
+
+  inline constexpr ArgBuilder&& required(bool r = true) && {
+    state_.is_required = r;
+    return std::move(*this);
+  }
+
+  inline constexpr ArgBuilder& is_flag(bool f = true) & {
+    state_.is_flag = f;
+    return *this;
+  }
+
+  inline constexpr ArgBuilder&& is_flag(bool f = true) && {
+    state_.is_flag = f;
     return std::move(*this);
   }
 
   // Finalizes construction and returns an immutable Arg object.
-  constexpr Arg build() const {
-    return Arg(name_, help_, long_name_, short_name_, is_required_, is_flag_);
+  inline constexpr Arg build() && {
+    if (!state_.name.has_value() && !state_.long_name.empty()) {
+      state_.name = state_.long_name;
+    }
+    return Arg(state_);
   }
 
  private:
-  std::string_view name_;
-  std::string_view help_;
-  std::string_view long_name_;
-  std::optional<char> short_name_;
-  bool is_required_ = false;
-  bool is_flag_ = false;
+  ArgState state_;
 };
 
 }  // namespace arg
