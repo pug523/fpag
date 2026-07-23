@@ -82,6 +82,54 @@ ARGS_FN_DEFINE(ChoiceConfig,
                         "Number of threads",
                         false))
 
+struct FullConfig {
+  std::string config_path = "chrb.toml";
+  std::string dim = "overworld";
+  i32 num_threads = 4;
+  std::string required_src;
+};
+
+ARGS_FN_DEFINE(FullConfig,
+               parse_full,
+               "full-app",
+               "1.0.0",
+               "Full option test app",
+               ARGS_OPT_FULL(FullConfig,
+                             config_path,
+                             '\0',
+                             "config-path",
+                             "chrb.toml",
+                             "path",
+                             "config file path",
+                             false),
+               ARGS_OPT_FULL(FullConfig,
+                             dim,
+                             'D',
+                             "dim",
+                             "overworld",
+                             "",
+                             "target dimension",
+                             false,
+                             "overworld",
+                             "nether",
+                             "end"),
+               ARGS_OPT_FULL(FullConfig,
+                             num_threads,
+                             'j',
+                             "threads",
+                             "4",
+                             "n",
+                             "number of worker threads",
+                             false),
+               ARGS_OPT_FULL(FullConfig,
+                             required_src,
+                             's',
+                             "src",
+                             "",
+                             "path",
+                             "source path",
+                             true))
+
 }  // namespace
 
 TEST_CASE("Macro argument parsing", "[arg][macro]") {
@@ -362,6 +410,77 @@ TEST_CASE("Macro options with choices validation", "[arg][macro]") {
     auto res = parse_choice(argc, argv);
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap().threads == 8);
+  }
+}
+
+TEST_CASE("Macro ARGS_OPT_FULL tests", "[arg][macro]") {
+  SECTION(
+      "Parses with required argument and keeps non-overridden default values") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"full-app", "-s", "/path/to/world"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_full(argc, argv);
+    REQUIRE(res.is_ok());
+
+    const FullConfig& cfg = std::move(res).unwrap();
+    CHECK(cfg.required_src == "/path/to/world");
+    CHECK(cfg.config_path == "chrb.toml");
+    CHECK(cfg.dim == "overworld");
+    CHECK(cfg.num_threads == 4);
+  }
+
+  SECTION("Overrides all values, custom value_name and choices") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"full-app", "--config-path", "custom.toml",
+                          "-D",       "nether",        "-j",
+                          "16",       "--src",         "/path/to/world"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_full(argc, argv);
+    REQUIRE(res.is_ok());
+
+    const FullConfig& cfg = std::move(res).unwrap();
+    CHECK(cfg.config_path == "custom.toml");
+    CHECK(cfg.dim == "nether");
+    CHECK(cfg.num_threads == 16);
+    CHECK(cfg.required_src == "/path/to/world");
+  }
+
+  SECTION("Fails when invalid choice is provided for ARGS_OPT_FULL") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"full-app", "-s", "/path/to/world", "-D",
+                          "invalid_dim"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_full(argc, argv);
+    CHECK(res.is_err());
+  }
+
+  SECTION("Fails when required option in ARGS_OPT_FULL is missing") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"full-app", "-D", "end"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_full(argc, argv);
+    CHECK(res.is_err());
+  }
+
+  SECTION("Help message formats value_name and choices properly") {
+    // NOLINTNEXTLINE(misc-const-correctness)
+    const char* argv[] = {"full-app", "--help"};
+    const i32 argc = static_cast<i32>(std::size(argv));
+
+    auto res = parse_full(argc, argv);
+    REQUIRE(res.is_help());
+
+    const std::string_view help = std::move(res).unwrap_help();
+    // Verify value_name placeholder rendering
+    CHECK(help.find("--config-path <path>") != std::string_view::npos);
+    CHECK(help.find("-j, --threads <n>") != std::string_view::npos);
+    // Verify choices list rendering
+    CHECK(help.find("-D, --dim <overworld|nether|end>") !=
+          std::string_view::npos);
   }
 }
 
