@@ -65,8 +65,8 @@ TEST_CASE("Arena object creation", "[base][arena]") {
   }
 
   struct Trivial {
-    int x;
-    float y;
+    i32 x;
+    f32 y;
   };
 
   SECTION("create<T> for trivial struct") {

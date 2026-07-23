@@ -32,13 +32,14 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
   queue.init();
 
   SECTION(
-      "Manual enqueue(reserve/commit) and dequeue(peek/discard) single int") {
+      "Manual enqueue(reserve/commit) and dequeue(peek/discard) single "
+      "integer") {
     constexpr i32 kDataIn = 42;
 
     void* ptr = nullptr;
     const SpscQueue::EnqueueStatus result =
         queue.reserve(sizeof(kDataIn), &ptr);
-    CHECK(result == SpscQueue::EnqueueStatus::kOk);
+    CHECK(result == SpscQueue::EnqueueStatus::Ok);
     *static_cast<i32*>(ptr) = kDataIn;
     queue.commit(sizeof(kDataIn));
     CHECK_FALSE(queue.empty());
@@ -62,7 +63,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     void* ptr = nullptr;
     const SpscQueue::EnqueueStatus result =
         queue.reserve(sizeof(kCharIn), &ptr);
-    CHECK(result == SpscQueue::EnqueueStatus::kOk);
+    CHECK(result == SpscQueue::EnqueueStatus::Ok);
     *static_cast<char*>(ptr) = kCharIn;
     queue.commit(sizeof(kCharIn));
     CHECK_FALSE(queue.empty());
@@ -76,12 +77,12 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     CHECK(char_out == kCharIn);
   }
 
-  SECTION("Automatic enqueue and dequeue single int") {
+  SECTION("Automatic enqueue and dequeue single integer") {
     constexpr i32 kDataIn = 42;
 
     const SpscQueue::EnqueueStatus result =
         queue.enqueue(&kDataIn, sizeof(kDataIn));
-    CHECK(result == SpscQueue::EnqueueStatus::kOk);
+    CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kDataIn));
     CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kDataIn));
@@ -99,7 +100,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
 
     const SpscQueue::EnqueueStatus result =
         queue.enqueue(&kCharIn, sizeof(kCharIn));
-    CHECK(result == SpscQueue::EnqueueStatus::kOk);
+    CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kCharIn));
     CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kCharIn));

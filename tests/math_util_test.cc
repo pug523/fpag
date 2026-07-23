@@ -30,7 +30,7 @@ TEST_CASE("is_power_of_two validates numbers correctly", "[base][math]") {
   }
 
   SECTION("Negative numbers (if signed)") {
-    if constexpr (std::is_signed_v<int>) {
+    if constexpr (std::is_signed_v<i32>) {
       CHECK_FALSE(is_power_of_two(-2));
       CHECK_FALSE(is_power_of_two(-8));
     }

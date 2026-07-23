@@ -36,7 +36,7 @@ void cleanup(L* logger, usize dropped_count) {
 
 constexpr usize kMapCap = 1 << 16;
 constexpr usize kQueueCap = 1 << 30;
-constexpr base::SpscQueue::Mode kMode = base::SpscQueue::Mode::kDrop;
+constexpr base::SpscQueue::Mode kMode = base::SpscQueue::Mode::Drop;
 
 // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 void async_logger_log_literal_compiled_string_w_interner(

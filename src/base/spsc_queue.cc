@@ -28,7 +28,7 @@ SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
   tail_cache_ = other.tail_cache_;
   other.data_ = nullptr;
   other.capacity_ = 0;
-  other.mode_ = Mode::kDefault;
+  other.mode_ = Mode::Default;
   other.head_.store(0, std::memory_order_relaxed);
   other.head_cache_ = 0;
   other.tail_.store(0, std::memory_order_relaxed);
@@ -45,7 +45,7 @@ SpscQueue& SpscQueue::operator=(SpscQueue&& other) noexcept {
   tail_cache_ = other.tail_cache_;
   other.data_ = nullptr;
   other.capacity_ = 0;
-  other.mode_ = Mode::kDefault;
+  other.mode_ = Mode::Default;
   other.head_.store(0, std::memory_order_relaxed);
   other.head_cache_ = 0;
   other.tail_.store(0, std::memory_order_relaxed);
@@ -74,7 +74,7 @@ void SpscQueue::reset() {
     data_ = nullptr;
   }
   capacity_ = 0;
-  mode_ = Mode::kDefault;
+  mode_ = Mode::Default;
   head_.store(0, std::memory_order_relaxed);
   head_cache_ = 0;
   tail_.store(0, std::memory_order_relaxed);
@@ -102,14 +102,14 @@ SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest,
   FPAG_DCHECK_LE(size, capacity_);
 
   if (size_consumer() < size) {
-    return DequeueStatus::kEmpty;
+    return DequeueStatus::Empty;
   }
 
   const char* src = peek(size, align);
   std::memcpy(dest, src, size);
 
   discard(size, align);
-  return DequeueStatus::kOk;
+  return DequeueStatus::Ok;
 }
 
 SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
@@ -123,9 +123,9 @@ SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
   const usize total_needed = size + padding;
 
   if (available_producer() < size) [[unlikely]] {
-    if (mode_ == Mode::kDrop) {
+    if (mode_ == Mode::Drop) {
       ++dropped_count_;
-      return EnqueueStatus::kDropped;
+      return EnqueueStatus::Dropped;
     } else {
       ++blocked_count_;
       wait_for_space_producer(total_needed);
@@ -137,7 +137,7 @@ SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
   *out = static_cast<void*>(data_ + (aligned_tail & capacity_mask()));
 
   FPAG_DCHECK(reinterpret_cast<uintptr_t>(*out) % align == 0);
-  return EnqueueStatus::kOk;
+  return EnqueueStatus::Ok;
 }
 
 void SpscQueue::commit(usize size) {
@@ -151,13 +151,13 @@ SpscQueue::EnqueueStatus SpscQueue::enqueue(const void* new_data,
   FPAG_DCHECK_LE(size, capacity_);
   void* buf = nullptr;
   const EnqueueStatus status = reserve(size, &buf, align);
-  if (status != EnqueueStatus::kOk) [[unlikely]] {
+  if (status != EnqueueStatus::Ok) [[unlikely]] {
     return status;
   }
 
   std::memcpy(buf, new_data, size);
   commit(size);
-  return EnqueueStatus::kOk;
+  return EnqueueStatus::Ok;
 }
 
 inline usize SpscQueue::available_producer() const {

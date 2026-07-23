@@ -15,9 +15,9 @@ namespace {
 void spsc_queue_simple_enqueue_single_thread(benchmark::State& state) {
   SpscQueue queue;
   constexpr usize kCap = 1 << 30;
-  queue.init(kCap, SpscQueue::Mode::kDrop);
+  queue.init(kCap, SpscQueue::Mode::Drop);
 
-  u64 const sample_data = 168;
+  const u64 sample_data = 168;
   for (auto _ : state) {
     queue.enqueue(&sample_data, sizeof(sample_data));
   }

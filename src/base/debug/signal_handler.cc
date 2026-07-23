@@ -45,7 +45,7 @@ inline i32 current_pid() {
 
 }  // namespace
 
-const char* signal_to_string(int signal_number) {
+const char* signal_to_string(i32 signal_number) {
   switch (signal_number) {
     case SIGSEGV: return "SIGSEGV (Invalid access to the storage)";
     case SIGABRT: return "SIGABRT (Abnormal termination)";

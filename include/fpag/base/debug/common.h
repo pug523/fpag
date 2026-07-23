@@ -5,4 +5,4 @@
 #pragma once
 
 // #define NOOP(...) (void)(0)
-#define NOOP(...) (void)sizeof(__VA_ARGS__)
+#define NOOP(...) (void)sizeof(__VA_ARGS__)  // NOLINT

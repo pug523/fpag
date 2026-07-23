@@ -15,20 +15,20 @@ namespace base {
 class SpscQueue {
  public:
   enum class Mode : u8 {
-    kDrop,
-    kBlock,
+    Drop,
+    Block,
 
-    kDefault = kDrop,
+    Default = Drop,
   };
 
   enum class DequeueStatus : u8 {
-    kOk,
-    kEmpty,
+    Ok,
+    Empty,
   };
 
   enum class EnqueueStatus : u8 {
-    kOk,
-    kDropped,
+    Ok,
+    Dropped,
   };
 
   SpscQueue() = default;
@@ -42,7 +42,7 @@ class SpscQueue {
 
   // Initialize the queue with the given data buffer and capacity.
   // `capacity` must be a power of 2.
-  void init(usize capacity = kDefaultCapacity, Mode mode = Mode::kDefault);
+  void init(usize capacity = kDefaultCapacity, Mode mode = Mode::Default);
   void reset();
 
   // Zero-copied consumer interface
@@ -100,7 +100,7 @@ class SpscQueue {
 
   char* data_ = nullptr;
   usize capacity_ = 0;
-  Mode mode_ = Mode::kDefault;
+  Mode mode_ = Mode::Default;
 
   usize dropped_count_ = 0;
   usize blocked_count_ = 0;

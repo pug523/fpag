@@ -51,7 +51,7 @@ class Serializer {
       void* out_ptr = nullptr;
       const Eqs status = queue->reserve(Deserializer::kPayloadHeaderSize,
                                         &out_ptr, kPayloadAlign);
-      if (status == Eqs::kDropped) [[unlikely]] {
+      if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 
@@ -67,7 +67,7 @@ class Serializer {
       void* out_ptr = nullptr;
       const Eqs status =
           queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
-      if (status == Eqs::kDropped) [[unlikely]] {
+      if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 
@@ -113,7 +113,7 @@ class Serializer {
           Deserializer::kPayloadHeaderSize + args_body_size;
       const Eqs status =
           queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
-      if (status == Eqs::kDropped) [[unlikely]] {
+      if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 

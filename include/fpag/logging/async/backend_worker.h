@@ -47,26 +47,26 @@ class BackendWorker {
   void init(S&& sink,
             const str::StringInterner* interner,
             usize queue_capacity = base::SpscQueue::kDefaultCapacity,
-            base::SpscQueue::Mode mode = base::SpscQueue::Mode::kDefault) {
+            base::SpscQueue::Mode mode = base::SpscQueue::Mode::Default) {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
-                       InternalStatus::kNotInitialized,
+                       InternalStatus::NotInitialized,
                        "BackendWorker is not idling");
 
     sink_ = std::move(sink);
     interner_ = interner;
     queue_.init(queue_capacity, mode);
 
-    internal_status_.store(InternalStatus::kInitialized,
+    internal_status_.store(InternalStatus::Initialized,
                            std::memory_order_release);
     FPAG_DCHECK(interner_);
   }
 
   void reset() {
     if (internal_status_.load(std::memory_order_acquire) ==
-        InternalStatus::kRunning) {
+        InternalStatus::Running) {
       stop();
     }
-    internal_status_.store(InternalStatus::kNotInitialized,
+    internal_status_.store(InternalStatus::NotInitialized,
                            std::memory_order_release);
     interner_ = nullptr;
     queue_.reset();
@@ -74,19 +74,17 @@ class BackendWorker {
 
   void start() {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
-                       InternalStatus::kInitialized,
+                       InternalStatus::Initialized,
                        "BackendWorker is not initialized or already running");
-    internal_status_.store(InternalStatus::kRunning, std::memory_order_release);
+    internal_status_.store(InternalStatus::Running, std::memory_order_release);
     thread_ = std::make_unique<std::thread>(&BackendWorker::worker_loop, this);
   }
 
   void stop() {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
-                       InternalStatus::kRunning,
-                       "BackendWorker is not running");
+                       InternalStatus::Running, "BackendWorker is not running");
     flush();
-    internal_status_.store(InternalStatus::kStopping,
-                           std::memory_order_release);
+    internal_status_.store(InternalStatus::Stopping, std::memory_order_release);
     if (thread_) [[likely]] {
       thread_->join();
       thread_ = nullptr;
@@ -95,10 +93,9 @@ class BackendWorker {
 
   void force_stop() {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
-                       InternalStatus::kRunning,
-                       "BackendWorker is not running");
+                       InternalStatus::Running, "BackendWorker is not running");
     // Do not flush on force stopping
-    internal_status_.store(InternalStatus::kForceStopping,
+    internal_status_.store(InternalStatus::ForceStopping,
                            std::memory_order_release);
     if (thread_) [[likely]] {
       thread_->join();
@@ -108,15 +105,14 @@ class BackendWorker {
 
   void flush() {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
-                       InternalStatus::kRunning,
-                       "BackendWorker is not running");
+                       InternalStatus::Running, "BackendWorker is not running");
     flush_requested_.store(true, std::memory_order_release);
     wait_for_flush();
   }
 
   inline bool running() const {
     return internal_status_.load(std::memory_order_acquire) ==
-           InternalStatus::kRunning;
+           InternalStatus::Running;
   }
 
   // cpplint's issue: it suggests `#include <utility>` because of `swap`
@@ -128,7 +124,7 @@ class BackendWorker {
     std::swap(thread_, other.thread_);
     internal_status_.store(
         other.internal_status_.load(std::memory_order_acquire));
-    other.internal_status_.store(InternalStatus::kNotInitialized,
+    other.internal_status_.store(InternalStatus::NotInitialized,
                                  std::memory_order_release);
   }
 
@@ -137,11 +133,11 @@ class BackendWorker {
 
  private:
   enum class InternalStatus : u8 {
-    kNotInitialized,
-    kInitialized,
-    kRunning,
-    kStopping,
-    kForceStopping,
+    NotInitialized,
+    Initialized,
+    Running,
+    Stopping,
+    ForceStopping,
   };
 
   void worker_loop() {
@@ -149,7 +145,7 @@ class BackendWorker {
     while (true) {
       const InternalStatus status =
           internal_status_.load(std::memory_order_acquire);
-      if (status == InternalStatus::kForceStopping) [[unlikely]] {
+      if (status == InternalStatus::ForceStopping) [[unlikely]] {
         break;
       }
 
@@ -159,7 +155,7 @@ class BackendWorker {
         sink_.flush();
         flush_requested_.store(false, std::memory_order_release);
       }
-      if (status == InternalStatus::kStopping && !processed && queue_.empty())
+      if (status == InternalStatus::Stopping && !processed && queue_.empty())
           [[unlikely]] {
         break;
       }
@@ -222,7 +218,7 @@ class BackendWorker {
     while (queue_.empty()) {
       if (spin_count % 32 == 0 &&
           internal_status_.load(std::memory_order_acquire) !=
-              InternalStatus::kRunning) {
+              InternalStatus::Running) {
         return;
       }
 
@@ -272,7 +268,7 @@ class BackendWorker {
   std::unique_ptr<std::thread> thread_ = nullptr;
   const str::StringInterner* interner_ = nullptr;
 
-  std::atomic<InternalStatus> internal_status_{InternalStatus::kNotInitialized};
+  std::atomic<InternalStatus> internal_status_{InternalStatus::NotInitialized};
   std::atomic<bool> flush_requested_{false};
 };
 
