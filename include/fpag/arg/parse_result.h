@@ -14,6 +14,7 @@ namespace arg {
 struct ParseError {
   enum class Kind : u8 {
     HelpRequested,
+    VersionRequested,
     Error,
   };
 
@@ -21,6 +22,7 @@ struct ParseError {
   std::string_view message;
 
   inline bool is_help() const { return kind == Kind::HelpRequested; }
+  inline bool is_version() const { return kind == Kind::VersionRequested; }
 };
 
 template <typename Class>

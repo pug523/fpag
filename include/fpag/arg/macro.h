@@ -62,6 +62,11 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
         arg::ParseError::Kind::HelpRequested,
         command.help_message(),
     }));
+  } else if (status == ParseStatus::VersionRequested) {
+    return ::arg::ParseResult<Class>(base::make_err(arg::ParseError{
+        arg::ParseError::Kind::VersionRequested,
+        std::string(command.version()),
+    }));
   } else if (status == ParseStatus::Error) {
     return ::arg::ParseResult<Class>(base::make_err(arg::ParseError{
         arg::ParseError::Kind::Error,

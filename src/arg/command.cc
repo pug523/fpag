@@ -52,105 +52,112 @@ ParseStatus Command::parse(i32 argc,
   last_error_code_ = ErrorCode::None;
   error_context_arg_.clear();
 
-  if (argc <= 1 || argv == nullptr) {
-    return ParseStatus::Success;
-  }
-
   bool stop_parsing_flags = false;
 
-  for (i32 i = 1; i < argc; ++i) {
-    if (argv[i] == nullptr) {
-      continue;
-    }
-    std::string_view current(argv[i]);
-
-    if (stop_parsing_flags) {
-      matches->add_positional(current);
-      continue;
-    }
-
-    // "--" Positional separator
-    if (current == "--") {
-      stop_parsing_flags = true;
-      continue;
-    }
-
-    // Long options
-    if (current.starts_with("--")) {
-      current.remove_prefix(2);
-
-      // Built-in flag checks
-      if (current == "help") {
-        return ParseStatus::HelpRequested;
+  if (argc > 1 && argv != nullptr) {
+    for (i32 i = 1; i < argc; ++i) {
+      if (argv[i] == nullptr) {
+        continue;
       }
-      if (current == "version" && !version_.empty()) {
-        return ParseStatus::VersionRequested;
+      std::string_view current(argv[i]);
+
+      if (stop_parsing_flags) {
+        matches->add_positional(current);
+        continue;
       }
 
-      auto equal_pos = current.find('=');
-      std::string_view key = current.substr(0, equal_pos);
-
-      const Arg* arg = find_arg_by_long(key);
-      if (arg == nullptr) {
-        return set_error(ErrorCode::UnknownLongOption, key);
+      // "--" Positional separator
+      if (current == "--") {
+        stop_parsing_flags = true;
+        continue;
       }
 
-      if (arg->is_flag()) {
-        if (equal_pos != std::string_view::npos) {
-          return set_error(ErrorCode::FlagTakesNoValue,
-                           fmt::format("--{}", key));
-        }
-        matches->add(arg->name(), "1");
-      } else {
-        if (equal_pos != std::string_view::npos) {
-          matches->add(arg->name(), current.substr(equal_pos + 1));
-        } else {
-          if (i + 1 >= argc || argv[i + 1] == nullptr) {
-            return set_error(ErrorCode::MissingValueForOption,
-                             fmt::format("--{}", key));
-          }
-          matches->add(arg->name(), argv[++i]);
-        }
-      }
-    } else if (current.starts_with("-") && current.size() > 1) {
-      // Short options
-      current.remove_prefix(1);
-
-      for (size_t c_idx = 0; c_idx < current.size(); ++c_idx) {
-        char c = current[c_idx];
+      // Long options
+      if (current.starts_with("--")) {
+        current.remove_prefix(2);
 
         // Built-in flag checks
-        if (c == 'h' && current.size() == 1) {
+        if (current == "help") {
           return ParseStatus::HelpRequested;
         }
-        if (c == 'v' && current.size() == 1 && !version_.empty()) {
+        if (current == "version" && !version_.empty()) {
           return ParseStatus::VersionRequested;
         }
 
-        const Arg* arg = find_arg_by_short(c);
+        auto equal_pos = current.find('=');
+        std::string_view key = current.substr(0, equal_pos);
+
+        const Arg* arg = find_arg_by_long(key);
         if (arg == nullptr) {
-          return set_error(ErrorCode::UnknownShortOption,
-                           std::string_view(&c, 1));
+          return set_error(ErrorCode::UnknownLongOption, key);
         }
 
         if (arg->is_flag()) {
+          if (equal_pos != std::string_view::npos) {
+            return set_error(ErrorCode::FlagTakesNoValue,
+                             fmt::format("--{}", key));
+          }
           matches->add(arg->name(), "1");
         } else {
-          if (c_idx + 1 < current.size()) {
-            matches->add(arg->name(), current.substr(c_idx + 1));
-            break;
+          if (equal_pos != std::string_view::npos) {
+            matches->add(arg->name(), current.substr(equal_pos + 1));
           } else {
             if (i + 1 >= argc || argv[i + 1] == nullptr) {
               return set_error(ErrorCode::MissingValueForOption,
-                               fmt::format("-{}", c));
+                               fmt::format("--{}", key));
             }
             matches->add(arg->name(), argv[++i]);
           }
         }
+      } else if (current.starts_with("-") && current.size() > 1) {
+        // Short options
+        current.remove_prefix(1);
+
+        for (size_t c_idx = 0; c_idx < current.size(); ++c_idx) {
+          char c = current[c_idx];
+
+          // Built-in flag checks
+          if (c == 'h' && current.size() == 1) {
+            return ParseStatus::HelpRequested;
+          }
+          if (c == 'v' && current.size() == 1 && !version_.empty()) {
+            return ParseStatus::VersionRequested;
+          }
+
+          const Arg* arg = find_arg_by_short(c);
+
+          if (arg == nullptr) {
+            // Built-in flag checks only apply if the user hasn't claimed this
+            // letter.
+            if (c == 'h' && current.size() == 1) {
+              return ParseStatus::HelpRequested;
+            }
+            if (c == 'v' && current.size() == 1 && !version_.empty()) {
+              return ParseStatus::VersionRequested;
+            }
+            return set_error(ErrorCode::UnknownShortOption,
+                             std::string_view(&c, 1));
+          }
+
+          if (arg->is_flag()) {
+            matches->add(arg->name(), "1");
+          } else {
+            if (c_idx + 1 < current.size()) {
+              matches->add(arg->name(), current.substr(c_idx + 1));
+              break;
+            } else {
+              if (i + 1 >= argc || argv[i + 1] == nullptr) {
+                return set_error(ErrorCode::MissingValueForOption,
+                                 fmt::format("-{}", c));
+              }
+              matches->add(arg->name(), argv[++i]);
+            }
+          }
+        }
+      } else {
+        // Positional arguments
+        matches->add_positional(current);
       }
-    } else {
-      // Positional arguments
-      matches->add_positional(current);
     }
   }
 
