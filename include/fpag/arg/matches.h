@@ -4,15 +4,11 @@
 
 #pragma once
 
-#include <charconv>
-#include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include <vector>
 
 #include "fpag/arg/converter.h"
-#include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
 
 namespace arg {
@@ -61,6 +57,9 @@ class Matches {
 
   template <typename T>
   base::Result<std::vector<T>, GetError> get_all(std::string_view name) const {
+    static_assert(Parsable<T>,
+                  "Type T is not supported by arg::Matches. "
+                  "Please specialize arg::Converter<T>.");
     std::vector<T> results;
     bool found = false;
 
@@ -68,7 +67,7 @@ class Matches {
       if (n == name) {
         base::Result<T, GetError> res = Converter<T>::from_string(v);
         if (res.is_err()) {
-          return res.err();
+          return base::make_err(std::move(res).unwrap_err());
         }
         results.push_back(std::move(res).unwrap());
         found = true;

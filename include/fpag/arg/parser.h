@@ -14,18 +14,13 @@
 #include "fpag/arg/error_formatter.h"
 #include "fpag/arg/help_formatter.h"
 #include "fpag/arg/matches.h"
+#include "fpag/arg/parse_error.h"
+#include "fpag/arg/parse_status.h"
 #include "fpag/base/color_mode.h"
 #include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
 
 namespace arg {
-
-enum class ParseStatus : u8 {
-  Success,
-  HelpRequested,
-  VersionRequested,
-  Error,
-};
 
 class Parser {
  public:
@@ -66,40 +61,74 @@ class Parser {
     return std::move(*this);
   }
 
+  // Zero-copy C-style argc/argv parser
   ParseStatus parse(i32 argc, const char* const* argv, Matches* matches);
+
+  // Zero-copy std::span parser
+  // (accepts std::vector<std::string_view> automatically)
+  ParseStatus parse(std::span<const std::string_view> args, Matches* matches);
+
+  // Overload for array literals
+  template <size_t N>
+  inline ParseStatus parse(const std::string_view (&args)[N],
+                           Matches* matches) {
+    return parse(std::span<const std::string_view>(args, N), matches);
+  }
 
   inline std::string_view name() const { return name_; }
   inline std::string_view version() const { return version_; }
   inline std::string_view about() const { return about_; }
   inline const std::vector<Arg>& args() const { return args_; }
-  inline ErrorCode error_code() const { return last_error_code_; }
+  inline const std::vector<ParseError>& errors() const& { return errors_; }
+  inline std::vector<ParseError>&& errors() && { return std::move(errors_); }
   inline bool builtin_enabled() const { return builtin_enabled_; }
   inline base::ColorMode color_mode() const { return color_mode_; }
 
   inline std::string_view error_message() {
-    return error_formatter_.format(last_error_code_, error_context_arg_, name_,
-                                   color_mode_);
+    return error_formatter_.format(errors_, name_, color_mode_);
   }
   inline std::string_view help_message() {
     return help_formatter_.format(*this, color_mode_);
   }
 
+  static constexpr const char* kBuiltinHelpArgLong = "help";
+  static constexpr const char kBuiltinHelpArgShort = 'h';
+  static constexpr const char* kBuiltinVersionArgLong = "version";
+  static constexpr const char kBuiltinVersionArgShort = 'v';
+
  private:
+  struct ArgSequence {
+    size_t size;
+    std::string_view (*at)(const void* ctx, size_t index);
+    const void* ctx;
+
+    inline std::string_view operator[](size_t index) const {
+      return at(ctx, index);
+    }
+  };
+
+  ParseStatus parse_impl(const ArgSequence& args, Matches* matches);
+
   const Arg* find_arg_by_short(char c) const;
   const Arg* find_arg_by_long(std::string_view name) const;
 
-  ParseStatus set_error(ErrorCode code, std::string_view context_arg = "");
+  void add_error(ErrorCode code,
+                 std::string&& context_arg = "",
+                 std::string&& value_arg = "");
 
-  ParseStatus long_option(std::string_view current,
-                          i32* i,
-                          i32 argc,
-                          const char* const* argv,
-                          Matches* matches);
-  ParseStatus short_options(std::string_view current,
-                            i32* i,
-                            i32 argc,
-                            const char* const* argv,
-                            Matches* matches);
+  // Returns true if should stop parsing.
+  bool long_option(std::string_view current,
+                   usize* i,
+                   const ArgSequence& args,
+                   Matches* matches,
+                   ParseStatus* status);
+
+  // Returns true if should stop parsing.
+  bool short_options(std::string_view current,
+                     usize* i,
+                     const ArgSequence& args,
+                     Matches* matches,
+                     ParseStatus* status);
   bool is_valid_choice(const Arg& arg, std::string_view value) const;
 
   std::string_view name_;
@@ -107,8 +136,7 @@ class Parser {
   std::string_view about_;
   std::vector<Arg> args_;
 
-  ErrorCode last_error_code_{ErrorCode::None};
-  std::string error_context_arg_;
+  std::vector<ParseError> errors_;
 
   ErrorFormatter error_formatter_;
   HelpFormatter help_formatter_;

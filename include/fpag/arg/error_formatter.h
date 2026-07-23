@@ -6,13 +6,12 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
-#include "fpag/arg/error_code.h"
+#include "fpag/arg/parse_error.h"
 #include "fpag/base/color_mode.h"
 
 namespace arg {
-
-class Parser;
 
 class ErrorFormatter {
  public:
@@ -25,8 +24,7 @@ class ErrorFormatter {
   ErrorFormatter(ErrorFormatter&&) noexcept = default;
   ErrorFormatter& operator=(ErrorFormatter&&) noexcept = default;
 
-  std::string_view format(ErrorCode code,
-                          std::string_view context_arg,
+  std::string_view format(const std::vector<ParseError>& errors,
                           std::string_view command_name,
                           base::ColorMode color_mode);
 

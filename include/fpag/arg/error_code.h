@@ -10,6 +10,7 @@ namespace arg {
 
 enum class ErrorCode : u8 {
   None = 0,
+  InvalidArgCount,
   NullMatchesPointer,
   UnknownLongOption,
   UnknownShortOption,
