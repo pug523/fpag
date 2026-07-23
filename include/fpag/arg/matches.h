@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "fpag/arg/converter.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
 
@@ -44,43 +45,40 @@ class Matches {
     return false;
   }
 
-  enum class GetError : u8 {
-    InvalidArgument,
-    OutOfRange,
-  };
-
   // Retrieves the argument value safely cast to type T
   template <typename T>
   base::Result<T, GetError> get(std::string_view name) const {
-    for (const auto& [n, v] : values_) {
+    static_assert(Parsable<T>,
+                  "Type T is not supported by arg::Matches. "
+                  "Please specialize arg::Converter<T>.");
+    for (const auto& [n, value] : values_) {
       if (n == name) {
-        if constexpr (std::is_same_v<T, std::string_view>) {
-          return base::make_ok(v);
-        } else if constexpr (std::is_same_v<T, std::string>) {
-          return base::make_ok(std::string(v));
-        } else if constexpr (std::is_same_v<T, bool>) {
-          if (v == "true" || v == "1" || v == "y") {
-            return base::make_ok(true);
-          }
-          if (v == "false" || v == "0" || v == "n") {
-            return base::make_ok(false);
-          }
-          return base::make_err(GetError::InvalidArgument);
-        } else if constexpr ((std::is_integral_v<T> &&
-                              !std::is_same_v<T, bool>) ||
-                             std::is_floating_point_v<T>) {
-          T val{};
-          auto [ptr, ec] = std::from_chars(v.data(), v.data() + v.size(), val);
-          if (ec != std::errc()) {
-            return base::make_err(GetError::InvalidArgument);
-          }
-          return base::make_ok(std::move(val));
-        } else {
-          static_assert(sizeof(T) == 0, "Unsupported type for Matches::get<T>");
-        }
+        return Converter<T>::from_string(value);
       }
     }
     return base::make_err(GetError::OutOfRange);
+  }
+
+  template <typename T>
+  base::Result<std::vector<T>, GetError> get_all(std::string_view name) const {
+    std::vector<T> results;
+    bool found = false;
+
+    for (const auto& [n, v] : values_) {
+      if (n == name) {
+        base::Result<T, GetError> res = Converter<T>::from_string(v);
+        if (res.is_err()) {
+          return res.err();
+        }
+        results.push_back(std::move(res).unwrap());
+        found = true;
+      }
+    }
+
+    if (!found) {
+      return base::make_err(GetError::OutOfRange);
+    }
+    return base::make_ok(std::move(results));
   }
 
   // Gets positional arguments

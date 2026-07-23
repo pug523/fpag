@@ -8,9 +8,9 @@
 #include <utility>
 
 #include "fpag/arg/arg.h"
-#include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_result.h"
+#include "fpag/arg/parser.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
 
@@ -22,11 +22,11 @@ struct ArgBinder {
   Arg arg;
   T Class::* member;
 
-  // Registers the argument to the Command builder.
-  inline void apply_to_command(Command* command) && {
+  // Registers the argument to the Parser builder.
+  inline void apply_to_parser(Parser* parser) && {
     // SAFETY: This is assumed to be called only by macros, and they have
-    // command instance so its pointer can not be null.
-    command->add_arg(std::move(arg));
+    // parser instance so its pointer can not be null.
+    parser->add_arg(std::move(arg));
   }
 
   // Extracts the parsed value from Matches into the struct member.
@@ -51,27 +51,27 @@ struct ArgBinder {
 template <typename Class, typename... Binders>
 arg::ParseResult<Class> parse_macro_impl(i32 argc,
                                          const char* const* argv,
-                                         Command command,
+                                         Parser parser,
                                          Binders&&... binders) {
-  (std::forward<Binders>(binders).apply_to_command(&command), ...);
+  (std::forward<Binders>(binders).apply_to_parser(&parser), ...);
 
   Matches matches;
-  const ParseStatus status = command.parse(argc, argv, &matches);
+  const ParseStatus status = parser.parse(argc, argv, &matches);
 
   if (status == ParseStatus::HelpRequested) {
     return ::arg::ParseResult<Class>(base::make_err(arg::ParseError{
         arg::ParseError::Kind::HelpRequested,
-        command.help_message(),
+        parser.help_message(),
     }));
   } else if (status == ParseStatus::VersionRequested) {
     return ::arg::ParseResult<Class>(base::make_err(arg::ParseError{
         arg::ParseError::Kind::VersionRequested,
-        std::string(command.version()),
+        std::string(parser.version()),
     }));
   } else if (status == ParseStatus::Error) {
     return ::arg::ParseResult<Class>(base::make_err(arg::ParseError{
         arg::ParseError::Kind::Error,
-        command.error_message(),
+        parser.error_message(),
     }));
   }
 
@@ -83,25 +83,26 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
 }  // namespace arg::detail
 
 // Defines an option argument mapping.
-#define ARGS_OPT(Class, Field, Short, Long, Help, Required) \
-  ::arg::detail::ArgBinder<Class, decltype(Class::Field)> { \
-    ::arg::ArgBuilder(#Field)                               \
-        .short_name(Short)                                  \
-        .long_name(Long)                                    \
-        .help(Help)                                         \
-        .required(Required)                                 \
-        .build(),                                           \
-        &Class::Field,                                      \
+#define ARGS_OPT(Class, Field, Short, Long, Help, Required, ...) \
+  ::arg::detail::ArgBinder<Class, decltype(Class::Field)> {      \
+    std::move(::arg::ArgBuilder(Long)                            \
+                  .short_name(Short)                             \
+                  .name(#Field)                                  \
+                  .help(Help)                                    \
+                  .required(Required)                            \
+                  .choices(__VA_OPT__(, ) __VA_ARGS__))          \
+        .build(),                                                \
+        &Class::Field,                                           \
   }
 
 // Defines a boolean flag mapping.
 #define ARGS_FLAG(Class, Field, Short, Long, Help) \
   ::arg::detail::ArgBinder<Class, bool> {          \
-    ::arg::ArgBuilder(#Field)                      \
-        .short_name(Short)                         \
-        .long_name(Long)                           \
-        .help(Help)                                \
-        .is_flag(true)                             \
+    std::move(::arg::ArgBuilder(Long)              \
+                  .short_name(Short)               \
+                  .name(#Field)                    \
+                  .help(Help)                      \
+                  .is_flag(true))                  \
         .build(),                                  \
         &Class::Field,                             \
   }
@@ -110,6 +111,6 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
 #define ARGS_FN_DEFINE(Class, FnName, CommandName, Version, About, ...)        \
   inline ::arg::ParseResult<Class> FnName(i32 argc, const char* const* argv) { \
     return ::arg::detail::parse_macro_impl<Class>(                             \
-        argc, argv, ::arg::Command(CommandName, Version).about(About),         \
+        argc, argv, ::arg::Parser(CommandName, Version).about(About),          \
         __VA_ARGS__);                                                          \
   }

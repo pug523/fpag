@@ -12,7 +12,7 @@
 
 namespace arg {
 
-class Command;
+class Parser;
 class Arg;
 
 class HelpFormatter {
@@ -26,8 +26,8 @@ class HelpFormatter {
   HelpFormatter(HelpFormatter&&) noexcept = default;
   HelpFormatter& operator=(HelpFormatter&&) noexcept = default;
 
-  std::string_view format(const Command& command, base::ColorMode color_mode);
-  std::string_view reformat(const Command& command, base::ColorMode color_mode);
+  std::string_view format(const Parser& parser, base::ColorMode color_mode);
+  std::string_view reformat(const Parser& parser, base::ColorMode color_mode);
 
  private:
   void render_option_line(std::string_view opt_spec,
