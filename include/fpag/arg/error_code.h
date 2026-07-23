@@ -17,6 +17,7 @@ enum class ErrorCode : u8 {
   FlagTakesNoValue,
   MissingRequiredArgument,
   DuplicateOption,
+  InvalidChoice,
 };
 
 }  // namespace arg

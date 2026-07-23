@@ -12,7 +12,7 @@
 
 namespace arg {
 
-class Command;
+class Parser;
 
 class ErrorFormatter {
  public:

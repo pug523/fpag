@@ -64,6 +64,9 @@ std::string_view ErrorFormatter::format(ErrorCode code,
       fmt::format_to(out, "the argument '{}' was provided more than once",
                      context_arg);
       break;
+    case ErrorCode::InvalidChoice:
+      fmt::format_to(out, "invalid choice for argument '{}'", context_arg);
+      break;
     default: fmt::format_to(out, "unknown error occurred"); break;
   }
 
