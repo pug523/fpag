@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <cassert>
 #include <type_traits>
 #include <utility>
 
+#include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -98,35 +98,36 @@ class Result {
   bool is_ok() const noexcept { return tag_ == ResultTag::Ok; }
   bool is_err() const noexcept { return tag_ == ResultTag::Err; }
 
-  // Extract reference to T (Assumes user verified is_ok())
-  T& unwrap() noexcept {
-    assert(tag_ == ResultTag::Ok);
-    return storage_.ok_val_;
+  // Unwraps
+  T unwrap() && noexcept {
+    FPAG_DCHECK_EQ(tag_, ResultTag::Ok);
+    return std::move(storage_.ok_val_);
   }
 
-  const T& unwrap() const noexcept {
-    assert(tag_ == ResultTag::Ok);
-    return storage_.ok_val_;
-  }
-
-  // Extract reference to E (Assumes user verified is_err())
-  E& unwrap_err() noexcept {
-    assert(tag_ == ResultTag::Err);
-    return storage_.err_val_;
-  }
-
-  const E& unwrap_err() const noexcept {
-    assert(tag_ == ResultTag::Err);
-    return storage_.err_val_;
+  // Unwraps error
+  E unwrap_err() && noexcept {
+    FPAG_DCHECK_EQ(tag_, ResultTag::Err);
+    return std::move(storage_.err_val_);
   }
 
   // Unwraps with fallback default value
-  T unwrap_or(T default_val) const noexcept {
+  T unwrap_or(T default_val) && noexcept {
     if (is_ok()) {
-      return storage_.ok_val_;
+      return std::move(storage_.ok_val_);
     }
-    return default_val;
+    return std::move(default_val);
   }
+
+  // // Non-destructive inspection
+  // const T& value() const& noexcept {
+  //   FPAG_DCHECK_EQ(tag_, ResultTag::Ok);
+  //   return storage_.ok_val_;
+  // }
+
+  // T& value() & noexcept {
+  //   FPAG_DCHECK_EQ(tag_, ResultTag::Ok);
+  //   return storage_.ok_val_;
+  // }
 
   // Maps T into U if Ok, keep Err if Err
   template <typename F>
