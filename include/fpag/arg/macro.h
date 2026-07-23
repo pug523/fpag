@@ -4,10 +4,14 @@
 
 #pragma once
 
+#include <utility>
+
 #include "fpag/arg/arg.h"
 #include "fpag/arg/command.h"
+#include "fpag/arg/matches.h"
 #include "fpag/arg/parse_result.h"
-#include "matches.h"
+#include "fpag/base/numeric.h"
+#include "fpag/base/result.h"
 
 namespace arg::detail {
 
@@ -46,16 +50,18 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
   (binders.apply_to_command(&command), ...);
 
   Matches matches;
-  ParseStatus status = command.parse(argc, argv, &matches);
+  const ParseStatus status = command.parse(argc, argv, &matches);
 
   if (status == ParseStatus::HelpRequested) {
-    return base::make_err(arg::ParseError{arg::ParseError::Kind::HelpRequested,
-                                          command.help_message()});
-  }
-
-  if (status == ParseStatus::Error) {
-    return base::make_err(
-        arg::ParseError{arg::ParseError::Kind::Error, command.error_message()});
+    return base::make_err(arg::ParseError{
+        arg::ParseError::Kind::HelpRequested,
+        command.help_message(),
+    });
+  } else if (status == ParseStatus::Error) {
+    return base::make_err(arg::ParseError{
+        arg::ParseError::Kind::Error,
+        command.error_message(),
+    });
   }
 
   Class config{};

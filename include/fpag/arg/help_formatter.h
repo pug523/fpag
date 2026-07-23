@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
-#include <vector>
 
 #include "fpag/base/color_mode.h"
 #include "fpag/base/numeric.h"

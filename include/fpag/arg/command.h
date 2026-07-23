@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "fpag/arg/matches.h"
 #include "fpag/base/color_mode.h"
 #include "fpag/base/console.h"
+#include "fpag/base/numeric.h"
 
 namespace arg {
 

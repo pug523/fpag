@@ -2,8 +2,11 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include <string>
+#pragma once
 
+#include <string_view>
+
+#include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
 
 namespace arg {

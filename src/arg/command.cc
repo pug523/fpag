@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 
 #include <cstddef>
+#include <string>
 #include <string_view>
 
 #include "fmt/format.h"
@@ -74,7 +75,7 @@ ParseStatus Command::parse(i32 argc,
       continue;
     }
 
-    // Handle long options
+    // Long options
     if (current.starts_with("--")) {
       current.remove_prefix(2);
 
@@ -111,9 +112,8 @@ ParseStatus Command::parse(i32 argc,
           matches->add(arg->name(), argv[++i]);
         }
       }
-    }
-    // Handle short options
-    else if (current.starts_with("-") && current.size() > 1) {
+    } else if (current.starts_with("-") && current.size() > 1) {
+      // Short options
       current.remove_prefix(1);
 
       for (size_t c_idx = 0; c_idx < current.size(); ++c_idx) {
@@ -148,9 +148,8 @@ ParseStatus Command::parse(i32 argc,
           }
         }
       }
-    }
-    // Handle positional arguments
-    else {
+    } else {
+      // Positional arguments
       matches->add_positional(current);
     }
   }
