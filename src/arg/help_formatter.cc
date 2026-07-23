@@ -5,6 +5,7 @@
 #include "fpag/arg/help_formatter.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <string>
 #include <string_view>
@@ -43,7 +44,21 @@ usize get_option_spec_len(const Arg& arg) noexcept {
   }
 
   if (!arg.is_flag()) {
-    len += 7;
+    if (!arg.choices().empty()) {
+      // calculates size of " <choice1|choice2>"
+      len += 3;  // " " + "<" + ">"
+      for (usize i = 0; i < arg.choices().size(); ++i) {
+        if (i > 0) {
+          len += 1;  // "|"
+        }
+        len += arg.choices()[i].size();
+      }
+    } else {
+      // calculates size of " <value_name>"
+      const std::string_view vname =
+          arg.value_name().empty() ? "value" : arg.value_name();
+      len += 3 + vname.size();  // " " + "<" + ">" + vname
+    }
   }
   return len;
 }
@@ -51,7 +66,7 @@ usize get_option_spec_len(const Arg& arg) noexcept {
 }  // namespace
 
 std::string_view HelpFormatter::format(const Parser& parser,
-                                       base::ColorMode color_mode) {
+                                       base::ColorMode color_mode) & {
   if (formatted_str_.empty()) {
     return reformat(parser, color_mode);
   }
@@ -85,7 +100,7 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
 }
 
 std::string_view HelpFormatter::reformat(const Parser& parser,
-                                         base::ColorMode color_mode) {
+                                         base::ColorMode color_mode) & {
   formatted_str_.clear();
 
   constexpr usize kMargin = 512;
@@ -153,10 +168,29 @@ std::string_view HelpFormatter::reformat(const Parser& parser,
     }
 
     if (!arg.is_flag()) {
-      opt_spec += " <path>";
+      opt_spec += " <";
+      if (!arg.choices().empty()) {
+        for (usize i = 0; i < arg.choices().size(); ++i) {
+          if (i > 0) {
+            opt_spec += "|";
+          }
+          opt_spec += arg.choices()[i];
+        }
+      } else {
+        opt_spec += arg.value_name().empty() ? "value" : arg.value_name();
+      }
+      opt_spec += ">";
     }
 
-    render_option_line(opt_spec, opt_spec.size(), max_opt_width, arg.help(),
+    std::string help_text(arg.help());
+    if (!arg.default_value().empty()) {
+      if (!help_text.empty()) {
+        help_text += " ";
+      }
+      help_text += fmt::format("(default: {})", arg.default_value());
+    }
+
+    render_option_line(opt_spec, opt_spec.size(), max_opt_width, help_text,
                        arg.is_required(), color_mode);
   }
 
