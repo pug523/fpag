@@ -22,8 +22,14 @@
 
 namespace arg {
 
+/// Command-line argument parser that processes command-line input and
+/// populates argument matches.
 class Parser {
  public:
+  /// @param name Program name displayed in help and error output.
+  /// @param version Version string displayed when `--version` or `-v' passed.
+  /// @param builtin_enabled Automatically registers help and version flags.
+  /// @param color_mode Controls ANSI color formatting.
   Parser(std::string_view name,
          std::string_view version,
          bool builtin_enabled = true,
@@ -41,6 +47,7 @@ class Parser {
   Parser(Parser&&) noexcept = default;
   Parser& operator=(Parser&&) noexcept = default;
 
+  /// Sets the top-level description of the application for help output.
   inline Parser& about(std::string_view description) & {
     about_ = description;
     return *this;
@@ -51,6 +58,7 @@ class Parser {
     return std::move(*this);
   }
 
+  /// Registers a command-line argument definition with the parser.
   inline Parser& add_arg(Arg&& arg) & {
     args_.push_back(std::move(arg));
     return *this;
@@ -61,15 +69,24 @@ class Parser {
     return std::move(*this);
   }
 
-  // Zero-copy C-style argc/argv parser
+  /// Zero-copy C-style argc/argv parser.
+  ///
+  /// @param argc Number of arguments in @p argv.
+  /// @param argv Array of argument strings (typically passed from main).
+  /// @param[out] matches Destination object to store parsed argument values.
+  /// @return Status indicating success, error, help/version requested
   ParseStatus parse(i32 argc, const char* const* argv, Matches* matches);
 
-  // Zero-copy std::span parser
-  // (accepts std::vector<std::string_view> automatically)
+  /// Zero-copy std::span parser. Accepts contiguous sequences like
+  /// std::vector<std::string_view> directly.
+  ///
+  /// @param args Sequence of argument views to parse.
+  /// @param[out] matches Destination object to store parsed argument values.
+  /// @return Status indicating success, error, help/version requested
   ParseStatus parse(std::span<const std::string_view> args, Matches* matches);
 
-  // Overload for array literals
-  template <size_t N>
+  /// Overload for fixed-size array literals.
+  template <usize N>
   inline ParseStatus parse(const std::string_view (&args)[N],
                            Matches* matches) {
     return parse(std::span<const std::string_view>(args, N), matches);
@@ -78,17 +95,26 @@ class Parser {
   inline std::string_view name() const { return name_; }
   inline std::string_view version() const { return version_; }
   inline std::string_view about() const { return about_; }
-  inline const std::vector<Arg>& args() const { return args_; }
+  inline const std::vector<Arg>& args() const& { return args_; }
   inline const std::vector<ParseError>& errors() const& { return errors_; }
-  inline std::vector<ParseError>&& errors() && { return std::move(errors_); }
+
   inline bool builtin_enabled() const { return builtin_enabled_; }
   inline base::ColorMode color_mode() const { return color_mode_; }
 
-  inline std::string_view error_message() {
+  inline std::string_view error_message() & {
     return error_formatter_.format(errors_, name_, color_mode_);
   }
-  inline std::string_view help_message() {
+  inline std::string_view help_message() & {
     return help_formatter_.format(*this, color_mode_);
+  }
+
+  inline std::vector<Arg>&& args() && { return std::move(args_); }
+  inline std::vector<ParseError>&& errors() && { return std::move(errors_); }
+  inline std::string&& error_message() && {
+    return std::move(error_formatter_).format(errors_, name_, color_mode_);
+  }
+  inline std::string&& help_message() && {
+    return std::move(help_formatter_).format(*this, color_mode_);
   }
 
   static constexpr const char* kBuiltinHelpArgLong = "help";
@@ -98,11 +124,11 @@ class Parser {
 
  private:
   struct ArgSequence {
-    size_t size;
-    std::string_view (*at)(const void* ctx, size_t index);
+    usize size;
+    std::string_view (*at)(const void* ctx, usize index);
     const void* ctx;
 
-    inline std::string_view operator[](size_t index) const {
+    inline std::string_view operator[](usize index) const {
       return at(ctx, index);
     }
   };

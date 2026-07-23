@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -49,10 +50,10 @@ class ParseResult {
     return res;
   }
 
-  inline static ParseResult make_help(std::string_view help) {
+  inline static ParseResult make_help(std::string&& help) {
     ParseResult res;
     res.status_ = ParseStatus::HelpRequested;
-    res.data_.help = help;
+    res.data_.help = std::move(help);
     return res;
   }
 
@@ -82,9 +83,9 @@ class ParseResult {
     return std::move(data_.errors);
   }
 
-  std::string_view unwrap_help() && {
+  std::string&& unwrap_help() && {
     FPAG_DCHECK_EQ(status_, ParseStatus::HelpRequested);
-    return data_.help;
+    return std::move(data_.help);
   }
 
   std::string_view unwrap_version() && {
@@ -97,7 +98,7 @@ class ParseResult {
   union Storage {
     T obj;
     std::vector<ParseError> errors;
-    std::string_view help;
+    std::string help;
     std::string_view version;
 
     Storage() noexcept {}
@@ -113,6 +114,9 @@ class ParseResult {
         data_.errors.~ErrorVec();
         break;
       case ParseStatus::HelpRequested:
+        using Str = std::string;
+        data_.help.~Str();
+        break;
       case ParseStatus::VersionRequested: break;
     }
   }
@@ -126,7 +130,9 @@ class ParseResult {
         new (&data_.errors)
             std::vector<ParseError>(std::move(other.data_.errors));
         break;
-      case ParseStatus::HelpRequested: data_.help = other.data_.help; break;
+      case ParseStatus::HelpRequested:
+        data_.help = std::move(other.data_.help);
+        break;
       case ParseStatus::VersionRequested:
         data_.version = other.data_.version;
         break;

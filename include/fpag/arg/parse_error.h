@@ -13,8 +13,10 @@ namespace arg {
 
 struct ParseError {
   ErrorCode code{ErrorCode::None};
-  std::string context;  // Flag/option name (e.g., "--foo" or "-f")
-  std::string value;  // Optional context value (e.g., invalid choice supplied)
+  /// Flag/option name (e.g., "--foo" or "-f")
+  std::string context;
+  /// Optional context value (e.g., invalid choice supplied)
+  std::string value;
 
   ParseError(ErrorCode c, std::string ctx, std::string val = "")
       : code(c), context(std::move(ctx)), value(std::move(val)) {}

@@ -66,15 +66,29 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
     case ParseStatus::Error:
       return ParseResult<Class>::make_err(std::move(parser).errors());
     case ParseStatus::HelpRequested:
-      return ParseResult<Class>::make_help(parser.help_message());
+      return ParseResult<Class>::make_help(std::move(parser).help_message());
     case ParseStatus::VersionRequested:
-      return ParseResult<Class>::make_version(parser.version());
+      return ParseResult<Class>::make_version(std::move(parser).version());
   }
 }
 
 }  // namespace arg::detail
 
-// Defines an option argument mapping.
+#define ARGS_OPT_FULL(Class, Field, Short, Long, Default, ValueName, Help, \
+                      Required, ...)                                       \
+  ::arg::detail::ArgBinder<Class, decltype(Class::Field)> {                \
+    std::move(::arg::ArgBuilder(Long)                                      \
+                  .short_name(Short)                                       \
+                  .name(#Field)                                            \
+                  .default_value(Default)                                  \
+                  .value_name(ValueName)                                   \
+                  .help(Help)                                              \
+                  .required(Required)                                      \
+                  .choices(__VA_OPT__({__VA_ARGS__})))                     \
+        .build(),                                                          \
+        &Class::Field,                                                     \
+  }
+
 #define ARGS_OPT(Class, Field, Short, Long, Help, Required, ...) \
   ::arg::detail::ArgBinder<Class, decltype(Class::Field)> {      \
     std::move(::arg::ArgBuilder(Long)                            \

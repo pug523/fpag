@@ -6,6 +6,7 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "fpag/base/color_mode.h"
 #include "fpag/base/numeric.h"
@@ -26,8 +27,19 @@ class HelpFormatter {
   HelpFormatter(HelpFormatter&&) noexcept = default;
   HelpFormatter& operator=(HelpFormatter&&) noexcept = default;
 
-  std::string_view format(const Parser& parser, base::ColorMode color_mode);
-  std::string_view reformat(const Parser& parser, base::ColorMode color_mode);
+  std::string_view format(const Parser& parser, base::ColorMode color_mode) &;
+  std::string_view reformat(const Parser& parser, base::ColorMode color_mode) &;
+
+  inline std::string&& format(const Parser& parser,
+                              base::ColorMode color_mode) && {
+    format(parser, color_mode);
+    return std::move(formatted_str_);
+  }
+  inline std::string&& reformat(const Parser& parser,
+                                base::ColorMode color_mode) && {
+    reformat(parser, color_mode);
+    return std::move(formatted_str_);
+  }
 
  private:
   void render_option_line(std::string_view opt_spec,

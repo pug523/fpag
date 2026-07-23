@@ -6,6 +6,7 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "fpag/arg/parse_error.h"
@@ -26,7 +27,14 @@ class ErrorFormatter {
 
   std::string_view format(const std::vector<ParseError>& errors,
                           std::string_view command_name,
-                          base::ColorMode color_mode);
+                          base::ColorMode color_mode) &;
+
+  inline std::string&& format(const std::vector<ParseError>& errors,
+                              std::string_view command_name,
+                              base::ColorMode color_mode) && {
+    format(errors, command_name, color_mode);
+    return std::move(formatted_str_);
+  }
 
  private:
   std::string formatted_str_;
