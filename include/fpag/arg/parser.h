@@ -27,37 +27,41 @@ enum class ParseStatus : u8 {
   Error,
 };
 
-class Command {
+class Parser {
  public:
-  Command(std::string_view name,
-          std::string_view version,
-          base::ColorMode color_mode =
-              base::console_color_mode(base::Stream::Stdout))
-      : name_(name), version_(version), color_mode_(color_mode) {}
-  ~Command() = default;
+  Parser(std::string_view name,
+         std::string_view version,
+         bool builtin_enabled = true,
+         base::ColorMode color_mode =
+             base::console_color_mode(base::Stream::Stdout))
+      : name_(name),
+        version_(version),
+        builtin_enabled_(builtin_enabled),
+        color_mode_(color_mode) {}
+  ~Parser() = default;
 
-  Command(const Command&) = delete;
-  Command& operator=(const Command&) = delete;
+  Parser(const Parser&) = delete;
+  Parser& operator=(const Parser&) = delete;
 
-  Command(Command&&) noexcept = default;
-  Command& operator=(Command&&) noexcept = default;
+  Parser(Parser&&) noexcept = default;
+  Parser& operator=(Parser&&) noexcept = default;
 
-  inline Command& about(std::string_view description) & {
+  inline Parser& about(std::string_view description) & {
     about_ = description;
     return *this;
   }
 
-  inline Command&& about(std::string_view description) && {
+  inline Parser&& about(std::string_view description) && {
     about_ = description;
     return std::move(*this);
   }
 
-  inline Command& add_arg(Arg&& arg) & {
+  inline Parser& add_arg(Arg&& arg) & {
     args_.push_back(std::move(arg));
     return *this;
   }
 
-  inline Command&& add_arg(Arg&& arg) && {
+  inline Parser&& add_arg(Arg&& arg) && {
     args_.push_back(std::move(arg));
     return std::move(*this);
   }
@@ -69,6 +73,8 @@ class Command {
   inline std::string_view about() const { return about_; }
   inline const std::vector<Arg>& args() const { return args_; }
   inline ErrorCode error_code() const { return last_error_code_; }
+  inline bool builtin_enabled() const { return builtin_enabled_; }
+  inline base::ColorMode color_mode() const { return color_mode_; }
 
   inline std::string_view error_message() {
     return error_formatter_.format(last_error_code_, error_context_arg_, name_,
@@ -84,6 +90,18 @@ class Command {
 
   ParseStatus set_error(ErrorCode code, std::string_view context_arg = "");
 
+  ParseStatus long_option(std::string_view current,
+                          i32* i,
+                          i32 argc,
+                          const char* const* argv,
+                          Matches* matches);
+  ParseStatus short_options(std::string_view current,
+                            i32* i,
+                            i32 argc,
+                            const char* const* argv,
+                            Matches* matches);
+  bool is_valid_choice(const Arg& arg, std::string_view value) const;
+
   std::string_view name_;
   std::string_view version_;
   std::string_view about_;
@@ -94,6 +112,7 @@ class Command {
 
   ErrorFormatter error_formatter_;
   HelpFormatter help_formatter_;
+  bool builtin_enabled_;
   base::ColorMode color_mode_;
 };
 
