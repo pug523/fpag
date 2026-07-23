@@ -84,22 +84,24 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
 // Defines an option argument mapping.
 #define ARGS_OPT(Class, Field, Short, Long, Help, Required) \
   ::arg::detail::ArgBinder<Class, decltype(Class::Field)> { \
-    std::move(::arg::Arg(#Field)                            \
-                  .short_name(Short)                        \
-                  .long_name(Long)                          \
-                  .help(Help)                               \
-                  .required(Required)),                     \
+    ::arg::ArgBuilder(#Field)                               \
+        .short_name(Short)                                  \
+        .long_name(Long)                                    \
+        .help(Help)                                         \
+        .required(Required)                                 \
+        .build(),                                           \
         &Class::Field,                                      \
   }
 
 // Defines a boolean flag mapping.
 #define ARGS_FLAG(Class, Field, Short, Long, Help) \
   ::arg::detail::ArgBinder<Class, bool> {          \
-    std::move(::arg::Arg(#Field)                   \
-                  .short_name(Short)               \
-                  .long_name(Long)                 \
-                  .help(Help)                      \
-                  .is_flag(true)),                 \
+    ::arg::ArgBuilder(#Field)                      \
+        .short_name(Short)                         \
+        .long_name(Long)                           \
+        .help(Help)                                \
+        .is_flag(true)                             \
+        .build(),                                  \
         &Class::Field,                             \
   }
 
