@@ -5,11 +5,10 @@
 #pragma once
 
 #include <charconv>
+#include <concepts>
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <utility>
-#include <vector>
 
 #include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
@@ -22,11 +21,7 @@ enum class GetError : u8 {
 };
 
 template <typename T>
-struct Converter {
-  static base::Result<T, GetError> from_string(std::string_view v) {
-    static_assert(sizeof(v) == 0, "No parser defined for this type");
-  }
-};
+struct Converter;
 
 template <typename T>
 concept Parsable = requires(std::string_view v) {
