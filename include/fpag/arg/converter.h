@@ -20,9 +20,26 @@ enum class GetError : u8 {
   OutOfRange,
 };
 
+/// Customization point for parsing command-line string values into type @tparam
+/// T.
+///
+/// To add parsing support for a custom type, specialize this struct and
+/// implement:
+/// @code
+/// static base::Result<T, GetError> from_string(std::string_view v);
+/// @endcode
+///
+/// @tparam T Target type to parse from string_view.
 template <typename T>
 struct Converter;
 
+/// Concept checking if type @tparam T can be parsed from a string via @ref
+/// Converter.
+///
+/// Requires @c Converter<T>::from_string(v) to return a
+/// @c base::Result<T, GetError>.
+///
+/// @tparam T Type to validate for command-line argument parsing capability.
 template <typename T>
 concept Parsable = requires(std::string_view v) {
   { Converter<T>::from_string(v) } -> std::same_as<base::Result<T, GetError>>;
