@@ -13,7 +13,7 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "fpag/arg/arg.h"
-#include "fpag/arg/command.h"
+#include "fpag/arg/parser.h"
 #include "fpag/base/color_mode.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/style.h"
@@ -50,10 +50,10 @@ usize get_option_spec_len(const Arg& arg) noexcept {
 
 }  // namespace
 
-std::string_view HelpFormatter::format(const Command& command,
+std::string_view HelpFormatter::format(const Parser& parser,
                                        base::ColorMode color_mode) {
   if (formatted_str_.empty()) {
-    return reformat(command, color_mode);
+    return reformat(parser, color_mode);
   }
   return formatted_str_;
 }
@@ -84,14 +84,14 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
   fmt::format_to(out, "\n");
 }
 
-std::string_view HelpFormatter::reformat(const Command& command,
+std::string_view HelpFormatter::reformat(const Parser& parser,
                                          base::ColorMode color_mode) {
   formatted_str_.clear();
 
   constexpr usize kMargin = 512;
   constexpr usize kEstimatedStrLenPerArgs = 128;
   const usize estimated_size =
-      kMargin + (command.args().size() * kEstimatedStrLenPerArgs);
+      kMargin + (parser.args().size() * kEstimatedStrLenPerArgs);
   formatted_str_.reserve(estimated_size);
 
   auto out = std::back_inserter(formatted_str_);
@@ -99,17 +99,17 @@ std::string_view HelpFormatter::reformat(const Command& command,
   // Title and about header
   constexpr usize kTerminalWidth = 60;
 
-  if (!command.name().empty()) {
-    usize pad = (command.name().size() < kTerminalWidth)
-                    ? (kTerminalWidth - command.name().size()) / 2
+  if (!parser.name().empty()) {
+    usize pad = (parser.name().size() < kTerminalWidth)
+                    ? (kTerminalWidth - parser.name().size()) / 2
                     : 0;
     fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad,
-                   s(base::kBrightRed, color_mode), command.name(),
+                   s(base::kBrightRed, color_mode), parser.name(),
                    s(base::kReset, color_mode));
   }
 
-  if (!command.about().empty()) {
-    std::string full_about = fmt::format("=-=-= {} =-=-=", command.about());
+  if (!parser.about().empty()) {
+    std::string full_about = fmt::format("=-=-= {} =-=-=", parser.about());
     usize pad = (full_about.size() < kTerminalWidth)
                     ? (kTerminalWidth - full_about.size()) / 2
                     : 0;
@@ -120,19 +120,19 @@ std::string_view HelpFormatter::reformat(const Command& command,
 
   // Usage and Options section
   fmt::format_to(out, "Usage: {}{}{} {}{}[Options]{}\n\nOptions:\n",
-                 s(base::kBrightGreen, color_mode), command.name(),
+                 s(base::kBrightGreen, color_mode), parser.name(),
                  s(base::kReset, color_mode),
                  s(base::kBrightMagenta, color_mode),
                  s(base::kBold, color_mode), s(base::kReset, color_mode));
 
   // Determine alignment column width
   usize max_opt_width = 32;
-  for (const auto& arg : command.args()) {
+  for (const auto& arg : parser.args()) {
     max_opt_width = std::max(max_opt_width, get_option_spec_len(arg));
   }
   max_opt_width = std::max(max_opt_width, static_cast<usize>(14));
 
-  for (const auto& arg : command.args()) {
+  for (const auto& arg : parser.args()) {
     std::string opt_spec;
     opt_spec.reserve(64);
 
@@ -161,11 +161,13 @@ std::string_view HelpFormatter::reformat(const Command& command,
   }
 
   // Built-in flags
-  render_option_line("  -h, --help", 12, max_opt_width,
-                     "print this help message", false, color_mode);
-  if (!command.version().empty()) {
-    render_option_line("  -v, --version", 15, max_opt_width, "print version",
-                       false, color_mode);
+  if (parser.builtin_enabled()) {
+    render_option_line("  -h, --help", 12, max_opt_width,
+                       "print this help message", false, color_mode);
+    if (!parser.version().empty()) {
+      render_option_line("  -v, --version", 15, max_opt_width, "print version",
+                         false, color_mode);
+    }
   }
 
   return formatted_str_;
