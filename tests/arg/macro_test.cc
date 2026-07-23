@@ -5,12 +5,11 @@
 #include "fpag/arg/macro.h"
 
 #include <string>
+#include <utility>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/arg/arg.h"
 #include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
-#include "fpag/arg/parse_result.h"
 #include "fpag/base/numeric.h"
 
 namespace arg {
@@ -58,6 +57,7 @@ ARGS_FN_DEFINE(BundleConfig,
 
 TEST_CASE("Macro argument parsing", "[arg][macro]") {
   SECTION("Default values when no flags or options are provided") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -67,10 +67,11 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const Config& cfg = res.unwrap();
     CHECK(cfg.port == 8080);
     CHECK(cfg.host == "127.0.0.1");
-    CHECK(cfg.verbose == false);
+    CHECK_FALSE(cfg.verbose);
   }
 
   SECTION("Parse options with short names") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "-p", "9090", "-V"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -84,6 +85,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Parse options with long names") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app",    "--port",  "3000",
                           "--host", "0.0.0.0", "--verbose"};
     const i32 argc = static_cast<i32>(std::size(argv));
@@ -98,6 +100,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Long option using '=' syntax") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--port=3000", "--host=0.0.0.0"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -110,6 +113,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Mixed short and long options") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "-p", "5000", "--host=10.0.0.1", "-V"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -123,6 +127,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Only some options provided, rest keep defaults") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--host=192.168.1.1"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -132,10 +137,11 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
     const Config& cfg = res.unwrap();
     CHECK(cfg.port == 8080);
     CHECK(cfg.host == "192.168.1.1");
-    CHECK(cfg.verbose == false);
+    CHECK_FALSE(cfg.verbose);
   }
 
   SECTION("Unknown long option fails") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--bogus"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -144,6 +150,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Unknown short option fails") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "-z"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -152,6 +159,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Missing value for long option fails") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--port"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -160,6 +168,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Missing value for short option fails") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "-p"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -168,6 +177,7 @@ TEST_CASE("Macro argument parsing", "[arg][macro]") {
   }
 
   SECTION("Help flag short-circuits to an error result") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--help"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -187,6 +197,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     std::move(binder).apply_to_command(&cmd);
 
     Matches matches;
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"test_app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -195,6 +206,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
   }
 
   SECTION("Fails end-to-end when required option is missing") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"auth-app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -203,6 +215,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
   }
 
   SECTION("Succeeds end-to-end when required option is provided (short)") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"auth-app", "-t", "secret123"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -212,6 +225,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
   }
 
   SECTION("Succeeds end-to-end when required option is provided (long)") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"auth-app", "--token=secret456"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -223,6 +237,7 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
 
 TEST_CASE("Macro bundled short flags", "[arg][macro]") {
   SECTION("Two boolean flags bundled under one dash both get set") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"bundle-app", "-ab"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -235,6 +250,7 @@ TEST_CASE("Macro bundled short flags", "[arg][macro]") {
   }
 
   SECTION("Only one of the bundled flags provided") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"bundle-app", "-a"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
@@ -243,7 +259,7 @@ TEST_CASE("Macro bundled short flags", "[arg][macro]") {
 
     const BundleConfig& cfg = res.unwrap();
     CHECK(cfg.a_flag == true);
-    CHECK(cfg.b_flag == false);
+    CHECK_FALSE(cfg.b_flag);
   }
 }
 

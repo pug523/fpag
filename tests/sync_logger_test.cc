@@ -109,7 +109,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
 
   SECTION("dlog") {
     FPAG_DLOG("dlog testing {}", 168);
-    i32 i = 8910;
+    const i32 i = 8910;
     FPAG_DLOG("dlog testing2 {}", i);
   }
 }
