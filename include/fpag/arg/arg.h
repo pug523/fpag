@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <string_view>
+#include <utility>
 
 #include "fpag/base/numeric.h"
 
@@ -24,29 +25,54 @@ class Arg {
   Arg& operator=(Arg&&) noexcept = default;
 
   // Fluent API builders
-  constexpr Arg& short_name(char c) {
+  constexpr Arg& short_name(char c) & {
     short_name_ = c;
     return *this;
   }
 
-  constexpr Arg& long_name(std::string_view n) {
+  constexpr Arg&& short_name(char c) && {
+    short_name_ = c;
+    return std::move(*this);
+  }
+
+  constexpr Arg& long_name(std::string_view n) & {
     long_name_ = n;
     return *this;
   }
 
-  constexpr Arg& help(std::string_view h) {
+  constexpr Arg&& long_name(std::string_view n) && {
+    long_name_ = n;
+    return std::move(*this);
+  }
+
+  constexpr Arg& help(std::string_view h) & {
     help_ = h;
     return *this;
   }
 
-  constexpr Arg& required(bool r = true) {
+  constexpr Arg&& help(std::string_view h) && {
+    help_ = h;
+    return std::move(*this);
+  }
+
+  constexpr Arg& required(bool r = true) & {
     is_required_ = r;
     return *this;
   }
 
-  constexpr Arg& is_flag(bool f = true) {
+  constexpr Arg&& required(bool r = true) && {
+    is_required_ = r;
+    return std::move(*this);
+  }
+
+  constexpr Arg& is_flag(bool f = true) & {
     is_flag_ = f;
     return *this;
+  }
+
+  constexpr Arg&& is_flag(bool f = true) && {
+    is_flag_ = f;
+    return std::move(*this);
   }
 
   constexpr std::string_view name() const { return name_; }
@@ -61,7 +87,8 @@ class Arg {
   std::string_view help_;
   std::string_view long_name_;
   std::optional<char> short_name_;
-  [[maybe_unused]] i32 padding;
+  // Align to 64 B
+  [[maybe_unused]] i32 padding_ = 0;
   bool is_required_ = false;
   bool is_flag_ = false;
 };

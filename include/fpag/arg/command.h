@@ -42,14 +42,24 @@ class Command {
   Command(Command&&) noexcept = default;
   Command& operator=(Command&&) noexcept = default;
 
-  inline Command& about(std::string_view description) {
+  inline Command& about(std::string_view description) & {
     about_ = description;
     return *this;
   }
 
-  inline Command& add_arg(Arg&& arg) {
+  inline Command&& about(std::string_view description) && {
+    about_ = description;
+    return std::move(*this);
+  }
+
+  inline Command& add_arg(Arg&& arg) & {
     args_.push_back(std::move(arg));
     return *this;
+  }
+
+  inline Command&& add_arg(Arg&& arg) && {
+    args_.push_back(std::move(arg));
+    return std::move(*this);
   }
 
   ParseStatus parse(i32 argc, const char* const* argv, Matches* matches);

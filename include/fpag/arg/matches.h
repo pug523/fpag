@@ -58,8 +58,16 @@ class Matches {
           return base::make_ok(v);
         } else if constexpr (std::is_same_v<T, std::string>) {
           return base::make_ok(std::string(v));
-          // NOLINTNEXTLINE(readability/braces)
-        } else if constexpr (std::is_integral_v<T> ||
+        } else if constexpr (std::is_same_v<T, bool>) {
+          if (v == "true" || v == "1" || v == "y") {
+            return base::make_ok(true);
+          }
+          if (v == "false" || v == "0" || v == "n") {
+            return base::make_ok(false);
+          }
+          return base::make_err(GetError::InvalidArgument);
+        } else if constexpr ((std::is_integral_v<T> &&
+                              !std::is_same_v<T, bool>) ||
                              std::is_floating_point_v<T>) {
           T val{};
           auto [ptr, ec] = std::from_chars(v.data(), v.data() + v.size(), val);

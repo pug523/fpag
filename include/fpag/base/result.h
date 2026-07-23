@@ -42,21 +42,23 @@ Err<typename std::decay<E>::type> make_err(E&& error) noexcept {
 template <typename T, typename E>
 class Result {
  public:
-  // Constructs from Ok<T>
-  explicit Result(Ok<T>&& ok) noexcept : tag_(ResultTag::Ok) {
+  // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
+  Result(Ok<T>&& ok) noexcept : tag_(ResultTag::Ok) {
     ::new (static_cast<void*>(&storage_.ok_val_)) T(std::move(ok.value));
   }
 
-  explicit Result(const Ok<T>& ok) noexcept : tag_(ResultTag::Ok) {
+  // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
+  Result(const Ok<T>& ok) noexcept : tag_(ResultTag::Ok) {
     ::new (static_cast<void*>(&storage_.ok_val_)) T(ok.value);
   }
 
-  // Constructs from Err<E>
-  explicit Result(Err<E>&& err) noexcept : tag_(ResultTag::Err) {
+  // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
+  Result(Err<E>&& err) noexcept : tag_(ResultTag::Err) {
     ::new (static_cast<void*>(&storage_.err_val_)) E(std::move(err.error));
   }
 
-  explicit Result(const Err<E>& err) noexcept : tag_(ResultTag::Err) {
+  // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
+  Result(const Err<E>& err) noexcept : tag_(ResultTag::Err) {
     ::new (static_cast<void*>(&storage_.err_val_)) E(err.error);
   }
 
@@ -128,8 +130,9 @@ class Result {
 
   // Maps T into U if Ok, keep Err if Err
   template <typename F>
-  Result<typename std::decay<decltype(f(std::declval<const T&>()))>::type, E>
-  map(F&& f) const noexcept {
+  auto map(F&& f) const noexcept -> Result<
+      typename std::decay<decltype(f(std::declval<const T&>()))>::type,
+      E> {
     if (is_ok()) {
       return make_ok(f(unwrap()));
     }
@@ -138,7 +141,7 @@ class Result {
 
   // Chain another Result-returning operation
   template <typename F>
-  decltype(f(std::declval<const T&>())) and_then(F&& f) const noexcept {
+  auto and_then(F&& f) const noexcept -> decltype(f(std::declval<const T&>())) {
     if (is_ok()) {
       return f(unwrap());
     }
