@@ -40,7 +40,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.info("formatting i32: {}", i);
 
     f32 f = 3.14f;
-    logger.info("formatting float: {}", f);
+    logger.info("formatting f32: {}", f);
 
     i32 color =
         static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
@@ -79,7 +79,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.info(FMT_COMPILE("formatting compiled i32: {}"), i);
 
     f32 f = 3.14f;
-    logger.info(FMT_COMPILE("formatting compiled float: {}"), f);
+    logger.info(FMT_COMPILE("formatting compiled f32: {}"), f);
 
     i32 color =
         static_cast<i32>(base::console_color_mode(base::Stream::Stdout));

@@ -23,13 +23,13 @@ namespace arg {
 namespace {
 
 // Pure zero-allocation adapter functions
-std::string_view get_from_argv(const void* ctx, size_t index) {
+std::string_view get_from_argv(const void* ctx, usize index) {
   const char* const* argv = static_cast<const char* const*>(ctx);
   const char* str = argv[index];
   return str ? std::string_view(str) : std::string_view();
 }
 
-std::string_view get_from_span(const void* ctx, size_t index) {
+std::string_view get_from_span(const void* ctx, usize index) {
   auto* span = static_cast<const std::span<const std::string_view>*>(ctx);
   return (*span)[index];
 }
@@ -132,7 +132,7 @@ bool Parser::short_options(std::string_view current,
                            ParseStatus* status) {
   current.remove_prefix(1);  // remove '-'
 
-  for (size_t c_idx = 0; c_idx < current.size(); ++c_idx) {
+  for (usize c_idx = 0; c_idx < current.size(); ++c_idx) {
     char c = current[c_idx];
     const Arg* arg = find_arg_by_short(c);
 
@@ -183,7 +183,7 @@ ParseStatus Parser::parse(i32 argc, const char* const* argv, Matches* matches) {
     return ParseStatus::Error;
   }
   const ArgSequence seq{
-      .size = static_cast<size_t>(argc),
+      .size = static_cast<usize>(argc),
       .at = get_from_argv,
       .ctx = argv,
   };

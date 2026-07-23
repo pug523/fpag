@@ -4,12 +4,12 @@
 
 #include "fpag/arg/converter.h"
 
-#include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/numeric.h"
 
 namespace arg {
 
@@ -19,11 +19,11 @@ TEST_CASE("Parsable concept check", "[arg][converter]") {
   STATIC_CHECK(Parsable<std::string_view>);
   STATIC_CHECK(Parsable<std::string>);
   STATIC_CHECK(Parsable<bool>);
-  STATIC_CHECK(Parsable<int>);
-  STATIC_CHECK(Parsable<int64_t>);
-  STATIC_CHECK(Parsable<uint32_t>);
-  STATIC_CHECK(Parsable<float>);
-  STATIC_CHECK(Parsable<double>);
+  STATIC_CHECK(Parsable<i32>);
+  STATIC_CHECK(Parsable<i64>);
+  STATIC_CHECK(Parsable<u32>);
+  STATIC_CHECK(Parsable<f32>);
+  STATIC_CHECK(Parsable<f64>);
 
   struct CustomUnparsedType {};
   STATIC_CHECK_FALSE(Parsable<CustomUnparsedType>);
@@ -66,35 +66,35 @@ TEST_CASE("Converter<bool> rejects invalid string inputs", "[arg][converter]") {
   }
 }
 
-TEST_CASE("Converter<int> parses valid integers", "[arg][converter]") {
+TEST_CASE("Converter<i32> parses valid integers", "[arg][converter]") {
   SECTION("Positive integer") {
-    auto res = Converter<int>::from_string("12345");
+    auto res = Converter<i32>::from_string("12345");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == 12345);
   }
 
   SECTION("Negative integer") {
-    auto res = Converter<int>::from_string("-42");
+    auto res = Converter<i32>::from_string("-42");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == -42);
   }
 
   SECTION("Zero") {
-    auto res = Converter<int>::from_string("0");
+    auto res = Converter<i32>::from_string("0");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == 0);
   }
 }
 
-TEST_CASE("Converter<int> rejects invalid inputs", "[arg][converter]") {
+TEST_CASE("Converter<i32> rejects invalid inputs", "[arg][converter]") {
   SECTION("Non-numeric characters") {
-    auto res = Converter<int>::from_string("abc");
+    auto res = Converter<i32>::from_string("abc");
     REQUIRE(res.is_err());
     CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
   }
 
   SECTION("Empty string") {
-    auto res = Converter<int>::from_string("");
+    auto res = Converter<i32>::from_string("");
     REQUIRE(res.is_err());
     CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
   }
@@ -102,36 +102,35 @@ TEST_CASE("Converter<int> rejects invalid inputs", "[arg][converter]") {
   SECTION("Trailing characters") {
     // std::from_chars parses valid prefix; check if behavior matches
     // requirement
-    auto res = Converter<int>::from_string("123abc");
+    auto res = Converter<i32>::from_string("123abc");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == 123);
   }
 
   SECTION("Overflow") {
-    auto res = Converter<int>::from_string("999999999999999999999999");
+    auto res = Converter<i32>::from_string("999999999999999999999999");
     REQUIRE(res.is_err());
     CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
   }
 }
 
-TEST_CASE("Converter<double> parses valid floating-point numbers",
+TEST_CASE("Converter<f64> parses valid floating-point numbers",
           "[arg][converter]") {
-  SECTION("Positive double") {
-    auto res = Converter<double>::from_string("3.14159");
+  SECTION("Positive f64") {
+    auto res = Converter<f64>::from_string("3.14159");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == 3.14159);
   }
 
-  SECTION("Negative double") {
-    auto res = Converter<double>::from_string("-0.00123");
+  SECTION("Negative f64") {
+    auto res = Converter<f64>::from_string("-0.00123");
     REQUIRE(res.is_ok());
     CHECK(std::move(res).unwrap() == -0.00123);
   }
 }
 
-TEST_CASE("Converter<double> rejects invalid float inputs",
-          "[arg][converter]") {
-  auto res = Converter<double>::from_string("invalid_float");
+TEST_CASE("Converter<f64> rejects invalid float inputs", "[arg][converter]") {
+  auto res = Converter<f64>::from_string("invalid_f64");
   REQUIRE(res.is_err());
   CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
 }

@@ -66,12 +66,11 @@ TEST_CASE("Matches get<i32> on non-numeric text is InvalidArgument",
   CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
 }
 
-TEST_CASE("Matches get<double> parses floating point values",
-          "[arg][matches]") {
+TEST_CASE("Matches get<f64> parses floating point values", "[arg][matches]") {
   Matches m;
   m.add("ratio", "3.14");
 
-  auto res = m.get<double>("ratio");
+  auto res = m.get<f64>("ratio");
   REQUIRE(res.is_ok());
   CHECK(std::move(res).unwrap() == 3.14);
 }

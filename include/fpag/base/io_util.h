@@ -28,7 +28,7 @@ constexpr i32 kStdoutFd = STDOUT_FILENO;
 constexpr i32 kStderrFd = STDERR_FILENO;
 #endif
 
-inline void write(i32 fd, const char* data, size_t size) {
+inline void write(i32 fd, const char* data, usize size) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   ::_write(fd, data, static_cast<u32>(size));
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)

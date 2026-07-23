@@ -27,7 +27,7 @@ inline const char* s(const char* code, base::ColorMode mode) noexcept {
 
 std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
                                         std::string_view command_name,
-                                        base::ColorMode color_mode) {
+                                        base::ColorMode color_mode) & {
   formatted_str_.clear();
 
   // Use a slightly larger estimate for multiple errors

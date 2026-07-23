@@ -40,7 +40,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.info("async formatting i32: {}", i);
 
     f32 f = 3.14f;
-    logger.info("async formatting float: {}", f);
+    logger.info("async formatting f32: {}", f);
 
     i32 color =
         static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
