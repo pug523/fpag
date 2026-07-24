@@ -53,14 +53,14 @@ class ParseResult {
   inline static ParseResult make_help(std::string&& help) {
     ParseResult res;
     res.status_ = ParseStatus::HelpRequested;
-    res.data_.help = std::move(help);
+    new (&res.data_.help) std::string(std::move(help));
     return res;
   }
 
-  inline static ParseResult make_version(std::string_view version) {
+  inline static ParseResult make_version(std::string&& version) {
     ParseResult res;
     res.status_ = ParseStatus::VersionRequested;
-    res.data_.version = version;
+    new (&res.data_.version) std::string(std::move(version));
     return res;
   }
 
@@ -88,53 +88,51 @@ class ParseResult {
     return std::move(data_.help);
   }
 
-  std::string_view unwrap_version() && {
+  std::string&& unwrap_version() && {
     FPAG_DCHECK_EQ(status_, ParseStatus::VersionRequested);
-    return data_.version;
+    return std::move(data_.version);
   }
 
  private:
-  ParseStatus status_;
+  ParseStatus status_ = ParseStatus::Error;
   union Storage {
     T obj;
     std::vector<ParseError> errors;
     std::string help;
-    std::string_view version;
+    std::string version;
 
     Storage() noexcept {}
     ~Storage() noexcept {}
   } data_;
 
   ParseResult() noexcept = default;
+
   void reset() noexcept {
+    using ErrorVec = std::vector<ParseError>;
+    using Str = std::string;
     switch (status_) {
       case ParseStatus::Success: data_.obj.~T(); break;
-      case ParseStatus::Error:
-        using ErrorVec = std::vector<ParseError>;
-        data_.errors.~ErrorVec();
-        break;
-      case ParseStatus::HelpRequested:
-        using Str = std::string;
-        data_.help.~Str();
-        break;
-      case ParseStatus::VersionRequested: break;
+      case ParseStatus::Error: data_.errors.~ErrorVec(); break;
+      case ParseStatus::HelpRequested: data_.help.~Str(); break;
+      case ParseStatus::VersionRequested: data_.version.~Str(); break;
     }
   }
 
   void construct_from(ParseResult&& other) noexcept {
+    using ErrorVec = std::vector<ParseError>;
+    using Str = std::string;
     switch (status_) {
       case ParseStatus::Success:
         new (&data_.obj) T(std::move(other.data_.obj));
         break;
       case ParseStatus::Error:
-        new (&data_.errors)
-            std::vector<ParseError>(std::move(other.data_.errors));
+        new (&data_.errors) ErrorVec(std::move(other.data_.errors));
         break;
       case ParseStatus::HelpRequested:
-        data_.help = std::move(other.data_.help);
+        new (&data_.help) Str(std::move(other.data_.help));
         break;
       case ParseStatus::VersionRequested:
-        data_.version = other.data_.version;
+        new (&data_.version) Str(std::move(other.data_.version));
         break;
     }
   }
