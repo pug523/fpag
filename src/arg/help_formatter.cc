@@ -181,11 +181,11 @@ std::string DefaultHelpFormatter::operator()(
 
   // Render built-in options
   if (command.builtin_enabled()) {
-    render_option_line(out, "  -h, --help", max_opt_width,
-                       "print this help message", "", false, color_style);
+    render_option_line(out, "  -h, --help", max_opt_width, "Print help message",
+                       "", false, color_style);
     if (!command.version().empty()) {
-      render_option_line(out, "  -v, --version", max_opt_width, "print version",
-                         "", false, color_style);
+      render_option_line(out, "  -v, --version", max_opt_width,
+                         "Print version information", "", false, color_style);
     }
   }
 
