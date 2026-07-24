@@ -12,7 +12,7 @@
 
 namespace arg {
 
-std::string DefaultVersionFormatter::format(
+std::string DefaultVersionFormatter::operator()(
     std::string_view command_name,
     std::string_view version,
     base::ColorStyle /* color_style */) const {

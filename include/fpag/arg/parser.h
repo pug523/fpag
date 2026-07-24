@@ -85,7 +85,7 @@ class Parser {
       F&& f = {},
       base::ColorStyle color_style =
           base::console_color_style(base::Stream::Stdout)) {
-    return std::move(f).format(root_cmd_.name(), errors_, color_style);
+    return std::move(f)(root_cmd_.name(), errors_, color_style);
   }
 
   template <HelpFormatter F = DefaultHelpFormatter>
@@ -93,7 +93,7 @@ class Parser {
       F&& f = {},
       base::ColorStyle color_style =
           base::console_color_style(base::Stream::Stdout)) const {
-    return std::move(f).format(root_cmd_, color_style);
+    return std::move(f)(root_cmd_, color_style);
   }
 
   template <VersionFormatter F = DefaultVersionFormatter>
@@ -101,8 +101,7 @@ class Parser {
       F&& f = {},
       base::ColorStyle color_style =
           base::console_color_style(base::Stream::Stdout)) const {
-    return std::move(f).format(root_cmd_.name(), root_cmd_.version(),
-                               color_style);
+    return std::move(f)(root_cmd_.name(), root_cmd_.version(), color_style);
   }
 
   static constexpr const char* kBuiltinHelpArgLong = "help";

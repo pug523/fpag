@@ -19,13 +19,13 @@ concept ErrorFormatter = requires(const F& f,
                                   std::string_view command_name,
                                   const std::vector<ParseError>& errors,
                                   base::ColorStyle color_style) {
-  { f.format(command_name, errors, color_style) } -> std::same_as<std::string>;
+  { f(command_name, errors, color_style) } -> std::same_as<std::string>;
 };
 
 struct DefaultErrorFormatter {
-  std::string format(std::string_view command_name,
-                     const std::vector<ParseError>& errors,
-                     base::ColorStyle color_style) const;
+  std::string operator()(std::string_view command_name,
+                         const std::vector<ParseError>& errors,
+                         base::ColorStyle color_style) const;
 };
 
 }  // namespace arg

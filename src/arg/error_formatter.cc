@@ -19,9 +19,10 @@
 
 namespace arg {
 
-std::string DefaultErrorFormatter::format(std::string_view command_name,
-                                          const std::vector<ParseError>& errors,
-                                          base::ColorStyle style) const {
+std::string DefaultErrorFormatter::operator()(
+    std::string_view command_name,
+    const std::vector<ParseError>& errors,
+    base::ColorStyle style) const {
   std::string result;
   constexpr usize kEstimatedStrLenPerError = 256;
   result.reserve(kEstimatedStrLenPerError * errors.size());

@@ -17,13 +17,13 @@ concept VersionFormatter = requires(const F& f,
                                     std::string_view command_name,
                                     std::string_view version,
                                     base::ColorStyle color_style) {
-  { f.format(command_name, version, color_style) } -> std::same_as<std::string>;
+  { f(command_name, version, color_style) } -> std::same_as<std::string>;
 };
 
 struct DefaultVersionFormatter {
-  std::string format(std::string_view command_name,
-                     std::string_view version,
-                     base::ColorStyle color_style) const;
+  std::string operator()(std::string_view command_name,
+                         std::string_view version,
+                         base::ColorStyle color_style) const;
 };
 
 }  // namespace arg

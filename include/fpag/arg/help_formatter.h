@@ -15,12 +15,12 @@ namespace arg {
 template <typename F>
 concept HelpFormatter =
     requires(const F& f, const Command& command, base::ColorStyle color_style) {
-      { f.format(command, color_style) } -> std::same_as<std::string>;
+      { f(command, color_style) } -> std::same_as<std::string>;
     };
 
 struct DefaultHelpFormatter {
-  std::string format(const Command& command,
-                     base::ColorStyle color_style) const;
+  std::string operator()(const Command& command,
+                         base::ColorStyle color_style) const;
 };
 
 }  // namespace arg
