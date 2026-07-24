@@ -105,12 +105,10 @@ std::string DefaultHelpFormatter::format(const Command& command,
   constexpr usize kTerminalWidth = 60;
 
   const char* bold = base::style_code(base::kBold, color_style);
+  const char* underline = base::style_code(base::kUnderline, color_style);
   const char* reset = base::style_code(base::kReset, color_style);
 
-  const char* bright_red = base::style_code(base::kBrightRed, color_style);
-  const char* bright_green = base::style_code(base::kBrightGreen, color_style);
-  const char* bright_yellow =
-      base::style_code(base::kBrightYellow, color_style);
+  const char* blue = base::style_code(base::kBlue, color_style);
   const char* bright_magenta =
       base::style_code(base::kBrightMagenta, color_style);
 
@@ -118,8 +116,8 @@ std::string DefaultHelpFormatter::format(const Command& command,
     usize pad = (command.name().size() < kTerminalWidth)
                     ? (kTerminalWidth - command.name().size()) / 2
                     : 0;
-    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, bright_red, command.name(),
-                   reset);
+    fmt::format_to(out, "{:>{}}{}{}{}{}\n\n", "", pad, bold, underline,
+                   command.name(), reset);
   }
 
   if (!command.about().empty()) {
@@ -127,21 +125,37 @@ std::string DefaultHelpFormatter::format(const Command& command,
     usize pad = (full_about.size() < kTerminalWidth)
                     ? (kTerminalWidth - full_about.size()) / 2
                     : 0;
-    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, bright_yellow, full_about,
-                   reset);
+    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, blue, full_about, reset);
   }
 
-  // Usage and Options section
-  fmt::format_to(out, "Usage: {}{}{} {}{}[Options]{}\n\nOptions:\n",
-                 bright_green, command.name(), reset, bright_magenta, bold,
-                 reset);
+  // Usage, Commands, and Options section
+  constexpr usize kMinDescriptionMargin = 20;
+  if (!command.subcommands().empty()) {
+    fmt::format_to(out, "{}{}Usage{}: {}{}{} {}{}[Options]{} {}{}[Command]{}\n",
+                   bold, underline, reset, bold, command.name(), reset,
+                   bright_magenta, bold, reset, bright_magenta, bold, reset);
+    fmt::format_to(out, "\n{}{}Commands{}:\n", bold, underline, reset);
+    usize max_command_width = kMinDescriptionMargin;
+    for (const Command& sub : command.subcommands()) {
+      max_command_width = std::max(max_command_width, sub.name().length());
+    }
+
+    for (const Command& sub : command.subcommands()) {
+      fmt::format_to(out, "  {:<{}}  {}\n", sub.name(), max_command_width,
+                     sub.about());
+    }
+  } else {
+    fmt::format_to(out, "{}{}Usage{}: {}{}{} {}{}[Options]{}\n", bold,
+                   underline, reset, bold, command.name(), reset,
+                   bright_magenta, bold, reset);
+  }
+  fmt::format_to(out, "\n{}{}Options{}:\n", bold, underline, reset);
 
   // Determine alignment column width
-  usize max_opt_width = 32;
+  usize max_opt_width = kMinDescriptionMargin;
   for (const auto& arg : command.args()) {
     max_opt_width = std::max(max_opt_width, get_option_spec_len(arg));
   }
-  max_opt_width = std::max(max_opt_width, static_cast<usize>(14));
 
   for (const auto& arg : command.args()) {
     std::string opt_spec;

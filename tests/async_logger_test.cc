@@ -13,18 +13,20 @@
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"
-#include "fpag/logging/sink/stdout_sink.h"
+#include "fpag/logging/sink/null_sink.h"
+// #include "fpag/logging/sink/stdout_sink.h"
 #include "fpag/mem/page_allocator.h"
 
 namespace logging {
 
 TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
-  AsyncLogger<StdoutSink, LogLevel::Trace> logger;
-  logger.init(StdoutSink(
-      static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
-      base::console_color_style(base::Stream::Stdout), true));
-  // AsyncLogger<NullSink, LogLevel::Trace> logger;
-  // logger.init(NullSink{});
+  // AsyncLogger<StdoutSink, LogLevel::Trace> logger;
+  // logger.init(StdoutSink(
+  //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
+  //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
+  //     true));
+  AsyncLogger<NullSink, LogLevel::Trace> logger;
+  logger.init(NullSink{});
   logger.start_backend_worker();
 
   SECTION("simple logging") {

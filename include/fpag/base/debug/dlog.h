@@ -10,6 +10,7 @@
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
 #include <string_view>
+#include <utility>
 
 #include "fmt/compile.h"
 #include "fmt/core.h"
@@ -36,9 +37,8 @@ inline constexpr void dlog_internal(const char* file,
   // Build passes but clang-tidy fails fmt::format_to compile checking for
   // unknown reasons.
 #ifndef __clang_analyzer__
-  fmt::format_to(
-      std::back_inserter(out), CompiledFormat{},
-      std::forward<Args>(args)...);  // NOLINT(build/include_what_you_use)
+  fmt::format_to(std::back_inserter(out), CompiledFormat{},
+                 std::forward<Args>(args)...);
 #else
   // NOLINTNEXTLINE(build/include_what_you_use)
   fmt::format_to(std::back_inserter(out), "", std::forward<Args>(args)...);
