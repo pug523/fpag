@@ -34,7 +34,7 @@ std::string DefaultErrorFormatter::operator()(
 
   for (const ParseError& err : errors) {
     // "error: " header
-    fmt::format_to(out, "{}{}{}{}{}{} ", bright_red, bold, "error", reset, ": ",
+    fmt::format_to(out, "{}{}{}{}{}{}", bright_red, bold, "error", reset, ": ",
                    bold);
 
     // Currently doing runtime format string parsing
