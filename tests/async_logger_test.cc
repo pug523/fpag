@@ -15,7 +15,7 @@
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/null_sink.h"
 // #include "fpag/logging/sink/stdout_sink.h"
-#include "fpag/mem/page_allocator.h"
+// #include "fpag/mem/page_allocator.h"
 
 namespace logging {
 

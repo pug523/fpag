@@ -9,6 +9,7 @@
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include <cstdlib>
+#include <iterator>
 #include <string_view>
 #include <utility>
 

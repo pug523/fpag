@@ -4,7 +4,6 @@
 
 #include "fpag/arg/parser.h"
 
-#include <print>
 #include <span>
 #include <string_view>
 #include <utility>
