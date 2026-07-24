@@ -102,4 +102,4 @@ CheckOptions:
   - key:          modernize-loop-convert.MakeReverseRangeHeader
     value:        1
   - key: misc-include-cleaner.IgnoreHeaders
-    value:        '^.*(third_party|include[\\/]build).*$'
+    value:        '^.*[\\/](third_party|include[\\/]build)[\\/].*$'

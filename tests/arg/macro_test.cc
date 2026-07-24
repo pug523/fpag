@@ -493,7 +493,12 @@ TEST_CASE("Macro type conversion failure leaves default value intact or fails",
 
     auto res = parse_config(argc, argv);
     // Even if parser matches raw string, extraction will fall back safely
-    CHECK(res.is_err());
+    CHECK(res.is_ok());
+    i32 const kDefaultPort = Config{}.port;
+    CHECK(std::move(res).unwrap().port == kDefaultPort);
+    // Matches::get<i32> will return base::make_err(GetError::InvalidArgument),
+    // but parse is correct so parse result is ok currently.
+    // If we add propagation of GetError to Parser, change this test case.
   }
 }
 
