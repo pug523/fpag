@@ -5,6 +5,7 @@
 #include "fpag/arg/error_formatter.h"
 
 #include <iterator>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -13,6 +14,7 @@
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/parse_error.h"
 #include "fpag/base/color_style.h"
+#include "fpag/base/numeric.h"
 #include "fpag/base/style.h"
 
 namespace arg {
@@ -24,7 +26,7 @@ std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
 
   constexpr usize kEstimatedStrLenPerError = 256;
   formatted_str_.reserve(kEstimatedStrLenPerError * errors.size());
-  std::back_insert_iterator<std::string> out =
+  const std::back_insert_iterator<std::string> out =
       std::back_inserter(formatted_str_);
 
   const char* bold = base::style_code(base::kBold, style);

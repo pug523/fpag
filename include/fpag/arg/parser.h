@@ -19,6 +19,7 @@
 #include "fpag/arg/parse_error.h"
 #include "fpag/arg/parse_result.h"
 #include "fpag/arg/parse_status.h"
+#include "fpag/arg/version_formatter.h"
 #include "fpag/base/color_style.h"
 #include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
@@ -91,6 +92,10 @@ class Parser {
     return help_formatter_.format(root_cmd_, color_style);
   }
 
+  inline std::string_view version_message() & {
+    return version_formatter_.format(root_cmd_.name(), root_cmd_.version());
+  }
+
   inline std::string&& error_message(
       base::ColorStyle color_style =
           base::console_color_style(base::Stream::Stdout)) && {
@@ -102,6 +107,11 @@ class Parser {
       base::ColorStyle color_style =
           base::console_color_style(base::Stream::Stdout)) && {
     return std::move(help_formatter_).format(root_cmd_, color_style);
+  }
+
+  inline std::string&& version_message() && {
+    return std::move(version_formatter_)
+        .format(root_cmd_.name(), root_cmd_.version());
   }
 
   static constexpr const char* kBuiltinHelpArgLong = "help";
@@ -153,6 +163,7 @@ class Parser {
 
   ErrorFormatter error_formatter_;
   HelpFormatter help_formatter_;
+  VersionFormatter version_formatter_;
 };
 
 }  // namespace arg

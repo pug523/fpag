@@ -26,19 +26,19 @@ class HelpFormatter {
   HelpFormatter(HelpFormatter&&) noexcept = default;
   HelpFormatter& operator=(HelpFormatter&&) noexcept = default;
 
-  std::string_view format(const Command& parser,
+  std::string_view format(const Command& command,
                           base::ColorStyle color_style) &;
-  std::string_view reformat(const Command& parser,
+  std::string_view reformat(const Command& command,
                             base::ColorStyle color_style) &;
 
-  inline std::string&& format(const Command& parser,
+  inline std::string&& format(const Command& command,
                               base::ColorStyle color_style) && {
-    format(parser, color_style);
+    format(command, color_style);
     return std::move(formatted_str_);
   }
-  inline std::string&& reformat(const Command& parser,
+  inline std::string&& reformat(const Command& command,
                                 base::ColorStyle color_style) && {
-    reformat(parser, color_style);
+    reformat(command, color_style);
     return std::move(formatted_str_);
   }
 

@@ -79,7 +79,8 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
                                        std::string_view help_text,
                                        bool is_required,
                                        base::ColorStyle c) {
-  auto out = std::back_inserter(formatted_str_);
+  const std::back_insert_iterator<std::string> out =
+      std::back_inserter(formatted_str_);
 
   // Option specification
   fmt::format_to(out, "{}{}{}", s(base::kBrightCyan, c), opt_spec,
