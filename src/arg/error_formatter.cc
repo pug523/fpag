@@ -40,6 +40,7 @@ std::string DefaultErrorFormatter::operator()(
     // Currently doing runtime format string parsing
     fmt::vformat_to(out, ec_to_format_str(err.code),
                     fmt::make_format_args(err.context, err.value));
+    fmt::format_to(out, "\n");
   }
 
   // Hint
