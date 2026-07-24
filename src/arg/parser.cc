@@ -109,7 +109,8 @@ bool Parser::long_option(const Command& cmd,
   }
 
   if (!is_valid_choice(*arg, value)) {
-    add_error(ErrorCode::InvalidChoice, std::string(value));
+    add_error(ErrorCode::InvalidChoice, std::string(arg->name()),
+              std::string(value));
     return false;
   }
   ctx.matches->add(arg->name(), value);
@@ -167,7 +168,8 @@ bool Parser::short_options(const Command& cmd,
     }
 
     if (!is_valid_choice(*arg, value)) {
-      add_error(ErrorCode::InvalidChoice, std::string(value));
+      add_error(ErrorCode::InvalidChoice, std::string(arg->name()),
+                std::string(value));
       return false;
     }
     ctx.matches->add(arg->name(), value);

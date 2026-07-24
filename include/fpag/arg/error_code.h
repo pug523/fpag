@@ -36,7 +36,8 @@ constexpr const char* ec_to_format_str(ErrorCode error_code) {
       return "the required argument '{}' was not provided";
     case ErrorCode::DuplicateOption:
       return "the argument '{}' was provided more than once";
-    case ErrorCode::InvalidChoice: return "invalid choice for argument '{}'";
+    case ErrorCode::InvalidChoice:
+      return "invalid choice for argument '{}': '{}'";
     default: return "unknown error occurred";
   }
 }
