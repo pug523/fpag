@@ -13,6 +13,7 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "fpag/arg/arg.h"
+#include "fpag/arg/command.h"
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_status.h"
@@ -22,7 +23,6 @@ namespace arg {
 
 namespace {
 
-// Pure zero-allocation adapter functions
 std::string_view get_from_argv(const void* ctx, usize index) {
   const char* const* argv = static_cast<const char* const*>(ctx);
   const char* str = argv[index];
@@ -35,24 +35,6 @@ std::string_view get_from_span(const void* ctx, usize index) {
 }
 
 }  // namespace
-
-const Arg* Parser::find_arg_by_short(char c) const {
-  for (const auto& arg : args_) {
-    if (arg.short_name() && *arg.short_name() == c) {
-      return &arg;
-    }
-  }
-  return nullptr;
-}
-
-const Arg* Parser::find_arg_by_long(std::string_view name) const {
-  for (const auto& arg : args_) {
-    if (arg.long_name() == name) {
-      return &arg;
-    }
-  }
-  return nullptr;
-}
 
 void Parser::add_error(ErrorCode code,
                        std::string&& context_arg,
@@ -72,27 +54,34 @@ bool Parser::is_valid_choice(const Arg& arg, std::string_view value) const {
   return false;
 }
 
-// --key=value or --key value
-bool Parser::long_option(std::string_view current,
+bool Parser::long_option(const Command& cmd,
+                         std::string_view raw_arg,
                          usize* i,
-                         const ArgSequence& args,
-                         Matches* matches,
+                         ParseContext& ctx,
                          ParseStatus* status) {
-  if (builtin_enabled_) {
-    if (current == kBuiltinHelpArgLong) {
+  std::string_view content = raw_arg.substr(2);  // Strip "--"
+
+  if (cmd.builtin_enabled()) {
+    if (content == kBuiltinHelpArgLong) {
       *status = ParseStatus::HelpRequested;
       return true;
-    } else if (current == kBuiltinVersionArgLong) {
+    } else if (content == kBuiltinVersionArgLong) {
       *status = ParseStatus::VersionRequested;
       return true;
     }
   }
 
-  auto equal_pos = current.find('=');
-  std::string_view key = current.substr(0, equal_pos);
-  const Arg* arg = find_arg_by_long(key);
+  auto equal_pos = content.find('=');
+  std::string_view key = content.substr(0, equal_pos);
+  const Arg* arg = cmd.find_arg_by_long(key);
 
   if (!arg) {
+    if (ctx.partial_mode) {
+      if (ctx.unparsed) {
+        ctx.unparsed->push_back(raw_arg);
+      }
+      return false;
+    }
     add_error(ErrorCode::UnknownLongOption, std::string(key));
     return false;
   }
@@ -106,13 +95,13 @@ bool Parser::long_option(std::string_view current,
     value = "1";
   } else {
     if (equal_pos != std::string_view::npos) {
-      value = current.substr(equal_pos + 1);
+      value = content.substr(equal_pos + 1);
     } else {
-      if (*i + 1 >= args.size || args[*i + 1].empty()) {
+      if (*i + 1 >= ctx.args.size || ctx.args[*i + 1].empty()) {
         add_error(ErrorCode::MissingValueForOption, fmt::format("--{}", key));
         return false;
       }
-      value = args[++*i];
+      value = ctx.args[++*i];
     }
   }
 
@@ -120,24 +109,23 @@ bool Parser::long_option(std::string_view current,
     add_error(ErrorCode::InvalidChoice, std::string(value));
     return false;
   }
-  matches->add(arg->name(), value);
+  ctx.matches->add(arg->name(), value);
   return false;
 }
 
-// -abc (supports chaining)
-bool Parser::short_options(std::string_view current,
+bool Parser::short_options(const Command& cmd,
+                           std::string_view raw_arg,
                            usize* i,
-                           const ArgSequence& args,
-                           Matches* matches,
+                           ParseContext& ctx,
                            ParseStatus* status) {
-  current.remove_prefix(1);  // remove '-'
+  std::string_view current = raw_arg.substr(1);  // Strip '-'
 
   for (usize c_idx = 0; c_idx < current.size(); ++c_idx) {
     char c = current[c_idx];
-    const Arg* arg = find_arg_by_short(c);
+    const Arg* arg = cmd.find_arg_by_short(c);
 
     if (!arg) {
-      if (builtin_enabled_) {
+      if (cmd.builtin_enabled()) {
         if (c == kBuiltinHelpArgShort) {
           *status = ParseStatus::HelpRequested;
           return true;
@@ -146,6 +134,15 @@ bool Parser::short_options(std::string_view current,
           return true;
         }
       }
+
+      if (ctx.partial_mode) {
+        if (ctx.unparsed) {
+          // Keep raw argument if unrecognized
+          ctx.unparsed->push_back(raw_arg);
+        }
+        return false;
+      }
+
       add_error(ErrorCode::UnknownShortOption, std::string(&c, 1));
       return false;
     }
@@ -154,17 +151,15 @@ bool Parser::short_options(std::string_view current,
     if (arg->is_flag()) {
       value = "1";
     } else {
-      // If value is inline, e.g., -fValue
       if (c_idx + 1 < current.size()) {
         value = current.substr(c_idx + 1);
-        c_idx = current.size();  // Break loop
+        c_idx = current.size();  // Consume rest as value
       } else {
-        // Value is next in argument sequence
-        if (*i + 1 >= args.size || args[*i + 1].empty()) {
+        if (*i + 1 >= ctx.args.size || ctx.args[*i + 1].empty()) {
           add_error(ErrorCode::MissingValueForOption, fmt::format("-{}", c));
           return false;
         }
-        value = args[++*i];
+        value = ctx.args[++*i];
       }
     }
 
@@ -172,7 +167,7 @@ bool Parser::short_options(std::string_view current,
       add_error(ErrorCode::InvalidChoice, std::string(value));
       return false;
     }
-    matches->add(arg->name(), value);
+    ctx.matches->add(arg->name(), value);
   }
   return false;
 }
@@ -187,7 +182,12 @@ ParseStatus Parser::parse(i32 argc, const char* const* argv, Matches* matches) {
       .at = get_from_argv,
       .ctx = argv,
   };
-  return parse_impl(seq, matches);
+  ParseContext ctx{
+      .args = seq,
+      .matches = matches,
+      .partial_mode = false,
+  };
+  return parse_impl(ctx);
 }
 
 ParseStatus Parser::parse(std::span<const std::string_view> args,
@@ -197,43 +197,102 @@ ParseStatus Parser::parse(std::span<const std::string_view> args,
       .at = get_from_span,
       .ctx = &args,
   };
-  return parse_impl(seq, matches);
+  ParseContext ctx{
+      .args = seq,
+      .matches = matches,
+      .partial_mode = false,
+  };
+  return parse_impl(ctx);
 }
 
-ParseStatus Parser::parse_impl(const ArgSequence& args, Matches* matches) {
-  if (!matches) {
+ParseStatus Parser::parse_partial(i32 argc,
+                                  const char* const* argv,
+                                  Matches* matches,
+                                  std::vector<std::string_view>* unparsed) {
+  if (argc <= 0) {
+    add_error(ErrorCode::InvalidArgCount, std::to_string(argc));
+    return ParseStatus::Error;
+  }
+  const ArgSequence seq{
+      .size = static_cast<usize>(argc),
+      .at = get_from_argv,
+      .ctx = argv,
+  };
+  ParseContext ctx{
+      .args = seq,
+      .matches = matches,
+      .unparsed = unparsed,
+      .partial_mode = true,
+  };
+  return parse_impl(ctx);
+}
+
+ParseStatus Parser::parse_partial(std::span<const std::string_view> args,
+                                  Matches* matches,
+                                  std::vector<std::string_view>* unparsed) {
+  const ArgSequence seq{
+      .size = args.size(),
+      .at = get_from_span,
+      .ctx = &args,
+  };
+  ParseContext ctx{
+      .args = seq,
+      .matches = matches,
+      .unparsed = unparsed,
+      .partial_mode = true,
+  };
+  return parse_impl(ctx);
+}
+
+ParseStatus Parser::parse_impl(ParseContext& ctx) {
+  if (!ctx.matches) {
     add_error(ErrorCode::NullMatchesPointer);
     return ParseStatus::Error;
   }
 
-  // Clear previous errors for re-parsing
   errors_.clear();
-
   bool stop_parsing_flags = false;
-  for (usize i = 1; i < args.size; ++i) {
-    const std::string_view current = args[i];
+
+  for (usize i = 1; i < ctx.args.size; ++i) {
+    const std::string_view current = ctx.args[i];
     if (current.empty()) {
       continue;
     }
 
     if (stop_parsing_flags) {
-      matches->add_positional(current);
+      if (ctx.partial_mode) {
+        if (ctx.unparsed) {
+          ctx.unparsed->push_back(current);
+        }
+      } else {
+        ctx.matches->add_positional(current);
+      }
       continue;
     }
 
     if (current == "--") {
       stop_parsing_flags = true;
+      if (ctx.partial_mode && ctx.unparsed) {
+        ctx.unparsed->push_back(current);
+      }
       continue;
     }
 
     ParseStatus status = ParseStatus::Success;
     bool should_stop = false;
+
     if (current.starts_with("--")) {
-      should_stop = long_option(current.substr(2), &i, args, matches, &status);
+      should_stop = long_option(root_cmd_, current, &i, ctx, &status);
     } else if (current.starts_with("-") && current.size() > 1) {
-      should_stop = short_options(current, &i, args, matches, &status);
+      should_stop = short_options(root_cmd_, current, &i, ctx, &status);
     } else {
-      matches->add_positional(current);
+      if (ctx.partial_mode) {
+        if (ctx.unparsed) {
+          ctx.unparsed->push_back(current);
+        }
+      } else {
+        ctx.matches->add_positional(current);
+      }
       continue;
     }
 
@@ -242,9 +301,9 @@ ParseStatus Parser::parse_impl(const ArgSequence& args, Matches* matches) {
     }
   }
 
-  // Validate required arguments
-  for (const auto& arg : args_) {
-    if (arg.is_required() && !matches->has(arg.name())) {
+  // Validate required arguments for root_cmd
+  for (const auto& arg : root_cmd_.args()) {
+    if (arg.is_required() && !ctx.matches->has(arg.name())) {
       std::string arg_name =
           !arg.long_name().empty()
               ? fmt::format("--{}", arg.long_name())
@@ -254,11 +313,7 @@ ParseStatus Parser::parse_impl(const ArgSequence& args, Matches* matches) {
     }
   }
 
-  if (errors_.empty()) {
-    return ParseStatus::Success;
-  } else {
-    return ParseStatus::Error;
-  }
+  return errors_.empty() ? ParseStatus::Success : ParseStatus::Error;
 }
 
 }  // namespace arg
