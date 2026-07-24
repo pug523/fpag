@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: pug523/actions_collection/cxx_setup@71166c04bd1fe7e41517c83aea77b377c307e1e5
+        uses: pug523/actions_collection/cxx_setup@69b59d98274d0e64f77647943f8b172c316f6e10
         with:
           os: ${{ runner.os }}
           plat: ${{ matrix.plat }}
