@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: pug523/actions/cxx-setup@35ed79f2fa4d73c3bc92aa85dc9c8e54eaeb0d77
+        uses: pug523/actions/cxx-setup@b86086d028214a9933e4bfd80f0a19a3d067716b
         with:
           os: ${{ runner.os }}
           plat: ${{ matrix.plat }}
@@ -94,7 +94,7 @@ jobs:
         run: xmake run tests
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@b86086d028214a9933e4bfd80f0a19a3d067716b
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ matrix.plat }}-${{ matrix.arch }}
           path: build/${{ matrix.plat }}/${{ matrix.arch }}/**
