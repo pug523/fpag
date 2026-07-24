@@ -21,7 +21,6 @@ Checks: >
   bugprone-undefined-memory-manipulation,
   bugprone-unique-ptr-array-mismatch,
   bugprone-unused-raii,
-  bugprone-use-after-move,
   bugprone-virtual-near-miss,
   clang-analyzer-deadcode.DeadStores,
   cppcoreguidelines-init-variables,
