@@ -8,14 +8,13 @@
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/parser.h"
 #include "fpag/base/numeric.h"
 
 namespace arg {
-
-// NOLINTBEGIN(bugprone-use-after-move)
 
 namespace {
 
@@ -270,15 +269,16 @@ TEST_CASE("Macro required options and validation", "[arg][macro]") {
     };
     auto binder = ARGS_OPT(RequiredConfig, key, 'k', "key", "API key", true);
 
-    Parser cmd("test_app", "1.0.0");
-    std::move(binder).apply_to_parser(&cmd);
+    CommandBuilder builder = CommandBuilder("test_app", "1.0.0");
+    std::move(binder).apply_to_builder(&builder);
+    Parser parser(std::move(builder).build());
 
     Matches matches;
     // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"test_app"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
-    const ParseStatus status = cmd.parse(argc, argv, &matches);
+    const ParseStatus status = parser.parse(argc, argv, &matches);
     CHECK(status == ParseStatus::Error);
   }
 
@@ -486,22 +486,15 @@ TEST_CASE("Macro ARGS_OPT_FULL tests", "[arg][macro]") {
 
 TEST_CASE("Macro type conversion failure leaves default value intact or fails",
           "[arg][macro]") {
-  SECTION("Invalid type conversion (e.g. string to int) returns error") {
+  SECTION("Invalid type conversion (e.g. string to integer) returns error") {
     // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--port", "invalid_number"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
     auto res = parse_config(argc, argv);
     // Even if parser matches raw string, extraction will fall back safely
-    if (res.is_ok()) {
-      // Port should remain default if extraction fails
-      CHECK(std::move(res).unwrap().port == 8080);
-    } else {
-      CHECK(res.is_err());
-    }
+    CHECK(res.is_err());
   }
 }
-
-// NOLINTEND(bugprone-use-after-move)
 
 }  // namespace arg

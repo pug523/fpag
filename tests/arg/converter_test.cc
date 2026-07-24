@@ -13,8 +13,6 @@
 
 namespace arg {
 
-// NOLINTBEGIN(bugprone-use-after-move)
-
 TEST_CASE("Parsable concept check", "[arg][converter]") {
   STATIC_CHECK(Parsable<std::string_view>);
   STATIC_CHECK(Parsable<std::string>);
@@ -134,7 +132,5 @@ TEST_CASE("Converter<f64> rejects invalid float inputs", "[arg][converter]") {
   REQUIRE(res.is_err());
   CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
 }
-
-// NOLINTEND(bugprone-use-after-move)
 
 }  // namespace arg

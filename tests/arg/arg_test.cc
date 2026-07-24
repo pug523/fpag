@@ -125,7 +125,7 @@ TEST_CASE("ArgBuilder allows setting default_value", "[arg][arg]") {
 }
 
 TEST_CASE("Arg choices are stored and retrievable", "[arg][arg]") {
-  constexpr std::string modes[] = {"read", "write", "execute"};
+  const std::string modes[] = {"read", "write", "execute"};
   const Arg a = ArgBuilder("mode").choices(modes).build();
 
   const std::span<const std::string> choices = a.choices();
@@ -141,7 +141,7 @@ TEST_CASE("Arg choices default to empty span", "[arg][arg]") {
 }
 
 TEST_CASE("Arg fluent builder supports chaining choices", "[arg][arg]") {
-  constexpr std::string choices[] = {"info", "warn", "error"};
+  const std::string choices[] = {"info", "warn", "error"};
   const Arg a = ArgBuilder("level").choices(choices).required().build();
 
   CHECK(a.choices().size() == 3);

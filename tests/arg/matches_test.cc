@@ -14,8 +14,6 @@
 
 namespace arg {
 
-// NOLINTBEGIN(bugprone-use-after-move)
-
 TEST_CASE("Matches has() reflects added values", "[arg][matches]") {
   Matches m;
   CHECK_FALSE(m.has("port"));
@@ -185,7 +183,5 @@ TEST_CASE("Matches get_all<T> collects multiple values", "[arg][matches]") {
     CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
   }
 }
-
-// NOLINTEND(bugprone-use-after-move)
 
 }  // namespace arg
