@@ -17,73 +17,33 @@
 
 namespace arg {
 
-namespace {
-
-inline const char* s(const char* code, base::ColorStyle mode) noexcept {
-  return base::style_code(code, mode);
-}
-
-}  // namespace
-
 std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
                                         std::string_view command_name,
-                                        base::ColorStyle color_style) & {
+                                        base::ColorStyle style) & {
   formatted_str_.clear();
 
-  // Use a slightly larger estimate for multiple errors
-  formatted_str_.reserve(256 * errors.size());
-  auto out = std::back_inserter(formatted_str_);
+  constexpr usize kEstimatedStrLenPerError = 256;
+  formatted_str_.reserve(kEstimatedStrLenPerError * errors.size());
+  std::back_insert_iterator<std::string> out =
+      std::back_inserter(formatted_str_);
 
-  for (const auto& err : errors) {
+  const char* bold = base::style_code(base::kBold, style);
+  const char* red = base::style_code(base::kBrightRed, style);
+  const char* reset = base::style_code(base::kReset, style);
+
+  for (const ParseError& err : errors) {
     // "error: " header
-    fmt::format_to(out, "{}{}{} ", s(base::kBrightRed, color_style),
-                   s(base::kBold, color_style), "error:");
-    // Detaileconst d error message
-    switch (err.code) {
-      case ErrorCode::InvalidArgCount:
-        fmt::format_to(out, "invalid arg count provided: {}", err.value);
-        break;
-      case ErrorCode::NullMatchesPointer:
-        fmt::format_to(out, "output matches pointer is null");
-        break;
-      case ErrorCode::UnknownLongOption:
-        fmt::format_to(out, "unexpected argument '--{}' found", err.context,
-                       err.value);
-        break;
-      case ErrorCode::UnknownShortOption:
-        fmt::format_to(out, "unexpected argument '-{}' found", err.context);
-        break;
-      case ErrorCode::MissingValueForOption:
-        fmt::format_to(out,
-                       "a value is required for '{}' but none was supplied",
-                       err.context);
-        break;
-      case ErrorCode::FlagTakesNoValue:
-        fmt::format_to(out, "flag '{}' takes no value", err.context);
-        break;
-      case ErrorCode::MissingRequiredArgument:
-        fmt::format_to(out, "the required argument '{}' was not provided",
-                       err.context);
-        break;
-      case ErrorCode::DuplicateOption:
-        fmt::format_to(out, "the argument '{}' was provided more than once",
-                       err.context);
-        break;
-      case ErrorCode::InvalidChoice:
-        fmt::format_to(out, "invalid choice for argument '{}'", err.context);
-        break;
-      default:
-        fmt::format_to(out, "unknown error occurred");
-        break;
+    fmt::format_to(out, "{}{}{}{}{}{} ", red, bold, "error", reset, ": ", bold);
 
-        fmt::format_to(out, "\n");
-    }
-
-    // Hint
-    fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
-                   command_name, s(base::kBrightCyan, color_style),
-                   s(base::kReset, color_style));
+    // Currently doing runtime format string parsing
+    fmt::vformat_to(out, ec_to_format_str(err.code),
+                    fmt::make_format_args(err.context, err.value));
   }
+
+  // Hint
+  const char* cyan = base::style_code(base::kBrightCyan, style);
+  fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
+                 command_name, cyan, reset);
   return formatted_str_;
 }
 
