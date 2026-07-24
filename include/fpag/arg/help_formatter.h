@@ -8,13 +8,12 @@
 #include <string_view>
 #include <utility>
 
-#include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/numeric.h"
 
 namespace arg {
 
-class Parser;
-class Arg;
+class Command;
 
 class HelpFormatter {
  public:
@@ -27,17 +26,19 @@ class HelpFormatter {
   HelpFormatter(HelpFormatter&&) noexcept = default;
   HelpFormatter& operator=(HelpFormatter&&) noexcept = default;
 
-  std::string_view format(const Parser& parser, base::ColorMode color_mode) &;
-  std::string_view reformat(const Parser& parser, base::ColorMode color_mode) &;
+  std::string_view format(const Command& parser,
+                          base::ColorStyle color_style) &;
+  std::string_view reformat(const Command& parser,
+                            base::ColorStyle color_style) &;
 
-  inline std::string&& format(const Parser& parser,
-                              base::ColorMode color_mode) && {
-    format(parser, color_mode);
+  inline std::string&& format(const Command& parser,
+                              base::ColorStyle color_style) && {
+    format(parser, color_style);
     return std::move(formatted_str_);
   }
-  inline std::string&& reformat(const Parser& parser,
-                                base::ColorMode color_mode) && {
-    reformat(parser, color_mode);
+  inline std::string&& reformat(const Command& parser,
+                                base::ColorStyle color_style) && {
+    reformat(parser, color_style);
     return std::move(formatted_str_);
   }
 
@@ -47,7 +48,7 @@ class HelpFormatter {
                           usize max_opt_width,
                           std::string_view help_text,
                           bool is_required,
-                          base::ColorMode color_mode);
+                          base::ColorStyle color_style);
 
   std::string formatted_str_;
 };

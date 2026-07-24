@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-#include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -68,8 +68,8 @@ constexpr const usize kResetCodeLength = kStyleCodeLength;
 constexpr const usize kRgbCodeLength = 20;
 
 inline constexpr const char* style_code(const char* code,
-                                        ColorMode mode) noexcept {
-  return mode != ColorMode::Off ? code : "";
+                                        ColorStyle mode) noexcept {
+  return mode != ColorStyle::Off ? code : "";
 }
 
 }  // namespace base

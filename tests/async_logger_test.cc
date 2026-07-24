@@ -22,7 +22,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   AsyncLogger<StdoutSink, LogLevel::Trace> logger;
   logger.init(StdoutSink(
       static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
-      base::console_color_mode(base::Stream::Stdout), true));
+      base::console_color_style(base::Stream::Stdout), true));
   // AsyncLogger<NullSink, LogLevel::Trace> logger;
   // logger.init(NullSink{});
   logger.start_backend_worker();
@@ -43,8 +43,8 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.info("async formatting f32: {}", f);
 
     i32 color =
-        static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
-    logger.info("async color mode: {}", color);
+        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+    logger.info("async color style: {}", color);
 
     const char* s = "hello cstring";
     logger.info("async formatting cstring: {}", s);
@@ -84,8 +84,8 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.info(FMT_COMPILE("async compiled formatting float: {}"), f);
 
     i32 color =
-        static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
-    logger.info(FMT_COMPILE("async compiled color mode: {}"), color);
+        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+    logger.info(FMT_COMPILE("async compiled color style: {}"), color);
 
     const char* s = "hello cstring";
     logger.info(FMT_COMPILE("async compiled formatting cstring: {}"), s);

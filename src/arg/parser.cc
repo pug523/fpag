@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "fmt/core.h"
 #include "fmt/format.h"
@@ -59,7 +60,7 @@ bool Parser::long_option(const Command& cmd,
                          usize* i,
                          ParseContext& ctx,
                          ParseStatus* status) {
-  std::string_view content = raw_arg.substr(2);  // Strip "--"
+  const std::string_view content = raw_arg.substr(2);  // Strip "--"
 
   if (cmd.builtin_enabled()) {
     if (content == kBuiltinHelpArgLong) {
@@ -118,7 +119,7 @@ bool Parser::short_options(const Command& cmd,
                            usize* i,
                            ParseContext& ctx,
                            ParseStatus* status) {
-  std::string_view current = raw_arg.substr(1);  // Strip '-'
+  const std::string_view current = raw_arg.substr(1);  // Strip '-'
 
   for (usize c_idx = 0; c_idx < current.size(); ++c_idx) {
     char c = current[c_idx];

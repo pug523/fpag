@@ -23,7 +23,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
   SyncLogger<StdoutSink, LogLevel::Off> logger;
   logger.init(StdoutSink(
       static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
-      base::console_color_mode(base::Stream::Stdout), true));
+      base::console_color_style(base::Stream::Stdout), true));
   // SyncLogger<NullSink, LogLevel::Off> logger;
   // logger.init(NullSink{});
 
@@ -43,8 +43,8 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.info("formatting f32: {}", f);
 
     i32 color =
-        static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
-    logger.info("color mode: {}", color);
+        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+    logger.info("color style: {}", color);
 
     const char* s = "hello cstring";
     logger.info("formatting cstring: {}", s);
@@ -82,8 +82,8 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.info(FMT_COMPILE("formatting compiled f32: {}"), f);
 
     i32 color =
-        static_cast<i32>(base::console_color_mode(base::Stream::Stdout));
-    logger.info(FMT_COMPILE("compiled color mode: {}"), color);
+        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+    logger.info(FMT_COMPILE("compiled color style: {}"), color);
 
     const char* s = "hello cstring";
     logger.info(FMT_COMPILE("formatting compiled cstring: {}"), s);

@@ -6,7 +6,7 @@
 
 #include <string_view>
 
-#include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
@@ -65,8 +65,8 @@ static constexpr std::string_view kAnsiTrueColorPrefixes[] = {
 };
 
 inline constexpr std::string_view log_prefix(LogLevel level,
-                                             base::ColorMode mode) {
-  using C = base::ColorMode;
+                                             base::ColorStyle mode) {
+  using C = base::ColorStyle;
   const u8 l = static_cast<u8>(level);
   switch (mode) {
     case C::Off: return kPlainPrefixes[l];

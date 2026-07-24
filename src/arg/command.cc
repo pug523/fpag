@@ -5,19 +5,10 @@
 #include "fpag/arg/command.h"
 
 #include <cstddef>
-#include <span>
-#include <string>
 #include <string_view>
-#include <utility>
 
 #include "fmt/core.h"
-#include "fmt/format.h"
 #include "fpag/arg/arg.h"
-#include "fpag/arg/error_code.h"
-#include "fpag/arg/matches.h"
-#include "fpag/arg/parse_status.h"
-#include "fpag/arg/parser.h"
-#include "fpag/base/numeric.h"
 
 namespace arg {
 

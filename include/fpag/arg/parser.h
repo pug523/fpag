@@ -38,11 +38,11 @@ class Parser {
   Parser(Parser&&) noexcept = default;
   Parser& operator=(Parser&&) noexcept = default;
 
-  /// Full zero-copy parsers
+  /// Full zero-allocation parsers
   ParseStatus parse(i32 argc, const char* const* argv, Matches* matches);
   ParseStatus parse(std::span<const std::string_view> args, Matches* matches);
 
-  /// Partial zero-copy parsers
+  /// Partial zero-allocation parsers
   /// Stores unrecognized options and positional arguments into @p unparsed.
   ParseStatus parse_partial(i32 argc,
                             const char* const* argv,

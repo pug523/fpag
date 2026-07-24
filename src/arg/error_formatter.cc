@@ -12,14 +12,14 @@
 #include "fmt/core.h"
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/parse_error.h"
-#include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/style.h"
 
 namespace arg {
 
 namespace {
 
-inline const char* s(const char* code, base::ColorMode mode) noexcept {
+inline const char* s(const char* code, base::ColorStyle mode) noexcept {
   return base::style_code(code, mode);
 }
 
@@ -27,7 +27,7 @@ inline const char* s(const char* code, base::ColorMode mode) noexcept {
 
 std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
                                         std::string_view command_name,
-                                        base::ColorMode color_mode) & {
+                                        base::ColorStyle color_style) & {
   formatted_str_.clear();
 
   // Use a slightly larger estimate for multiple errors
@@ -36,8 +36,8 @@ std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
 
   for (const auto& err : errors) {
     // "error: " header
-    fmt::format_to(out, "{}{}{} ", s(base::kBrightRed, color_mode),
-                   s(base::kBold, color_mode), "error:");
+    fmt::format_to(out, "{}{}{} ", s(base::kBrightRed, color_style),
+                   s(base::kBold, color_style), "error:");
     // Detaileconst d error message
     switch (err.code) {
       case ErrorCode::InvalidArgCount:
@@ -81,8 +81,8 @@ std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
 
     // Hint
     fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
-                   command_name, s(base::kBrightCyan, color_mode),
-                   s(base::kReset, color_mode));
+                   command_name, s(base::kBrightCyan, color_style),
+                   s(base::kReset, color_style));
   }
   return formatted_str_;
 }

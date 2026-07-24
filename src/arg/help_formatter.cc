@@ -14,8 +14,8 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "fpag/arg/arg.h"
-#include "fpag/arg/parser.h"
-#include "fpag/base/color_mode.h"
+#include "fpag/arg/command.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/style.h"
 
@@ -23,7 +23,7 @@ namespace arg {
 
 namespace {
 
-inline const char* s(const char* code, base::ColorMode mode) noexcept {
+inline const char* s(const char* code, base::ColorStyle mode) noexcept {
   return base::style_code(code, mode);
 }
 
@@ -65,10 +65,10 @@ usize get_option_spec_len(const Arg& arg) noexcept {
 
 }  // namespace
 
-std::string_view HelpFormatter::format(const Parser& parser,
-                                       base::ColorMode color_mode) & {
+std::string_view HelpFormatter::format(const Command& command,
+                                       base::ColorStyle color_style) & {
   if (formatted_str_.empty()) {
-    return reformat(parser, color_mode);
+    return reformat(command, color_style);
   }
   return formatted_str_;
 }
@@ -78,7 +78,7 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
                                        usize max_opt_width,
                                        std::string_view help_text,
                                        bool is_required,
-                                       base::ColorMode c) {
+                                       base::ColorStyle c) {
   auto out = std::back_inserter(formatted_str_);
 
   // Option specification
@@ -99,14 +99,14 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
   fmt::format_to(out, "\n");
 }
 
-std::string_view HelpFormatter::reformat(const Parser& parser,
-                                         base::ColorMode color_mode) & {
+std::string_view HelpFormatter::reformat(const Command& command,
+                                         base::ColorStyle color_style) & {
   formatted_str_.clear();
 
   constexpr usize kMargin = 512;
   constexpr usize kEstimatedStrLenPerArgs = 128;
   const usize estimated_size =
-      kMargin + (parser.args().size() * kEstimatedStrLenPerArgs);
+      kMargin + (command.args().size() * kEstimatedStrLenPerArgs);
   formatted_str_.reserve(estimated_size);
 
   auto out = std::back_inserter(formatted_str_);
@@ -114,40 +114,40 @@ std::string_view HelpFormatter::reformat(const Parser& parser,
   // Title and about header
   constexpr usize kTerminalWidth = 60;
 
-  if (!parser.name().empty()) {
-    usize pad = (parser.name().size() < kTerminalWidth)
-                    ? (kTerminalWidth - parser.name().size()) / 2
+  if (!command.name().empty()) {
+    usize pad = (command.name().size() < kTerminalWidth)
+                    ? (kTerminalWidth - command.name().size()) / 2
                     : 0;
     fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad,
-                   s(base::kBrightRed, color_mode), parser.name(),
-                   s(base::kReset, color_mode));
+                   s(base::kBrightRed, color_style), command.name(),
+                   s(base::kReset, color_style));
   }
 
-  if (!parser.about().empty()) {
-    std::string full_about = fmt::format("=-=-= {} =-=-=", parser.about());
+  if (!command.about().empty()) {
+    std::string full_about = fmt::format("{}", command.about());
     usize pad = (full_about.size() < kTerminalWidth)
                     ? (kTerminalWidth - full_about.size()) / 2
                     : 0;
     fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad,
-                   s(base::kBrightYellow, color_mode), full_about,
-                   s(base::kReset, color_mode));
+                   s(base::kBrightYellow, color_style), full_about,
+                   s(base::kReset, color_style));
   }
 
   // Usage and Options section
   fmt::format_to(out, "Usage: {}{}{} {}{}[Options]{}\n\nOptions:\n",
-                 s(base::kBrightGreen, color_mode), parser.name(),
-                 s(base::kReset, color_mode),
-                 s(base::kBrightMagenta, color_mode),
-                 s(base::kBold, color_mode), s(base::kReset, color_mode));
+                 s(base::kBrightGreen, color_style), command.name(),
+                 s(base::kReset, color_style),
+                 s(base::kBrightMagenta, color_style),
+                 s(base::kBold, color_style), s(base::kReset, color_style));
 
   // Determine alignment column width
   usize max_opt_width = 32;
-  for (const auto& arg : parser.args()) {
+  for (const auto& arg : command.args()) {
     max_opt_width = std::max(max_opt_width, get_option_spec_len(arg));
   }
   max_opt_width = std::max(max_opt_width, static_cast<usize>(14));
 
-  for (const auto& arg : parser.args()) {
+  for (const auto& arg : command.args()) {
     std::string opt_spec;
     opt_spec.reserve(64);
 
@@ -191,16 +191,16 @@ std::string_view HelpFormatter::reformat(const Parser& parser,
     }
 
     render_option_line(opt_spec, opt_spec.size(), max_opt_width, help_text,
-                       arg.is_required(), color_mode);
+                       arg.is_required(), color_style);
   }
 
   // Built-in flags
-  if (parser.builtin_enabled()) {
+  if (command.builtin_enabled()) {
     render_option_line("  -h, --help", 12, max_opt_width,
-                       "print this help message", false, color_mode);
-    if (!parser.version().empty()) {
+                       "print this help message", false, color_style);
+    if (!command.version().empty()) {
       render_option_line("  -v, --version", 15, max_opt_width, "print version",
-                         false, color_mode);
+                         false, color_style);
     }
   }
 

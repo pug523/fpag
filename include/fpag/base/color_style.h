@@ -8,11 +8,11 @@
 
 namespace base {
 
-enum class ColorMode : u8 {
-  Auto,
-  Always,
-  Never,
+enum class ColorStyle : u8 {
+  Off = 0,
+  Ansi16 = 1,
+  Ansi256 = 2,
+  AnsiTrueColor = 3,
 };
 
 }  // namespace base
-

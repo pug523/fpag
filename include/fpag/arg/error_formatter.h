@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "fpag/arg/parse_error.h"
-#include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 
 namespace arg {
 
@@ -27,12 +27,12 @@ class ErrorFormatter {
 
   std::string_view format(const std::vector<ParseError>& errors,
                           std::string_view command_name,
-                          base::ColorMode color_mode) &;
+                          base::ColorStyle color_style) &;
 
   inline std::string&& format(const std::vector<ParseError>& errors,
                               std::string_view command_name,
-                              base::ColorMode color_mode) && {
-    format(errors, command_name, color_mode);
+                              base::ColorStyle color_style) && {
+    format(errors, command_name, color_style);
     return std::move(formatted_str_);
   }
 

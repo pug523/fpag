@@ -16,6 +16,7 @@
 #include <string_view>
 
 #include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/console.h"
 #include "fpag/base/debug/fatal.h"
 
@@ -23,7 +24,7 @@ namespace base {
 
 namespace {
 
-bool check_ansi_sequence_available(Stream stream) {
+bool check_ansi_sequence_availability(Stream stream) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   // Check if GetStdHandle() returns terminal handle
   DWORD handle = 0;
@@ -58,19 +59,22 @@ bool check_ansi_sequence_available(Stream stream) {
 #endif
 }
 
-ColorMode determine_color_mode(Stream stream) {
-  if (!is_ansi_available(stream) || std::getenv("NO_COLOR")) {
-    return ColorMode::Off;
+ColorStyle console_color_style_internal(Stream stream, ColorMode color_mode) {
+  if (color_mode == ColorMode::Never) {
+    return ColorStyle::Off;
+  } else if (color_mode != ColorMode::Always &&
+             (!is_ansi_available(stream) || std::getenv("NO_COLOR"))) {
+    return ColorStyle::Off;
   }
 
   const char* const color_term_env = std::getenv("COLORTERM");
   if (color_term_env) {
     const std::string_view color_term{color_term_env};
     if (color_term == "truecolor" || color_term == "24bit") {
-      return ColorMode::AnsiTrueColor;
+      return ColorStyle::AnsiTrueColor;
     }
     if (color_term == "256color") {
-      return ColorMode::Ansi256;
+      return ColorStyle::Ansi256;
     }
   }
 
@@ -78,17 +82,17 @@ ColorMode determine_color_mode(Stream stream) {
   if (term_env) {
     const std::string_view term{term_env};
     if (term.find("256color") != std::string_view::npos) {
-      return ColorMode::Ansi256;
+      return ColorStyle::Ansi256;
     }
   }
-  return ColorMode::Ansi16;
+  return ColorStyle::Ansi16;
 }
 
 }  // namespace
 
 bool is_ansi_available(Stream stream) {
-  static const bool out = check_ansi_sequence_available(Stream::Stdout);
-  static const bool err = check_ansi_sequence_available(Stream::Stderr);
+  static const bool out = check_ansi_sequence_availability(Stream::Stdout);
+  static const bool err = check_ansi_sequence_availability(Stream::Stderr);
   switch (stream) {
     case Stream::Stdout: return out;
     case Stream::Stderr: return err;
@@ -96,12 +100,12 @@ bool is_ansi_available(Stream stream) {
   }
 }
 
-ColorMode console_color_mode(Stream stream) {
-  static const ColorMode out = determine_color_mode(Stream::Stdout);
-  static const ColorMode err = determine_color_mode(Stream::Stderr);
+ColorStyle console_color_style(Stream stream, ColorMode color_mode) {
   switch (stream) {
-    case Stream::Stdout: return out;
-    case Stream::Stderr: return err;
+    case Stream::Stdout:
+      return console_color_style_internal(Stream::Stdout, color_mode);
+    case Stream::Stderr:
+      return console_color_style_internal(Stream::Stderr, color_mode);
     default: FPAG_UNREACHABLE();
   }
 }
@@ -113,8 +117,8 @@ void register_console() {
   SetConsoleOutputCP(CP_UTF8);
 #endif
   // Call these once to initialize the static variable
-  console_color_mode(Stream::Stdout);
-  console_color_mode(Stream::Stderr);
+  console_color_style(Stream::Stdout);
+  console_color_style(Stream::Stderr);
 }
 
 }  // namespace base

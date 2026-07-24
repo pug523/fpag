@@ -5,6 +5,7 @@
 #pragma once
 
 #include "fpag/base/color_mode.h"
+#include "fpag/base/color_style.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -16,7 +17,8 @@ enum class Stream : u8 {
 
 bool is_ansi_available(Stream stream);
 
-ColorMode console_color_mode(Stream stream);
+ColorStyle console_color_style(Stream stream,
+                               ColorMode color_mode = ColorMode::Auto);
 
 void register_console();
 

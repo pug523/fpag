@@ -7,10 +7,12 @@
 #include <utility>
 
 #include "fpag/arg/arg.h"
+#include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_result.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/parser.h"
+#include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
 
 namespace arg::detail {
@@ -21,11 +23,11 @@ struct ArgBinder {
   Arg arg;
   T Class::* member;
 
-  // Registers the argument to the Parser builder.
-  inline void apply_to_parser(Parser* parser) && {
+  // Registers the argument to the CommandBuilder.
+  inline void apply_to_builder(CommandBuilder* builder) && {
     // SAFETY: This is assumed to be called only by macros, and they have
-    // parser instance so its pointer can not be null.
-    parser->add_arg(std::move(arg));
+    // builder instance so its pointer can not be null.
+    builder->add_arg(std::move(arg));
   }
 
   // Extracts the parsed value from Matches into the struct member.
@@ -50,9 +52,11 @@ struct ArgBinder {
 template <typename Class, typename... Binders>
 arg::ParseResult<Class> parse_macro_impl(i32 argc,
                                          const char* const* argv,
-                                         Parser&& parser,
+                                         CommandBuilder&& builder,
                                          Binders&&... binders) {
-  (std::forward<Binders>(binders).apply_to_parser(&parser), ...);
+  (std::forward<Binders>(binders).apply_to_builder(&builder), ...);
+
+  Parser parser(std::move(builder).build());
 
   Matches matches;
   const ParseStatus status = parser.parse(argc, argv, &matches);
@@ -68,7 +72,7 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
     case ParseStatus::HelpRequested:
       return ParseResult<Class>::make_help(std::move(parser).help_message());
     case ParseStatus::VersionRequested:
-      return ParseResult<Class>::make_version(std::move(parser).version());
+      return ParseResult<Class>::make_version(parser.root_command().version());
   }
 }
 
@@ -113,11 +117,13 @@ arg::ParseResult<Class> parse_macro_impl(i32 argc,
         &Class::Field,                             \
   }
 
-// Generates a parse function for a user-defined struct.
+/// Generates a Standalone CommandBuilder with basic metadata.
+#define CREATE_PARSER(CommandName, Version, About) \
+  ::arg::CommandBuilder(CommandName, Version).about(About)
+
+// Generates a parse function for a user-defined struct using CommandBuilder.
 #define ARGS_FN_DEFINE(Class, FnName, CommandName, Version, About, ...)        \
   inline ::arg::ParseResult<Class> FnName(i32 argc, const char* const* argv) { \
     return ::arg::detail::parse_macro_impl<Class>(                             \
-        argc, argv,                                                            \
-        std::move(::arg::Parser(CommandName, Version).about(About)),           \
-        __VA_ARGS__);                                                          \
+        argc, argv, CREATE_PARSER(CommandName, Version, About), __VA_ARGS__);  \
   }
