@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <concepts>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "fpag/arg/parse_error.h"
@@ -14,30 +14,19 @@
 
 namespace arg {
 
-class ErrorFormatter {
- public:
-  ErrorFormatter() = default;
-  ~ErrorFormatter() = default;
+template <typename F>
+concept ErrorFormatter = requires(const F& f,
+                                  std::string_view command_name,
+                                  const std::vector<ParseError>& errors,
+                                  base::ColorStyle color_style) {
+  { f.format(command_name, errors, color_style) } -> std::same_as<std::string>;
+};
 
-  ErrorFormatter(const ErrorFormatter&) = delete;
-  ErrorFormatter& operator=(const ErrorFormatter&) = delete;
-
-  ErrorFormatter(ErrorFormatter&&) noexcept = default;
-  ErrorFormatter& operator=(ErrorFormatter&&) noexcept = default;
-
-  std::string_view format(const std::vector<ParseError>& errors,
-                          std::string_view command_name,
-                          base::ColorStyle color_style) &;
-
-  inline std::string&& format(const std::vector<ParseError>& errors,
-                              std::string_view command_name,
-                              base::ColorStyle color_style) && {
-    format(errors, command_name, color_style);
-    return std::move(formatted_str_);
-  }
-
- private:
-  std::string formatted_str_;
+struct DefaultErrorFormatter {
+  std::string format(std::string_view command_name,
+                     const std::vector<ParseError>& errors,
+                     base::ColorStyle color_style) const;
 };
 
 }  // namespace arg
+

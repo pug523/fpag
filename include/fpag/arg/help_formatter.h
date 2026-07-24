@@ -4,53 +4,23 @@
 
 #pragma once
 
+#include <concepts>
 #include <string>
-#include <string_view>
-#include <utility>
 
+#include "fpag/arg/command.h"
 #include "fpag/base/color_style.h"
-#include "fpag/base/numeric.h"
 
 namespace arg {
 
-class Command;
+template <typename F>
+concept HelpFormatter =
+    requires(const F& f, const Command& command, base::ColorStyle color_style) {
+      { f.format(command, color_style) } -> std::same_as<std::string>;
+    };
 
-class HelpFormatter {
- public:
-  HelpFormatter() = default;
-  ~HelpFormatter() = default;
-
-  HelpFormatter(const HelpFormatter&) = delete;
-  HelpFormatter& operator=(const HelpFormatter&) = delete;
-
-  HelpFormatter(HelpFormatter&&) noexcept = default;
-  HelpFormatter& operator=(HelpFormatter&&) noexcept = default;
-
-  std::string_view format(const Command& command,
-                          base::ColorStyle color_style) &;
-  std::string_view reformat(const Command& command,
-                            base::ColorStyle color_style) &;
-
-  inline std::string&& format(const Command& command,
-                              base::ColorStyle color_style) && {
-    format(command, color_style);
-    return std::move(formatted_str_);
-  }
-  inline std::string&& reformat(const Command& command,
-                                base::ColorStyle color_style) && {
-    reformat(command, color_style);
-    return std::move(formatted_str_);
-  }
-
- private:
-  void render_option_line(std::string_view opt_spec,
-                          usize visible_len,
-                          usize max_opt_width,
-                          std::string_view help_text,
-                          bool is_required,
-                          base::ColorStyle color_style);
-
-  std::string formatted_str_;
+struct DefaultHelpFormatter {
+  std::string format(const Command& command,
+                     base::ColorStyle color_style) const;
 };
 
 }  // namespace arg

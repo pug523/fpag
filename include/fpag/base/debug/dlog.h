@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <iterator>
-
 #include "fpag/base/debug/common.h"  // IWYU pragma: keep
 #include "fpag/build/build_config.h"
 

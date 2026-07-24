@@ -23,10 +23,6 @@ namespace arg {
 
 namespace {
 
-inline const char* s(const char* code, base::ColorStyle mode) noexcept {
-  return base::style_code(code, mode);
-}
-
 // Calculates visible length of option column.
 usize get_option_spec_len(const Arg& arg) noexcept {
   usize len = 2;
@@ -63,28 +59,20 @@ usize get_option_spec_len(const Arg& arg) noexcept {
   return len;
 }
 
-}  // namespace
-
-std::string_view HelpFormatter::format(const Command& command,
-                                       base::ColorStyle color_style) & {
-  if (formatted_str_.empty()) {
-    return reformat(command, color_style);
-  }
-  return formatted_str_;
-}
-
-void HelpFormatter::render_option_line(std::string_view opt_spec,
-                                       usize visible_len,
-                                       usize max_opt_width,
-                                       std::string_view help_text,
-                                       bool is_required,
-                                       base::ColorStyle c) {
-  const std::back_insert_iterator<std::string> out =
-      std::back_inserter(formatted_str_);
+void render_option_line(const std::back_insert_iterator<std::string> out,
+                        std::string_view opt_spec,
+                        usize visible_len,
+                        usize max_opt_width,
+                        std::string_view help_text,
+                        bool is_required,
+                        base::ColorStyle color_style) {
+  const char* italic = base::style_code(base::kItalic, color_style);
+  const char* reset = base::style_code(base::kReset, color_style);
+  const char* bright_cyan = base::style_code(base::kBrightCyan, color_style);
+  const char* gray = base::style_code(base::kGray, color_style);
 
   // Option specification
-  fmt::format_to(out, "{}{}{}", s(base::kBrightCyan, c), opt_spec,
-                 s(base::kReset, c));
+  fmt::format_to(out, "{}{}{}", bright_cyan, opt_spec, reset);
 
   if (visible_len < max_opt_width) {
     fmt::format_to(out, "{:>{}}", "", max_opt_width - visible_len);
@@ -94,52 +82,59 @@ void HelpFormatter::render_option_line(std::string_view opt_spec,
   // Description
   fmt::format_to(out, "{}", help_text);
   if (is_required) {
-    fmt::format_to(out, " {}{}[required]{}", s(base::kGray, c),
-                   s(base::kItalic, c), s(base::kReset, c));
+    fmt::format_to(out, " {}{}[required]{}", gray, italic, reset);
   }
   fmt::format_to(out, "\n");
 }
 
-std::string_view HelpFormatter::reformat(const Command& command,
-                                         base::ColorStyle color_style) & {
-  formatted_str_.clear();
+}  // namespace
+
+std::string DefaultHelpFormatter::format(const Command& command,
+                                         base::ColorStyle color_style) const {
+  std::string result;
 
   constexpr usize kMargin = 512;
   constexpr usize kEstimatedStrLenPerArgs = 128;
   const usize estimated_size =
       kMargin + (command.args().size() * kEstimatedStrLenPerArgs);
-  formatted_str_.reserve(estimated_size);
+  result.reserve(estimated_size);
 
-  auto out = std::back_inserter(formatted_str_);
+  auto out = std::back_inserter(result);
 
   // Title and about header
   constexpr usize kTerminalWidth = 60;
+
+  const char* bold = base::style_code(base::kBold, color_style);
+  const char* reset = base::style_code(base::kReset, color_style);
+
+  const char* bright_red = base::style_code(base::kBrightRed, color_style);
+  const char* bright_green = base::style_code(base::kBrightGreen, color_style);
+  const char* bright_yellow =
+      base::style_code(base::kBrightYellow, color_style);
+  const char* bright_magenta =
+      base::style_code(base::kBrightMagenta, color_style);
 
   if (!command.name().empty()) {
     usize pad = (command.name().size() < kTerminalWidth)
                     ? (kTerminalWidth - command.name().size()) / 2
                     : 0;
-    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad,
-                   s(base::kBrightRed, color_style), command.name(),
-                   s(base::kReset, color_style));
+    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, bright_red, command.name(),
+                   reset);
   }
 
   if (!command.about().empty()) {
-    std::string full_about = fmt::format("{}", command.about());
+    std::string_view full_about = command.about();
     usize pad = (full_about.size() < kTerminalWidth)
                     ? (kTerminalWidth - full_about.size()) / 2
                     : 0;
-    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad,
-                   s(base::kBrightYellow, color_style), full_about,
-                   s(base::kReset, color_style));
+    fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, bright_yellow, full_about,
+                   reset);
   }
 
   // Usage and Options section
   fmt::format_to(out, "Usage: {}{}{} {}{}[Options]{}\n\nOptions:\n",
-                 s(base::kBrightGreen, color_style), command.name(),
-                 s(base::kReset, color_style),
-                 s(base::kBrightMagenta, color_style),
-                 s(base::kBold, color_style), s(base::kReset, color_style));
+                 bright_green, command.name(), reset, bright_magenta, bold,
+                 reset);
 
   // Determine alignment column width
   usize max_opt_width = 32;
@@ -183,29 +178,28 @@ std::string_view HelpFormatter::reformat(const Command& command,
       opt_spec += ">";
     }
 
-    std::string help_text(arg.help());
     if (!arg.default_value().empty()) {
-      if (!help_text.empty()) {
-        help_text += " ";
-      }
-      help_text += fmt::format("(default: {})", arg.default_value());
+      const std::string help =
+          fmt::format("{} (default: {})", arg.help(), arg.default_value());
+      render_option_line(out, opt_spec, opt_spec.size(), max_opt_width, help,
+                         arg.is_required(), color_style);
+    } else {
+      render_option_line(out, opt_spec, opt_spec.size(), max_opt_width,
+                         arg.help(), arg.is_required(), color_style);
     }
-
-    render_option_line(opt_spec, opt_spec.size(), max_opt_width, help_text,
-                       arg.is_required(), color_style);
   }
 
   // Built-in flags
   if (command.builtin_enabled()) {
-    render_option_line("  -h, --help", 12, max_opt_width,
+    render_option_line(out, "  -h, --help", 12, max_opt_width,
                        "print this help message", false, color_style);
     if (!command.version().empty()) {
-      render_option_line("  -v, --version", 15, max_opt_width, "print version",
-                         false, color_style);
+      render_option_line(out, "  -v, --version", 15, max_opt_width,
+                         "print version", false, color_style);
     }
   }
 
-  return formatted_str_;
+  return result;
 }
 
 }  // namespace arg

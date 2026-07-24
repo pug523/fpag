@@ -19,23 +19,22 @@
 
 namespace arg {
 
-std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
-                                        std::string_view command_name,
-                                        base::ColorStyle style) & {
-  formatted_str_.clear();
-
+std::string DefaultErrorFormatter::format(std::string_view command_name,
+                                          const std::vector<ParseError>& errors,
+                                          base::ColorStyle style) const {
+  std::string result;
   constexpr usize kEstimatedStrLenPerError = 256;
-  formatted_str_.reserve(kEstimatedStrLenPerError * errors.size());
-  const std::back_insert_iterator<std::string> out =
-      std::back_inserter(formatted_str_);
+  result.reserve(kEstimatedStrLenPerError * errors.size());
+  const std::back_insert_iterator<std::string> out = std::back_inserter(result);
 
   const char* bold = base::style_code(base::kBold, style);
-  const char* red = base::style_code(base::kBrightRed, style);
+  const char* bright_red = base::style_code(base::kBrightRed, style);
   const char* reset = base::style_code(base::kReset, style);
 
   for (const ParseError& err : errors) {
     // "error: " header
-    fmt::format_to(out, "{}{}{}{}{}{} ", red, bold, "error", reset, ": ", bold);
+    fmt::format_to(out, "{}{}{}{}{}{} ", bright_red, bold, "error", reset, ": ",
+                   bold);
 
     // Currently doing runtime format string parsing
     fmt::vformat_to(out, ec_to_format_str(err.code),
@@ -46,7 +45,7 @@ std::string_view ErrorFormatter::format(const std::vector<ParseError>& errors,
   const char* cyan = base::style_code(base::kBrightCyan, style);
   fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
                  command_name, cyan, reset);
-  return formatted_str_;
+  return result;
 }
 
 }  // namespace arg

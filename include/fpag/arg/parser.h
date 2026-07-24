@@ -80,38 +80,29 @@ class Parser {
   inline const std::vector<ParseError>& errors() const& { return errors_; }
   inline std::vector<ParseError>&& errors() && { return std::move(errors_); }
 
-  inline std::string_view error_message(
+  template <ErrorFormatter F = DefaultErrorFormatter>
+  inline std::string error_message(
+      F&& f = {},
       base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) & {
-    return error_formatter_.format(errors_, root_cmd_.name(), color_style);
+          base::console_color_style(base::Stream::Stdout)) {
+    return std::move(f).format(root_cmd_.name(), errors_, color_style);
   }
 
-  inline std::string_view help_message(
+  template <HelpFormatter F = DefaultHelpFormatter>
+  inline std::string help_message(
+      F&& f = {},
       base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) & {
-    return help_formatter_.format(root_cmd_, color_style);
+          base::console_color_style(base::Stream::Stdout)) const {
+    return std::move(f).format(root_cmd_, color_style);
   }
 
-  inline std::string_view version_message() & {
-    return version_formatter_.format(root_cmd_.name(), root_cmd_.version());
-  }
-
-  inline std::string&& error_message(
+  template <VersionFormatter F = DefaultVersionFormatter>
+  inline std::string version_message(
+      F&& f = {},
       base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) && {
-    return std::move(error_formatter_)
-        .format(errors_, root_cmd_.name(), color_style);
-  }
-
-  inline std::string&& help_message(
-      base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) && {
-    return std::move(help_formatter_).format(root_cmd_, color_style);
-  }
-
-  inline std::string&& version_message() && {
-    return std::move(version_formatter_)
-        .format(root_cmd_.name(), root_cmd_.version());
+          base::console_color_style(base::Stream::Stdout)) const {
+    return std::move(f).format(root_cmd_.name(), root_cmd_.version(),
+                               color_style);
   }
 
   static constexpr const char* kBuiltinHelpArgLong = "help";
@@ -160,10 +151,6 @@ class Parser {
 
   Command root_cmd_;
   std::vector<ParseError> errors_;
-
-  ErrorFormatter error_formatter_;
-  HelpFormatter help_formatter_;
-  VersionFormatter version_formatter_;
 };
 
 }  // namespace arg

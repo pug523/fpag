@@ -10,9 +10,7 @@
 #include "fpag/arg/command.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_result.h"
-#include "fpag/arg/parse_status.h"
 #include "fpag/arg/parser.h"
-#include "fpag/base/console.h"
 #include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
 
