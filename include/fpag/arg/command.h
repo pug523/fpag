@@ -20,9 +20,9 @@ class Command;
 
 /// Internal state configuration for Command
 struct CommandState {
-  std::string_view name;
-  std::string_view version;
-  std::string_view about;
+  std::string name;
+  std::string version;
+  std::string about;
   std::vector<Arg> args;
   std::vector<Command> subcommands;
   bool builtin_enabled = true;
@@ -40,15 +40,25 @@ class Command {
   Command(Command&&) noexcept = default;
   Command& operator=(Command&&) noexcept = default;
 
-  inline std::string_view name() const { return state_.name; }
-  inline std::string_view version() const { return state_.version; }
-  inline std::string_view about() const { return state_.about; }
+  inline std::string_view name() const& {
+    return std::string_view{state_.name};
+  }
+  inline std::string_view version() const& {
+    return std::string_view{state_.version};
+  }
+  inline std::string_view about() const& {
+    return std::string_view{state_.about};
+  }
   inline bool builtin_enabled() const { return state_.builtin_enabled; }
 
   inline std::span<const Arg> args() const { return state_.args; }
   inline std::span<const Command> subcommands() const {
     return state_.subcommands;
   }
+
+  inline std::string&& name() && { return std::move(state_).name; }
+  inline std::string&& version() && { return std::move(state_).version; }
+  inline std::string&& about() && { return std::move(state_).about; }
 
   // Lookup helpers
   const Arg* find_arg_by_short(char c) const;
@@ -62,10 +72,9 @@ class Command {
 /// Fluent builder for constructing an immutable @ref Command.
 class CommandBuilder {
  public:
-  explicit CommandBuilder(std::string_view name,
-                          std::string_view version = "") {
-    state_.name = name;
-    state_.version = version;
+  explicit CommandBuilder(std::string&& name, std::string&& version = "") {
+    state_.name = std::move(name);
+    state_.version = std::move(version);
   }
   ~CommandBuilder() = default;
 
@@ -75,13 +84,13 @@ class CommandBuilder {
   CommandBuilder(CommandBuilder&&) noexcept = default;
   CommandBuilder& operator=(CommandBuilder&&) noexcept = default;
 
-  inline CommandBuilder& about(std::string_view description) & {
-    state_.about = description;
+  inline CommandBuilder& about(std::string&& description) & {
+    state_.about = std::move(description);
     return *this;
   }
 
-  inline CommandBuilder&& about(std::string_view description) && {
-    state_.about = description;
+  inline CommandBuilder&& about(std::string&& description) && {
+    state_.about = std::move(description);
     return std::move(*this);
   }
 

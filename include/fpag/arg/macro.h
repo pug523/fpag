@@ -13,6 +13,7 @@
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/parser.h"
 #include "fpag/base/console.h"
+#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
 
 namespace arg::detail {
@@ -50,30 +51,27 @@ struct ArgBinder {
 };
 
 template <typename Class, typename... Binders>
-arg::ParseResult<Class> parse_macro_impl(i32 argc,
-                                         const char* const* argv,
-                                         CommandBuilder&& builder,
-                                         Binders&&... binders) {
+ParseResult<Class> parse_macro_impl(i32 argc,
+                                    const char* const* argv,
+                                    CommandBuilder&& builder,
+                                    Binders&&... binders) {
   (std::forward<Binders>(binders).apply_to_builder(&builder), ...);
-
   Parser parser(std::move(builder).build());
-
-  Matches matches;
-  const ParseStatus status = parser.parse(argc, argv, &matches);
-  Class config{};
-
-  switch (status) {
-    case ParseStatus::Success: {
-      (binders.extract(&config, &matches), ...);
-      return ParseResult<Class>::make_ok(std::move(config));
-    }
-    case ParseStatus::Error:
-      return ParseResult<Class>::make_err(std::move(parser).errors());
-    case ParseStatus::HelpRequested:
-      return ParseResult<Class>::make_help(std::move(parser).help_message());
-    case ParseStatus::VersionRequested:
-      return ParseResult<Class>::make_version(parser.root_command().version());
+  ParseResult<Matches> result = parser.try_parse(argc, argv);
+  if (result.is_ok()) {
+    Class config{};
+    Matches matches = std::move(result).unwrap();
+    (binders.extract(&config, &matches), ...);
+    return ParseResult<Class>::make_ok(std::move(config));
+  } else if (result.is_err()) {
+    return ParseResult<Class>::make_err(std::move(result).unwrap_err());
+  } else if (result.is_help()) {
+    return ParseResult<Class>::make_help(std::move(result).unwrap_help());
+  } else if (result.is_version()) {
+    return ParseResult<Class>::make_version(std::move(result).unwrap_version());
   }
+  FPAG_UNREACHABLE_MSG(
+      "parse result is neither ok nor err nor help nor version");
 }
 
 }  // namespace arg::detail

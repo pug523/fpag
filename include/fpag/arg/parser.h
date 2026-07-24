@@ -17,6 +17,7 @@
 #include "fpag/arg/help_formatter.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_error.h"
+#include "fpag/arg/parse_result.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/base/color_style.h"
 #include "fpag/base/console.h"
@@ -51,6 +52,12 @@ class Parser {
   ParseStatus parse_partial(std::span<const std::string_view> args,
                             Matches* matches,
                             std::vector<std::string_view>* unparsed);
+
+  ParseResult<Matches> try_parse(i32 argc, const char* const* argv) &;
+  ParseResult<Matches> try_parse(std::span<const std::string_view> args) &;
+
+  ParseResult<Matches> try_parse(i32 argc, const char* const* argv) &&;
+  ParseResult<Matches> try_parse(std::span<const std::string_view> args) &&;
 
   /// Fixed-size array overloads
   template <usize N>
