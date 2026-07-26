@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string_view>
 
+#include "fpag/base/location.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -13,10 +13,7 @@ namespace base {
 struct StackTraceFrame {
   void* address = nullptr;
   usize index = 0;
-  std::string_view file = "";
-  std::string_view function = "";
-  u32 line = 0;
-  u32 column = 0;
+  Location location = {};
 };
 
 }  // namespace base

@@ -39,7 +39,7 @@ void free_pages(void* ptr, usize size);
 
 static constexpr u64 kPageSize = 4096;  // 4 KiB
 static constexpr u64 kHugePageSize =
-    static_cast<const u64>(2 * 1024 * 1024);  // 2 MiB
+    static_cast<u64>(2 * 1024 * 1024);  // 2 MiB
 
 inline bool is_page_aligned_ptr(void* ptr) {
   return reinterpret_cast<uintptr_t>(ptr) % kPageSize == 0;

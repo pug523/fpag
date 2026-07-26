@@ -26,24 +26,31 @@ void append_frame(std::string* out,
         fmt::format("{:#018x}  ", reinterpret_cast<uintptr_t>(frame.address)));
   }
 
+  const std::string_view file = frame.location.file_name();
+  std::string_view func = frame.location.function_name();
+
   if (opts.show_function) {
-    const std::string_view func =
-        !frame.function.empty() ? frame.function : "(unknown)";
-    if (opts.show_file_line && !frame.file.empty()) {
+    if (func.empty()) {
+      func = "(unknown)";
+    }
+    if (opts.show_file_line && !file.empty()) {
       out->append(fmt::format("{:<60}", func));
     } else {
       out->append(func);
     }
   }
 
-  if (opts.show_file_line && !frame.file.empty()) {
+  if (opts.show_file_line && !file.empty()) {
+    // if (file.empty()) {
+    //   file = "(unknown)";
+    // }
     // out->append("\n      at ");
     out->append(" at ");
-    out->append(frame.file);
-    if (frame.line > 0) {
-      out->append(fmt::format(":{}", frame.line));
-      if (frame.column > 0) {
-        out->append(fmt::format(":{}", frame.column));
+    out->append(file);
+    if (frame.location.valid_line()) {
+      out->append(fmt::format(":{}", frame.location.line));
+      if (frame.location.valid_column()) {
+        out->append(fmt::format(":{}", frame.location.column));
       }
     }
   }
@@ -66,13 +73,5 @@ std::string format_frames(const StackTraceFrame* frames,
   }
   return out;
 }
-
-// std::string format_frame(const StackTraceFrame& frame,
-//                          const FrameFormatOptions& opts) {
-//   std::string out;
-//   out.reserve(128);
-//   append_frame(&out, frame, opts);
-//   return out;
-// }
 
 }  // namespace base

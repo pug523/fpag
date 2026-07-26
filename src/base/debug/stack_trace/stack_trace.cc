@@ -61,10 +61,10 @@ void StackTrace::collect_trace() {
     const SymbolInfo info = sym.resolve(raw_addrs[i]);
 
     // Intern the strings so that string_view members remain valid.
-    frames_[i].function = intern_string(info.function);
-    frames_[i].file = intern_string(info.file);
-    frames_[i].line = info.line;
-    frames_[i].column = info.column;
+    frames_[i].location.function = intern_string(info.function).data();
+    frames_[i].location.file = intern_string(info.file).data();
+    frames_[i].location.line = info.line;
+    frames_[i].location.column = info.column;
   }
 
   status_ = StackTraceStatus::Collected;
