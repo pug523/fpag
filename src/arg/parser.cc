@@ -259,10 +259,12 @@ ParseResult<Matches> Parser::try_parse(i32 argc, const char* const* argv) & {
     case ParseStatus::Error:
       return ParseResult<Matches>::make_err(std::vector<ParseError>(errors_));
     case ParseStatus::HelpRequested:
-      return ParseResult<Matches>::make_help(std::string(help_message()));
+      return ParseResult<Matches>::make_help(help_message());
     case ParseStatus::VersionRequested:
       return ParseResult<Matches>::make_version(
           std::string(root_cmd_.version()));
+    default:
+      return ParseResult<Matches>::make_err(std::vector<ParseError>(errors_));
   }
 }
 
@@ -277,10 +279,12 @@ ParseResult<Matches> Parser::try_parse(
     case ParseStatus::Error:
       return ParseResult<Matches>::make_err(std::vector<ParseError>(errors_));
     case ParseStatus::HelpRequested:
-      return ParseResult<Matches>::make_help(std::string(help_message()));
+      return ParseResult<Matches>::make_help(help_message());
     case ParseStatus::VersionRequested:
       return ParseResult<Matches>::make_version(
           std::string(root_cmd_.version()));
+    default:
+      return ParseResult<Matches>::make_err(std::vector<ParseError>(errors_));
   }
 }
 
@@ -297,6 +301,7 @@ ParseResult<Matches> Parser::try_parse(i32 argc, const char* const* argv) && {
       return ParseResult<Matches>::make_help(std::move(*this).help_message());
     case ParseStatus::VersionRequested:
       return ParseResult<Matches>::make_version(std::move(root_cmd_).version());
+    default: return ParseResult<Matches>::make_err(std::move(*this).errors());
   }
 }
 
@@ -314,6 +319,7 @@ ParseResult<Matches> Parser::try_parse(
       return ParseResult<Matches>::make_help(std::move(*this).help_message());
     case ParseStatus::VersionRequested:
       return ParseResult<Matches>::make_version(std::move(root_cmd_).version());
+    default: return ParseResult<Matches>::make_err(std::move(*this).errors());
   }
 }
 

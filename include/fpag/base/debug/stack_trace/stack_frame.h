@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 #include "fpag/base/location.h"
 #include "fpag/base/numeric.h"
 
