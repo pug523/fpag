@@ -158,7 +158,7 @@ add_requires(
 
 if has_config("tests") then
   add_requires(
-    "catch2 v3.13.0",
+    "catch2 v3.15.2",
     { system = false, external = true, configs = stdlib_config() }
   )
 end
@@ -437,7 +437,7 @@ add_rules("fpag.common_config", { public = false })
 add_deps("fpag")
 set_kind("binary")
 add_files("tests/**.cc")
-add_packages("catch2")
+add_packages("catch2", { components = "lib" })
 add_includedirs("tests", { public = true })
 set_default(false)
 target_end()
