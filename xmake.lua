@@ -188,7 +188,7 @@ if libunwind() then
 end
 
 add_requires(
-  "fmt 12.1.0",
+  "fmt 12.2.0",
   { system = false, private = false, configs = stdlib_config() }
 )
 
