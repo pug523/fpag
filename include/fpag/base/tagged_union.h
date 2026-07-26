@@ -37,7 +37,7 @@ class TaggedUnion {
       typename T,
       typename = std::enable_if_t<internal::ContainsType<T, Ts...>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
-  TaggedUnion(T&& value) noexcept(
+  constexpr TaggedUnion(T&& value) noexcept(
       std::is_nothrow_constructible_v<std::decay_t<T>, T>)
       : tag_(static_cast<TagStorageType>(
             internal::TypeIndex<std::decay_t<T>, Ts...>::value)) {
@@ -46,14 +46,14 @@ class TaggedUnion {
                       std::forward<T>(value));
   }
 
-  TaggedUnion(const TaggedUnion& other) noexcept(
+  constexpr TaggedUnion(const TaggedUnion& other) noexcept(
       (std::is_nothrow_copy_constructible_v<Ts> && ...))
     requires((std::is_copy_constructible_v<Ts> && ...))
       : tag_(other.tag_) {
     copy_construct_from(other);
   }
 
-  TaggedUnion& operator=(const TaggedUnion& other) noexcept(
+  constexpr TaggedUnion& operator=(const TaggedUnion& other) noexcept(
       (std::is_nothrow_copy_constructible_v<Ts> && ...) &&
       (std::is_nothrow_destructible_v<Ts> && ...))
     requires((std::is_copy_constructible_v<Ts> && ...) &&
@@ -67,13 +67,13 @@ class TaggedUnion {
     return *this;
   }
 
-  TaggedUnion(TaggedUnion&& other) noexcept(
+  constexpr TaggedUnion(TaggedUnion&& other) noexcept(
       (std::is_nothrow_move_constructible_v<Ts> && ...))
       : tag_(other.tag_) {
     move_construct_from(std::move(other));
   }
 
-  TaggedUnion& operator=(TaggedUnion&& other) noexcept(
+  constexpr TaggedUnion& operator=(TaggedUnion&& other) noexcept(
       (std::is_nothrow_move_constructible_v<Ts> && ...) &&
       (std::is_nothrow_destructible_v<Ts> && ...)) {
     if (this != &other) {
@@ -84,17 +84,19 @@ class TaggedUnion {
     return *this;
   }
 
-  ~TaggedUnion() noexcept { destroy_current(); }
+  constexpr ~TaggedUnion() noexcept { destroy_current(); }
 
   // Returns current active tag.
-  Tag tag() const noexcept { return static_cast<Tag>(tag_); }
+  inline constexpr Tag tag() const noexcept { return static_cast<Tag>(tag_); }
 
   // Returns current active raw tag index as usize.
-  usize tag_raw() const noexcept { return static_cast<usize>(tag_); }
+  inline constexpr usize tag_raw() const noexcept {
+    return static_cast<usize>(tag_);
+  }
 
   // Checks if current active type is T.
   template <typename T>
-  bool is() const noexcept {
+  inline constexpr bool is() const noexcept {
     static_assert(internal::ContainsType<T, Ts...>::value,
                   "Type T is not part of TaggedUnion.");
     return static_cast<usize>(tag_) == internal::TypeIndex<T, Ts...>::value;
@@ -102,25 +104,25 @@ class TaggedUnion {
 
   // Accessors for contained type T with pointer laundering.
   template <typename T>
-  T& get() & noexcept {
+  inline constexpr T& get() & noexcept {
     FPAG_DCHECK(is<T>());
     return *std::launder(reinterpret_cast<T*>(storage_));
   }
 
   template <typename T>
-  const T& get() const& noexcept {
+  inline constexpr const T& get() const& noexcept {
     FPAG_DCHECK(is<T>());
     return *std::launder(reinterpret_cast<const T*>(storage_));
   }
 
   template <typename T>
-  T&& get() && noexcept {
+  inline constexpr T&& get() && noexcept {
     FPAG_DCHECK(is<T>());
     return std::move(*std::launder(reinterpret_cast<T*>(storage_)));
   }
 
  private:
-  void destroy_current() noexcept {
+  constexpr void destroy_current() noexcept {
     auto destroy_helper = [this]<usize... Is>(std::index_sequence<Is...>) {
       usize current_tag = static_cast<usize>(tag_);
       bool _ = ((Is == current_tag ? (std::destroy_at(std::launder(
@@ -132,7 +134,7 @@ class TaggedUnion {
     destroy_helper(std::index_sequence_for<Ts...>{});
   }
 
-  void move_construct_from(TaggedUnion&& other) noexcept(
+  constexpr void move_construct_from(TaggedUnion&& other) noexcept(
       (std::is_nothrow_move_constructible_v<Ts> && ...)) {
     auto move_helper = [this, &other]<usize... Is>(std::index_sequence<Is...>) {
       usize current_tag = static_cast<usize>(tag_);
@@ -148,7 +150,7 @@ class TaggedUnion {
     move_helper(std::index_sequence_for<Ts...>{});
   }
 
-  void copy_construct_from(const TaggedUnion& other) noexcept(
+  constexpr void copy_construct_from(const TaggedUnion& other) noexcept(
       (std::is_nothrow_copy_constructible_v<Ts> && ...)) {
     auto copy_helper = [this, &other]<usize... Is>(std::index_sequence<Is...>) {
       usize current_tag = static_cast<usize>(tag_);

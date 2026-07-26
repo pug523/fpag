@@ -18,7 +18,7 @@ template <typename Target, typename... Ts>
 struct TypeIndex {
  private:
   template <usize... Is>
-  static constexpr usize find_index(std::index_sequence<Is...>) noexcept {
+  static consteval usize find_index(std::index_sequence<Is...>) noexcept {
     usize result = sizeof...(Ts);
     bool _ =
         ((std::is_same_v<Target, Ts> ? (result = Is, true) : false) || ...);
@@ -52,7 +52,7 @@ struct HasAltCountMember<E, std::void_t<decltype(E::Count)>> : std::true_type {
 
 // Validates enum type constraints at compile time.
 template <typename TagEnum, usize ExpectedCount>
-constexpr bool validate_tag_enum() noexcept {
+consteval bool validate_tag_enum() noexcept {
   static_assert(std::is_enum_v<TagEnum>, "TagEnum must be an enum type.");
   static_assert(std::is_integral_v<std::underlying_type_t<TagEnum>>,
                 "Underlying type of TagEnum must be an integral type.");
