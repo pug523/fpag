@@ -8,4 +8,4 @@ namespace base {
 
 void register_signal_handlers();
 
-}
+}  // namespace base
