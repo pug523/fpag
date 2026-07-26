@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <new>  // IWYU pragma: keep
 #include <type_traits>
 #include <utility>
 
