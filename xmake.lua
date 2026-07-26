@@ -153,20 +153,20 @@ end
 
 add_requires(
   "xxhash v0.8.3",
-  { system = false, external = true, configs = stdlib_config() }
+  { system = false, private = true, configs = stdlib_config() }
 )
 
 if has_config("tests") then
   add_requires(
     "catch2 v3.15.2",
-    { system = false, external = true, configs = stdlib_config() }
+    { system = false, private = true, configs = stdlib_config() }
   )
 end
 
 if has_config("benchmarks") then
   add_requires("benchmark v1.9.5", {
     system = false,
-    external = true,
+    private = true,
     configs = table.join(stdlib_config(), {
       exceptions = false,
       cxflags = "-DBENCHMARK_USE_LIBCXX="
@@ -183,13 +183,13 @@ end
 if libunwind() then
   add_requires(
     "libunwind v1.8.3",
-    { system = false, external = true, configs = stdlib_config() }
+    { system = false, private = true, configs = stdlib_config() }
   )
 end
 
 add_requires(
   "fmt 12.1.0",
-  { system = false, external = false, configs = stdlib_config() }
+  { system = false, private = false, configs = stdlib_config() }
 )
 
 -- Tasks
