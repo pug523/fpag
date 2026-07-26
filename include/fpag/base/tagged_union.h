@@ -25,6 +25,7 @@ class TaggedUnion {
                 "TagEnum validation failed.");
 
   using Tag = TagEnum;
+  using TagStorageType = internal::TagUnderlyingType_t<TagEnum>;
 
   template <typename T>
   static constexpr Tag TagOf =
@@ -36,7 +37,8 @@ class TaggedUnion {
       typename = std::enable_if_t<internal::ContainsType<T, Ts...>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
   TaggedUnion(T&& value) noexcept
-      : tag_(internal::TypeIndex<std::decay_t<T>, Ts...>::value) {
+      : tag_(static_cast<TagStorageType>(
+            internal::TypeIndex<std::decay_t<T>, Ts...>::value)) {
     using CleanT = std::decay_t<T>;
     ::new (static_cast<void*>(storage_)) CleanT(std::forward<T>(value));
   }
@@ -46,7 +48,7 @@ class TaggedUnion {
 
   TaggedUnion(TaggedUnion&& other) noexcept : tag_(other.tag_) {
     internal::UnionMove<0, Ts...>::move_construct(
-        other.tag_, static_cast<void*>(other.storage_),
+        static_cast<usize>(other.tag_), static_cast<void*>(other.storage_),
         static_cast<void*>(storage_));
   }
 
@@ -55,7 +57,7 @@ class TaggedUnion {
       destroy_current();
       tag_ = other.tag_;
       internal::UnionMove<0, Ts...>::move_construct(
-          other.tag_, static_cast<void*>(other.storage_),
+          static_cast<usize>(other.tag_), static_cast<void*>(other.storage_),
           static_cast<void*>(storage_));
     }
     return *this;
@@ -66,15 +68,15 @@ class TaggedUnion {
   // Returns current active tag.
   Tag tag() const noexcept { return static_cast<Tag>(tag_); }
 
-  // Returns current active raw tag index.
-  usize tag_raw() const noexcept { return tag_; }
+  // Returns current active raw tag index as usize.
+  usize tag_raw() const noexcept { return static_cast<usize>(tag_); }
 
   // Check if current active type is T.
   template <typename T>
   bool is() const noexcept {
     static_assert(internal::ContainsType<T, Ts...>::value,
                   "Type T is not part of TaggedUnion.");
-    return tag_ == internal::TypeIndex<T, Ts...>::value;
+    return static_cast<usize>(tag_) == internal::TypeIndex<T, Ts...>::value;
   }
 
   // Get reference to contained type T.
@@ -98,7 +100,7 @@ class TaggedUnion {
 
  private:
   void destroy_current() noexcept {
-    internal::UnionDestructor<0, Ts...>::destroy(tag_,
+    internal::UnionDestructor<0, Ts...>::destroy(static_cast<usize>(tag_),
                                                  static_cast<void*>(storage_));
   }
 
@@ -106,7 +108,7 @@ class TaggedUnion {
   static constexpr usize kStorageAlign = std::max({alignof(Ts)...});
 
   alignas(kStorageAlign) u8 storage_[kStorageSize];
-  usize tag_;
+  TagStorageType tag_;
 };
 
 // Default AutoTaggedUnion alias providing automatically generated enum tag.

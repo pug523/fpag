@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <limits>
 #include <type_traits>
 #include <utility>
 
@@ -110,11 +111,36 @@ constexpr bool validate_tag_enum() noexcept {
   return true;
 }
 
+template <usize Count>
+struct TagTypeImpl {
+  using type = std::conditional_t<
+      (Count <= std::numeric_limits<u8>::max()),
+      u8,
+      std::conditional_t<
+          (Count <= std::numeric_limits<u16>::max()),
+          u16,
+          std::conditional_t<(Count <= std::numeric_limits<u32>::max()),
+                             u32,
+                             usize>>>;
+};
+
+template <usize Count>
+using TagType = typename TagTypeImpl<Count>::type;
+
 // Default TagEnum generator when none is provided explicitly.
 template <typename... Ts>
 struct DefaultTagEnum {
-  enum class Type : usize {};
+  enum class Type : TagType<sizeof...(Ts)>{};
 };
+
+template <typename T>
+struct TagUnderlyingType {
+  using type =
+      std::conditional_t<std::is_enum_v<T>, std::underlying_type_t<T>, T>;
+};
+
+template <typename T>
+using TagUnderlyingType_t = typename TagUnderlyingType<T>::type;
 
 }  // namespace base::internal
 
