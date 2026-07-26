@@ -12,6 +12,9 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/testing/copy_tracker.h"
+#include "fpag/testing/dtor_tracker.h"
+#include "fpag/testing/move_tracker.h"
 
 namespace base {
 
@@ -24,95 +27,11 @@ enum class CustomTag : u8 {
   Float = 2,
 };
 
-// Helper struct to track lifetime without exceptions or heap allocations.
-struct MoveTracker {
-  MoveTracker() = delete;
-  explicit MoveTracker(i32* move_count) noexcept : move_count_(move_count) {}
-
-  MoveTracker(const MoveTracker&) = delete;
-  MoveTracker& operator=(const MoveTracker&) = delete;
-
-  MoveTracker(MoveTracker&& other) noexcept : move_count_(other.move_count_) {
-    if (move_count_ != nullptr) {
-      (*move_count_)++;
-    }
-    other.move_count_ = nullptr;
-  }
-
-  MoveTracker& operator=(MoveTracker&& other) noexcept {
-    if (this != &other) {
-      move_count_ = other.move_count_;
-      if (move_count_ != nullptr) {
-        (*move_count_)++;
-      }
-      other.move_count_ = nullptr;
-    }
-    return *this;
-  }
-
-  ~MoveTracker() noexcept = default;
-
-  i32* move_count_{nullptr};
-};
-
-// Helper struct to track destructor invocations.
-struct DtorTracker {
-  DtorTracker() = delete;
-  explicit DtorTracker(bool* destroyed) noexcept : destroyed_(destroyed) {}
-  DtorTracker(const DtorTracker&) = delete;
-  DtorTracker& operator=(const DtorTracker&) = delete;
-
-  DtorTracker(DtorTracker&& other) noexcept : destroyed_(other.destroyed_) {
-    other.destroyed_ = nullptr;
-  }
-
-  DtorTracker& operator=(DtorTracker&& other) noexcept {
-    if (this != &other) {
-      destroyed_ = other.destroyed_;
-      other.destroyed_ = nullptr;
-    }
-    return *this;
-  }
-
-  ~DtorTracker() noexcept {
-    if (destroyed_ != nullptr) {
-      *destroyed_ = true;
-    }
-  }
-
-  bool* destroyed_{nullptr};
-};
-
-// Helper struct to track copy operations.
-struct CopyTracker {
-  CopyTracker() = delete;
-  explicit CopyTracker(i32* copy_count) noexcept : copy_count_(copy_count) {}
-
-  CopyTracker(const CopyTracker& other) noexcept
-      : copy_count_(other.copy_count_) {
-    if (copy_count_ != nullptr) {
-      (*copy_count_)++;
-    }
-  }
-
-  CopyTracker& operator=(const CopyTracker& other) noexcept {
-    if (this != &other) {
-      copy_count_ = other.copy_count_;
-      if (copy_count_ != nullptr) {
-        (*copy_count_)++;
-      }
-    }
-    return *this;
-  }
-
-  CopyTracker(CopyTracker&&) noexcept = default;
-  CopyTracker& operator=(CopyTracker&&) noexcept = default;
-  ~CopyTracker() noexcept = default;
-
-  i32* copy_count_{nullptr};
-};
-
 }  // namespace
+
+using testing::CopyTracker;
+using testing::DtorTracker;
+using testing::MoveTracker;
 
 TEST_CASE("TaggedUnion memory layout and static checks",
           "[base][tagged_union]") {
@@ -265,7 +184,7 @@ TEST_CASE("AutoTaggedUnion copy semantics", "[base][tagged_union]") {
 
   SECTION("Copy constructor") {
     // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-    U u2(u1);
+    U const u2(u1);
     CHECK(u2.is<CopyTracker>());
     CHECK(copy_count == 1);
   }
