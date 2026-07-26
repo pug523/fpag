@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -13,79 +14,36 @@
 
 namespace base::internal {
 
-// Helper trait to find the index of a type in a variadic type list.
+// Finds the 0-based index of Target within Ts...
 template <typename Target, typename... Ts>
-struct TypeIndex;
+struct TypeIndex {
+ private:
+  template <usize... Is>
+  static constexpr usize find_index(std::index_sequence<Is...>) noexcept {
+    usize result = sizeof...(Ts);
+    bool _ =
+        ((std::is_same_v<Target, Ts> ? (result = Is, true) : false) || ...);
+    return result;
+  }
 
-template <typename Target, typename Head, typename... Tail>
-struct TypeIndex<Target, Head, Tail...> {
-  static constexpr usize value =
-      std::is_same_v<Target, Head> ? 0 : 1 + TypeIndex<Target, Tail...>::value;
+ public:
+  static constexpr usize value = find_index(std::index_sequence_for<Ts...>{});
+  static_assert(value < sizeof...(Ts), "Target type was not found in Ts...");
 };
 
-template <typename Target>
-struct TypeIndex<Target> {
-  static constexpr usize value = 0;
-};
-
-// Trait to check if a type exists in a variadic list.
+// Checks if Target exists within Ts...
 template <typename Target, typename... Ts>
 struct ContainsType
     : std::disjunction<std::is_same<std::decay_t<Target>, Ts>...> {};
 
-// Destructor helper for tagged storage.
-template <usize Index, typename... Ts>
-struct UnionDestructor;
-
-template <usize Index>
-struct UnionDestructor<Index> {
-  static void destroy(usize /*tag*/, void* /*storage*/) noexcept {
-    // noop
-  }
-};
-
-template <usize Index, typename Head, typename... Tail>
-struct UnionDestructor<Index, Head, Tail...> {
-  static void destroy(usize tag, void* storage) noexcept {
-    if (tag == Index) {
-      reinterpret_cast<Head*>(storage)->~Head();
-    } else {
-      UnionDestructor<Index + 1, Tail...>::destroy(tag, storage);
-    }
-  }
-};
-
-// Move constructor helper for tagged storage.
-template <usize Index, typename... Ts>
-struct UnionMove;
-
-template <usize Index>
-struct UnionMove<Index> {
-  static void move_construct(usize /*tag*/,
-                             void* /*src*/,
-                             void* /*dst*/) noexcept {
-    // noop
-  }
-};
-
-template <usize Index, typename Head, typename... Tail>
-struct UnionMove<Index, Head, Tail...> {
-  static void move_construct(usize tag, void* src, void* dst) noexcept {
-    if (tag == Index) {
-      ::new (dst) Head(std::move(*reinterpret_cast<Head*>(src)));
-    } else {
-      UnionMove<Index + 1, Tail...>::move_construct(tag, src, dst);
-    }
-  }
-};
-
-// Helper detection idiom for 'kCount' or 'Count' member in enum types.
+// Helper detection idiom for 'kCount' member in enum types.
 template <typename E, typename = void>
 struct HasCountMember : std::false_type {};
 
 template <typename E>
 struct HasCountMember<E, std::void_t<decltype(E::kCount)>> : std::true_type {};
 
+// Helper detection idiom for 'Count' member in enum types.
 template <typename E, typename = void>
 struct HasAltCountMember : std::false_type {};
 
@@ -93,7 +51,7 @@ template <typename E>
 struct HasAltCountMember<E, std::void_t<decltype(E::Count)>> : std::true_type {
 };
 
-// Validates enum type constraints at compile-time.
+// Validates enum type constraints at compile time.
 template <typename TagEnum, usize ExpectedCount>
 constexpr bool validate_tag_enum() noexcept {
   static_assert(std::is_enum_v<TagEnum>, "TagEnum must be an enum type.");
@@ -111,6 +69,7 @@ constexpr bool validate_tag_enum() noexcept {
   return true;
 }
 
+// Selects the minimum unsigned integer type that can hold Count values.
 template <usize Count>
 struct TagTypeImpl {
   using type = std::conditional_t<
@@ -143,4 +102,3 @@ template <typename T>
 using TagUnderlyingType_t = typename TagUnderlyingType<T>::type;
 
 }  // namespace base::internal
-

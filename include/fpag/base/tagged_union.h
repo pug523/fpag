@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -31,34 +32,54 @@ class TaggedUnion {
   static constexpr Tag TagOf =
       static_cast<Tag>(internal::TypeIndex<std::decay_t<T>, Ts...>::value);
 
-  // Type-safe construction for any contained type.
+  // Type-safe value construction for any contained type.
   template <
       typename T,
       typename = std::enable_if_t<internal::ContainsType<T, Ts...>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
-  TaggedUnion(T&& value) noexcept
+  TaggedUnion(T&& value) noexcept(
+      std::is_nothrow_constructible_v<std::decay_t<T>, T>)
       : tag_(static_cast<TagStorageType>(
             internal::TypeIndex<std::decay_t<T>, Ts...>::value)) {
     using CleanT = std::decay_t<T>;
-    ::new (static_cast<void*>(storage_)) CleanT(std::forward<T>(value));
+    std::construct_at(reinterpret_cast<CleanT*>(storage_),
+                      std::forward<T>(value));
   }
 
-  TaggedUnion(const TaggedUnion&) = delete;
-  TaggedUnion& operator=(const TaggedUnion&) = delete;
-
-  TaggedUnion(TaggedUnion&& other) noexcept : tag_(other.tag_) {
-    internal::UnionMove<0, Ts...>::move_construct(
-        static_cast<usize>(other.tag_), static_cast<void*>(other.storage_),
-        static_cast<void*>(storage_));
+  TaggedUnion(const TaggedUnion& other) noexcept(
+      (std::is_nothrow_copy_constructible_v<Ts> && ...))
+    requires((std::is_copy_constructible_v<Ts> && ...))
+      : tag_(other.tag_) {
+    copy_construct_from(other);
   }
 
-  TaggedUnion& operator=(TaggedUnion&& other) noexcept {
+  TaggedUnion& operator=(const TaggedUnion& other) noexcept(
+      (std::is_nothrow_copy_constructible_v<Ts> && ...) &&
+      (std::is_nothrow_destructible_v<Ts> && ...))
+    requires((std::is_copy_constructible_v<Ts> && ...) &&
+             (std::is_copy_assignable_v<Ts> && ...))
+  {
     if (this != &other) {
       destroy_current();
       tag_ = other.tag_;
-      internal::UnionMove<0, Ts...>::move_construct(
-          static_cast<usize>(other.tag_), static_cast<void*>(other.storage_),
-          static_cast<void*>(storage_));
+      copy_construct_from(other);
+    }
+    return *this;
+  }
+
+  TaggedUnion(TaggedUnion&& other) noexcept(
+      (std::is_nothrow_move_constructible_v<Ts> && ...))
+      : tag_(other.tag_) {
+    move_construct_from(std::move(other));
+  }
+
+  TaggedUnion& operator=(TaggedUnion&& other) noexcept(
+      (std::is_nothrow_move_constructible_v<Ts> && ...) &&
+      (std::is_nothrow_destructible_v<Ts> && ...)) {
+    if (this != &other) {
+      destroy_current();
+      tag_ = other.tag_;
+      move_construct_from(std::move(other));
     }
     return *this;
   }
@@ -71,7 +92,7 @@ class TaggedUnion {
   // Returns current active raw tag index as usize.
   usize tag_raw() const noexcept { return static_cast<usize>(tag_); }
 
-  // Check if current active type is T.
+  // Checks if current active type is T.
   template <typename T>
   bool is() const noexcept {
     static_assert(internal::ContainsType<T, Ts...>::value,
@@ -79,51 +100,81 @@ class TaggedUnion {
     return static_cast<usize>(tag_) == internal::TypeIndex<T, Ts...>::value;
   }
 
-  // Get reference to contained type T.
+  // Accessors for contained type T with pointer laundering.
   template <typename T>
   T& get() & noexcept {
     FPAG_DCHECK(is<T>());
-    return *reinterpret_cast<T*>(storage_);
+    return *std::launder(reinterpret_cast<T*>(storage_));
   }
 
   template <typename T>
   const T& get() const& noexcept {
     FPAG_DCHECK(is<T>());
-    return *reinterpret_cast<const T*>(storage_);
+    return *std::launder(reinterpret_cast<const T*>(storage_));
   }
 
   template <typename T>
   T&& get() && noexcept {
     FPAG_DCHECK(is<T>());
-    return std::move(*reinterpret_cast<T*>(storage_));
+    return std::move(*std::launder(reinterpret_cast<T*>(storage_)));
   }
 
  private:
   void destroy_current() noexcept {
-    internal::UnionDestructor<0, Ts...>::destroy(static_cast<usize>(tag_),
-                                                 static_cast<void*>(storage_));
+    auto destroy_helper = [this]<usize... Is>(std::index_sequence<Is...>) {
+      usize current_tag = static_cast<usize>(tag_);
+      bool _ = ((Is == current_tag ? (std::destroy_at(std::launder(
+                                          reinterpret_cast<Ts*>(storage_))),
+                                      true)
+                                   : false) ||
+                ...);
+    };
+    destroy_helper(std::index_sequence_for<Ts...>{});
+  }
+
+  void move_construct_from(TaggedUnion&& other) noexcept(
+      (std::is_nothrow_move_constructible_v<Ts> && ...)) {
+    auto move_helper = [this, &other]<usize... Is>(std::index_sequence<Is...>) {
+      usize current_tag = static_cast<usize>(tag_);
+      bool _ = ((Is == current_tag
+                     ? (std::construct_at(
+                            reinterpret_cast<Ts*>(storage_),
+                            std::move(*std::launder(
+                                reinterpret_cast<Ts*>(other.storage_)))),
+                        true)
+                     : false) ||
+                ...);
+    };
+    move_helper(std::index_sequence_for<Ts...>{});
+  }
+
+  void copy_construct_from(const TaggedUnion& other) noexcept(
+      (std::is_nothrow_copy_constructible_v<Ts> && ...)) {
+    auto copy_helper = [this, &other]<usize... Is>(std::index_sequence<Is...>) {
+      usize current_tag = static_cast<usize>(tag_);
+      bool _ =
+          ((Is == current_tag
+                ? (std::construct_at(reinterpret_cast<Ts*>(storage_),
+                                     *std::launder(reinterpret_cast<const Ts*>(
+                                         other.storage_))),
+                   true)
+                : false) ||
+           ...);
+    };
+    copy_helper(std::index_sequence_for<Ts...>{});
   }
 
   static constexpr usize kStorageSize = std::max({sizeof(Ts)...});
-  static constexpr usize kStorageAlign = std::max({alignof(Ts)...});
 
-  alignas(kStorageAlign) u8 storage_[kStorageSize];
+  alignas(Ts...) std::byte storage_[kStorageSize];
   TagStorageType tag_;
 };
 
-// Default AutoTaggedUnion alias providing automatically generated enum tag.
+// Default AutoTaggedUnion providing automatically generated enum tag.
 template <typename Head, typename... Tail>
-class AutoTaggedUnion
-    : public TaggedUnion<typename internal::DefaultTagEnum<Head, Tail...>::Type,
-                         Head,
-                         Tail...> {
-  using Base =
-      TaggedUnion<typename internal::DefaultTagEnum<Head, Tail...>::Type,
-                  Head,
-                  Tail...>;
-
- public:
-  using Base::Base;
-};
+using AutoTaggedUnion =
+    TaggedUnion<typename internal::DefaultTagEnum<Head, Tail...>::Type,
+                Head,
+                Tail...>;
 
 }  // namespace base

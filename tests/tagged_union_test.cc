@@ -6,9 +6,11 @@
 
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -26,6 +28,7 @@ enum class CustomTag : u8 {
 struct MoveTracker {
   MoveTracker() = delete;
   explicit MoveTracker(i32* move_count) noexcept : move_count_(move_count) {}
+
   MoveTracker(const MoveTracker&) = delete;
   MoveTracker& operator=(const MoveTracker&) = delete;
 
@@ -33,6 +36,7 @@ struct MoveTracker {
     if (move_count_ != nullptr) {
       (*move_count_)++;
     }
+    other.move_count_ = nullptr;
   }
 
   MoveTracker& operator=(MoveTracker&& other) noexcept {
@@ -41,6 +45,7 @@ struct MoveTracker {
       if (move_count_ != nullptr) {
         (*move_count_)++;
       }
+      other.move_count_ = nullptr;
     }
     return *this;
   }
@@ -78,7 +83,60 @@ struct DtorTracker {
   bool* destroyed_{nullptr};
 };
 
+// Helper struct to track copy operations.
+struct CopyTracker {
+  CopyTracker() = delete;
+  explicit CopyTracker(i32* copy_count) noexcept : copy_count_(copy_count) {}
+
+  CopyTracker(const CopyTracker& other) noexcept
+      : copy_count_(other.copy_count_) {
+    if (copy_count_ != nullptr) {
+      (*copy_count_)++;
+    }
+  }
+
+  CopyTracker& operator=(const CopyTracker& other) noexcept {
+    if (this != &other) {
+      copy_count_ = other.copy_count_;
+      if (copy_count_ != nullptr) {
+        (*copy_count_)++;
+      }
+    }
+    return *this;
+  }
+
+  CopyTracker(CopyTracker&&) noexcept = default;
+  CopyTracker& operator=(CopyTracker&&) noexcept = default;
+  ~CopyTracker() noexcept = default;
+
+  i32* copy_count_{nullptr};
+};
+
 }  // namespace
+
+TEST_CASE("TaggedUnion memory layout and static checks",
+          "[base][tagged_union]") {
+  using SmallUnion = AutoTaggedUnion<u8, u16>;
+  using MixedUnion = TaggedUnion<CustomTag, i32, std::string_view, f64>;
+
+  STATIC_REQUIRE(sizeof(SmallUnion) ==
+                 base::round_up(sizeof(u16) + sizeof(u8), alignof(u16)));
+  STATIC_REQUIRE(alignof(SmallUnion) == alignof(u16));
+
+  STATIC_REQUIRE(sizeof(MixedUnion) == sizeof(std::string_view) + sizeof(u8) +
+                                           alignof(std::string_view) - 1);
+  STATIC_REQUIRE(alignof(MixedUnion) == alignof(std::string_view));
+
+  // Verify type traits propagation.
+  STATIC_REQUIRE(std::is_nothrow_move_constructible_v<SmallUnion>);
+  STATIC_REQUIRE(std::is_nothrow_move_assignable_v<SmallUnion>);
+  STATIC_REQUIRE(std::is_copy_constructible_v<MixedUnion>);
+  STATIC_REQUIRE(std::is_copy_assignable_v<MixedUnion>);
+
+  using NonCopyableUnion = AutoTaggedUnion<MoveTracker, i32>;
+  STATIC_REQUIRE_FALSE(std::is_copy_constructible_v<NonCopyableUnion>);
+  STATIC_REQUIRE_FALSE(std::is_copy_assignable_v<NonCopyableUnion>);
+}
 
 TEST_CASE("Explicit TaggedUnion basic construction and custom enum tag",
           "[base][tagged_union]") {
@@ -176,11 +234,13 @@ TEST_CASE("AutoTaggedUnion lvalue and rvalue reference accessors",
 TEST_CASE("AutoTaggedUnion move semantics", "[base][tagged_union]") {
   i32 move_count = 0;
   AutoTaggedUnion<MoveTracker, i32> u1((MoveTracker(&move_count)));
+  CHECK(u1.is<MoveTracker>());
+  CHECK(move_count == 1);
 
   SECTION("Move constructor") {
     const AutoTaggedUnion<MoveTracker, i32> u2(std::move(u1));
     CHECK(u2.is<MoveTracker>());
-    CHECK(move_count == 2);  // 1 for temp -> u1, 1 for u1 -> u2
+    CHECK(move_count == 2);
   }
 
   SECTION("Move assignment operator") {
@@ -188,6 +248,40 @@ TEST_CASE("AutoTaggedUnion move semantics", "[base][tagged_union]") {
     u2 = std::move(u1);
     CHECK(u2.is<MoveTracker>());
     CHECK(move_count == 2);
+  }
+
+  SECTION("Self move assignment") {
+    AutoTaggedUnion<MoveTracker, i32>* self = &u1;
+    *self = std::move(*self);
+    CHECK(u1.is<MoveTracker>());
+    CHECK(move_count == 1);
+  }
+}
+
+TEST_CASE("AutoTaggedUnion copy semantics", "[base][tagged_union]") {
+  i32 copy_count = 0;
+  using U = AutoTaggedUnion<CopyTracker, i32>;
+  U u1((CopyTracker(&copy_count)));
+
+  SECTION("Copy constructor") {
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+    U u2(u1);
+    CHECK(u2.is<CopyTracker>());
+    CHECK(copy_count == 1);
+  }
+
+  SECTION("Copy assignment operator") {
+    U u2(i32{200});
+    u2 = u1;
+    CHECK(u2.is<CopyTracker>());
+    CHECK(copy_count == 1);
+  }
+
+  SECTION("Self copy assignment") {
+    U* self = &u1;
+    *self = *self;
+    CHECK(u1.is<CopyTracker>());
+    CHECK(copy_count == 0);
   }
 }
 
