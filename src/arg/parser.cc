@@ -125,7 +125,7 @@ bool Parser::short_options(const Command& cmd,
   const std::string_view current = raw_arg.substr(1);  // Strip '-'
 
   for (usize c_idx = 0; c_idx < current.size(); ++c_idx) {
-    char c = current[c_idx];
+    const char c = current[c_idx];
     const Arg* arg = cmd.find_arg_by_short(c);
 
     if (!arg) {

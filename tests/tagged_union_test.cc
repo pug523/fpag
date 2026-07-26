@@ -15,6 +15,13 @@ namespace base {
 
 namespace {
 
+// Helper enum class for explicit TaggedUnion testing.
+enum class CustomTag : u8 {
+  Int = 0,
+  StringView = 1,
+  Float = 2,
+};
+
 // Helper struct to track lifetime without exceptions or heap allocations.
 struct MoveTracker {
   MoveTracker() = delete;
@@ -73,10 +80,57 @@ struct DtorTracker {
 
 }  // namespace
 
-TEST_CASE("TaggedUnion basic construction and type checking",
+TEST_CASE("Explicit TaggedUnion basic construction and custom enum tag",
+          "[base][tagged_union]") {
+  using U = TaggedUnion<CustomTag, i32, std::string_view, f64>;
+
+  SECTION("Construct with first type (i32)") {
+    U u(i32{42});
+    CHECK(u.is<i32>());
+    CHECK_FALSE(u.is<std::string_view>());
+    CHECK_FALSE(u.is<f64>());
+    CHECK(u.tag() == CustomTag::Int);
+    CHECK(u.tag() == U::TagOf<i32>);
+    CHECK(u.tag_raw() == 0);
+    CHECK(u.get<i32>() == 42);
+  }
+
+  SECTION("Construct with second type (std::string_view)") {
+    U u(std::string_view{"explicit_tag"});
+    CHECK_FALSE(u.is<i32>());
+    CHECK(u.is<std::string_view>());
+    CHECK_FALSE(u.is<f64>());
+    CHECK(u.tag() == CustomTag::StringView);
+    CHECK(u.tag() == U::TagOf<std::string_view>);
+    CHECK(u.tag_raw() == 1);
+    CHECK(u.get<std::string_view>() == "explicit_tag");
+  }
+}
+
+TEST_CASE("Explicit TaggedUnion move assignment cleanup",
+          "[base][tagged_union]") {
+  enum class TrackerTag : u8 {
+    Dtor = 0,
+    Int = 1,
+  };
+  using U = TaggedUnion<TrackerTag, DtorTracker, i32>;
+
+  bool destroyed = false;
+  U u1((DtorTracker(&destroyed)));
+  U u2(i32{99});
+
+  // Assigning u2 to u1 should invoke DtorTracker's destructor for u1's current
+  // content.
+  u1 = std::move(u2);
+  CHECK(destroyed);
+  CHECK(u1.is<i32>());
+  CHECK(u1.get<i32>() == 99);
+}
+
+TEST_CASE("AutoTaggedUnion basic construction and type checking",
           "[base][tagged_union]") {
   SECTION("Construct with integer type") {
-    using U = TaggedUnion<i32, std::string_view, f64>;
+    using U = AutoTaggedUnion<i32, std::string_view, f64>;
     U u(i32{42});
     CHECK(u.is<i32>());
     CHECK_FALSE(u.is<std::string_view>());
@@ -87,7 +141,7 @@ TEST_CASE("TaggedUnion basic construction and type checking",
   }
 
   SECTION("Construct with string_view") {
-    using U = TaggedUnion<i32, std::string_view, f64>;
+    using U = AutoTaggedUnion<i32, std::string_view, f64>;
     U u(std::string_view{"hello, tagged_union"});
     CHECK_FALSE(u.is<i32>());
     CHECK(u.is<std::string_view>());
@@ -98,9 +152,9 @@ TEST_CASE("TaggedUnion basic construction and type checking",
   }
 }
 
-TEST_CASE("TaggedUnion lvalue and rvalue reference accessors",
+TEST_CASE("AutoTaggedUnion lvalue and rvalue reference accessors",
           "[base][tagged_union]") {
-  using U = TaggedUnion<i32, std::string>;
+  using U = AutoTaggedUnion<i32, std::string>;
   U u(std::string{"rust_style"});
 
   SECTION("Lvalue ref access") {
@@ -119,28 +173,28 @@ TEST_CASE("TaggedUnion lvalue and rvalue reference accessors",
   }
 }
 
-TEST_CASE("TaggedUnion move semantics", "[base][tagged_union]") {
+TEST_CASE("AutoTaggedUnion move semantics", "[base][tagged_union]") {
   i32 move_count = 0;
-  TaggedUnion<MoveTracker, i32> u1((MoveTracker(&move_count)));
+  AutoTaggedUnion<MoveTracker, i32> u1((MoveTracker(&move_count)));
 
   SECTION("Move constructor") {
-    TaggedUnion<MoveTracker, i32> const u2(std::move(u1));
+    const AutoTaggedUnion<MoveTracker, i32> u2(std::move(u1));
     CHECK(u2.is<MoveTracker>());
     CHECK(move_count == 2);  // 1 for temp -> u1, 1 for u1 -> u2
   }
 
   SECTION("Move assignment operator") {
-    TaggedUnion<MoveTracker, i32> u2(i32{100});
+    AutoTaggedUnion<MoveTracker, i32> u2(i32{100});
     u2 = std::move(u1);
     CHECK(u2.is<MoveTracker>());
     CHECK(move_count == 2);
   }
 }
 
-TEST_CASE("TaggedUnion destructor propagation", "[base][tagged_union]") {
+TEST_CASE("AutoTaggedUnion destructor propagation", "[base][tagged_union]") {
   bool destroyed = false;
   {
-    TaggedUnion<i32, DtorTracker> const u((DtorTracker(&destroyed)));
+    const AutoTaggedUnion<i32, DtorTracker> u((DtorTracker(&destroyed)));
     CHECK_FALSE(destroyed);
   }
   CHECK(destroyed);

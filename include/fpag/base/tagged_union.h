@@ -11,83 +11,20 @@
 
 #include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
+#include "fpag/base/tagged_union_internal.h"
 
 namespace base {
 
-namespace internal {
-
-// Helper trait to find the index of a type in a variadic type list.
-template <typename Target, typename... Ts>
-struct TypeIndex;
-
-template <typename Target, typename Head, typename... Tail>
-struct TypeIndex<Target, Head, Tail...> {
-  static constexpr usize value =
-      std::is_same_v<Target, Head> ? 0 : 1 + TypeIndex<Target, Tail...>::value;
-};
-
-template <typename Target>
-struct TypeIndex<Target> {
-  static constexpr usize value = 0;
-};
-
-// Trait to check if a type exists in a variadic list.
-template <typename Target, typename... Ts>
-struct ContainsType
-    : std::disjunction<std::is_same<std::decay_t<Target>, Ts>...> {};
-
-// Destructor helper for tagged storage.
-template <usize Index, typename... Ts>
-struct UnionDestructor;
-
-template <usize Index>
-struct UnionDestructor<Index> {
-  static void destroy(usize, void*) noexcept {
-    // noop
-  }
-};
-
-template <usize Index, typename Head, typename... Tail>
-struct UnionDestructor<Index, Head, Tail...> {
-  static void destroy(usize tag, void* storage) noexcept {
-    if (tag == Index) {
-      reinterpret_cast<Head*>(storage)->~Head();
-    } else {
-      UnionDestructor<Index + 1, Tail...>::destroy(tag, storage);
-    }
-  }
-};
-
-// Move constructor helper.
-template <usize Index, typename... Ts>
-struct UnionMove;
-
-template <usize Index>
-struct UnionMove<Index> {
-  static void move_construct(usize, void*, void*) noexcept {
-    // noop
-  }
-};
-
-template <usize Index, typename Head, typename... Tail>
-struct UnionMove<Index, Head, Tail...> {
-  static void move_construct(usize tag, void* src, void* dst) noexcept {
-    if (tag == Index) {
-      ::new (dst) Head(std::move(*reinterpret_cast<Head*>(src)));
-    } else {
-      UnionMove<Index + 1, Tail...>::move_construct(tag, src, dst);
-    }
-  }
-};
-
-}  // namespace internal
-
-template <typename... Ts>
+// Generic TaggedUnion implementation supporting explicit or auto-generated
+// TagEnum.
+template <typename TagEnum, typename... Ts>
 class TaggedUnion {
  public:
   static_assert(sizeof...(Ts) > 0, "TaggedUnion requires at least one type.");
+  static_assert(internal::validate_tag_enum<TagEnum, sizeof...(Ts)>(),
+                "TagEnum validation failed.");
 
-  enum class Tag : usize {};
+  using Tag = TagEnum;
 
   template <typename T>
   static constexpr Tag TagOf =
@@ -170,6 +107,21 @@ class TaggedUnion {
 
   alignas(kStorageAlign) u8 storage_[kStorageSize];
   usize tag_;
+};
+
+// Default AutoTaggedUnion alias providing automatically generated enum tag.
+template <typename Head, typename... Tail>
+class AutoTaggedUnion
+    : public TaggedUnion<typename internal::DefaultTagEnum<Head, Tail...>::Type,
+                         Head,
+                         Tail...> {
+  using Base =
+      TaggedUnion<typename internal::DefaultTagEnum<Head, Tail...>::Type,
+                  Head,
+                  Tail...>;
+
+ public:
+  using Base::Base;
 };
 
 }  // namespace base

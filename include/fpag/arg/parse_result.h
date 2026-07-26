@@ -28,7 +28,7 @@ template <typename T>
 class ParseResult {
  public:
   using Storage =
-      base::TaggedUnion<T, std::vector<ParseError>, HelpText, VersionText>;
+      base::AutoTaggedUnion<T, std::vector<ParseError>, HelpText, VersionText>;
 
   ~ParseResult() = default;
 

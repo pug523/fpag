@@ -37,7 +37,7 @@ Err<std::decay_t<E>> make_err(E&& error) noexcept {
 template <typename T, typename E>
 class Result {
  public:
-  using StorageUnion = TaggedUnion<Ok<T>, Err<E>>;
+  using StorageUnion = AutoTaggedUnion<Ok<T>, Err<E>>;
 
   // NOLINTNEXTLINE(google-explicit-constructor, runtime/explicit)
   Result(Ok<T>&& ok) noexcept : union_(std::move(ok)) {}

@@ -225,6 +225,7 @@ on_run(function()
         files
       )
     )
+    os.exec("xmake format")
   end
 end)
 task_end()
