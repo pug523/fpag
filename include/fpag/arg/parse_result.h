@@ -11,130 +11,88 @@
 #include "fpag/arg/parse_error.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/base/debug/check.h"
+#include "fpag/base/tagged_union.h"
 
 namespace arg {
+
+// Wrapper types to distinguish std::string in TaggedUnion.
+struct HelpText {
+  std::string value;
+};
+
+struct VersionText {
+  std::string value;
+};
 
 template <typename T>
 class ParseResult {
  public:
-  ~ParseResult() { reset(); }
+  using Storage =
+      base::TaggedUnion<T, std::vector<ParseError>, HelpText, VersionText>;
+
+  ~ParseResult() = default;
 
   ParseResult(const ParseResult&) = delete;
   ParseResult& operator=(const ParseResult&) = delete;
 
-  ParseResult(ParseResult&& other) noexcept : status_(other.status_) {
-    construct_from(std::move(other));
+  ParseResult(ParseResult&&) noexcept = default;
+  ParseResult& operator=(ParseResult&&) noexcept = default;
+
+  static ParseResult make_ok(T&& obj) {
+    return ParseResult(Storage(std::move(obj)), ParseStatus::Success);
   }
 
-  ParseResult& operator=(ParseResult&& other) noexcept {
-    if (this != &other) {
-      reset();
-      status_ = other.status_;
-      construct_from(std::move(other));
-    }
-    return *this;
+  static ParseResult make_err(std::vector<ParseError>&& errors) {
+    return ParseResult(Storage(std::move(errors)), ParseStatus::Error);
   }
 
-  inline static ParseResult make_ok(T&& obj) {
-    ParseResult res;
-    res.status_ = ParseStatus::Success;
-    new (&res.data_.obj) T(std::move(obj));
-    return res;
+  static ParseResult make_help(std::string&& help) {
+    return ParseResult(Storage(HelpText{std::move(help)}),
+                       ParseStatus::HelpRequested);
   }
 
-  inline static ParseResult make_err(std::vector<ParseError>&& errors) {
-    ParseResult res;
-    res.status_ = ParseStatus::Error;
-    new (&res.data_.errors) std::vector<ParseError>(std::move(errors));
-    return res;
+  static ParseResult make_version(std::string&& version) {
+    return ParseResult(Storage(VersionText{std::move(version)}),
+                       ParseStatus::VersionRequested);
   }
 
-  inline static ParseResult make_help(std::string&& help) {
-    ParseResult res;
-    res.status_ = ParseStatus::HelpRequested;
-    new (&res.data_.help) std::string(std::move(help));
-    return res;
+  ParseStatus status() const noexcept { return status_; }
+
+  bool is_ok() const noexcept { return status_ == ParseStatus::Success; }
+  bool is_err() const noexcept { return status_ == ParseStatus::Error; }
+  bool is_help() const noexcept {
+    return status_ == ParseStatus::HelpRequested;
   }
-
-  inline static ParseResult make_version(std::string&& version) {
-    ParseResult res;
-    res.status_ = ParseStatus::VersionRequested;
-    new (&res.data_.version) std::string(std::move(version));
-    return res;
-  }
-
-  inline ParseStatus status() const { return status_; }
-
-  inline bool is_ok() const { return status_ == ParseStatus::Success; }
-  inline bool is_err() const { return status_ == ParseStatus::Error; }
-  inline bool is_help() const { return status_ == ParseStatus::HelpRequested; }
-  inline bool is_version() const {
+  bool is_version() const noexcept {
     return status_ == ParseStatus::VersionRequested;
   }
 
   T&& unwrap() && {
-    FPAG_DCHECK_EQ(status_, ParseStatus::Success);
-    return std::move(data_.obj);
+    FPAG_DCHECK(is_ok());
+    return std::move(storage_).template get<T>();
   }
 
   std::vector<ParseError>&& unwrap_err() && {
-    FPAG_DCHECK_EQ(status_, ParseStatus::Error);
-    return std::move(data_.errors);
+    FPAG_DCHECK(is_err());
+    return std::move(storage_).template get<std::vector<ParseError>>();
   }
 
   std::string&& unwrap_help() && {
-    FPAG_DCHECK_EQ(status_, ParseStatus::HelpRequested);
-    return std::move(data_.help);
+    FPAG_DCHECK(is_help());
+    return std::move(storage_).template get<HelpText>().value;
   }
 
   std::string&& unwrap_version() && {
-    FPAG_DCHECK_EQ(status_, ParseStatus::VersionRequested);
-    return std::move(data_.version);
+    FPAG_DCHECK(is_version());
+    return std::move(storage_).template get<VersionText>().value;
   }
 
  private:
-  ParseStatus status_ = ParseStatus::Error;
-  union Storage {
-    T obj;
-    std::vector<ParseError> errors;
-    std::string help;
-    std::string version;
+  ParseResult(Storage&& storage, ParseStatus status) noexcept
+      : storage_(std::move(storage)), status_(status) {}
 
-    Storage() noexcept {}
-    ~Storage() noexcept {}
-  } data_;
-
-  ParseResult() noexcept = default;
-
-  void reset() noexcept {
-    using ErrorVec = std::vector<ParseError>;
-    using Str = std::string;
-    switch (status_) {
-      case ParseStatus::Success: data_.obj.~T(); break;
-      case ParseStatus::Error: data_.errors.~ErrorVec(); break;
-      case ParseStatus::HelpRequested: data_.help.~Str(); break;
-      case ParseStatus::VersionRequested: data_.version.~Str(); break;
-    }
-  }
-
-  void construct_from(ParseResult&& other) noexcept {
-    using ErrorVec = std::vector<ParseError>;
-    using Str = std::string;
-    switch (status_) {
-      case ParseStatus::Success:
-        new (&data_.obj) T(std::move(other.data_.obj));
-        break;
-      case ParseStatus::Error:
-        new (&data_.errors) ErrorVec(std::move(other.data_.errors));
-        break;
-      case ParseStatus::HelpRequested:
-        new (&data_.help) Str(std::move(other.data_.help));
-        break;
-      case ParseStatus::VersionRequested:
-        new (&data_.version) Str(std::move(other.data_.version));
-        break;
-    }
-  }
+  Storage storage_;
+  ParseStatus status_;
 };
 
 }  // namespace arg

@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <new>
 #include <type_traits>
 #include <utility>
 
@@ -155,7 +154,7 @@ class TaggedUnion {
   }
 
   template <typename T>
-  T get() && noexcept {
+  T&& get() && noexcept {
     FPAG_DCHECK(is<T>());
     return std::move(*reinterpret_cast<T*>(storage_));
   }
