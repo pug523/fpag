@@ -77,25 +77,25 @@ void raw_check_fail_impl(const char* expr,
   constexpr const char* kFuncSuffix = ")\n";
   constexpr const char* kNewline = "\n";
 
-  ::base::write(kStderrFd, kHeaderPrefix, const_strlen(kHeaderPrefix));
-  ::base::write(kStderrFd, expr, std::strlen(expr));
-  ::base::write(kStderrFd, kHeaderSuffix, const_strlen(kHeaderSuffix));
+  base::write(kStderrFd, kHeaderPrefix, const_strlen(kHeaderPrefix));
+  base::write(kStderrFd, expr, std::strlen(expr));
+  base::write(kStderrFd, kHeaderSuffix, const_strlen(kHeaderSuffix));
 
-  ::base::write(kStderrFd, kAt, const_strlen(kAt));
-  ::base::write(kStderrFd, file, std::strlen(file));
-  ::base::write(kStderrFd, kColon, const_strlen(kColon));
+  base::write(kStderrFd, kAt, const_strlen(kAt));
+  base::write(kStderrFd, file, std::strlen(file));
+  base::write(kStderrFd, kColon, const_strlen(kColon));
 
   char line_buf[kLineBufSize];
   auto result = fmt::format_to_n(line_buf, sizeof(line_buf), "{}", line);
-  ::base::write(kStderrFd, line_buf, result.size);
+  base::write(kStderrFd, line_buf, result.size);
 
-  ::base::write(kStderrFd, kFuncPrefix, const_strlen(kFuncPrefix));
-  ::base::write(kStderrFd, func, std::strlen(func));
-  ::base::write(kStderrFd, kFuncSuffix, const_strlen(kFuncSuffix));
+  base::write(kStderrFd, kFuncPrefix, const_strlen(kFuncPrefix));
+  base::write(kStderrFd, func, std::strlen(func));
+  base::write(kStderrFd, kFuncSuffix, const_strlen(kFuncSuffix));
 
   if (!msg.empty()) {
-    ::base::write(kStderrFd, msg.data(), msg.size());
-    ::base::write(kStderrFd, kNewline, const_strlen(kNewline));
+    base::write(kStderrFd, msg.data(), msg.size());
+    base::write(kStderrFd, kNewline, const_strlen(kNewline));
   }
 
   fatal_crash_impl();

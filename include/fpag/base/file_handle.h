@@ -47,9 +47,7 @@ class FileHandle {
   bool resize(usize new_size);
   usize get_size() const;
 
-  [[nodiscard]] constexpr bool is_valid() const {
-    return handle_ != kInvalidHandle;
-  }
+  [[nodiscard]] bool is_valid() const { return handle_ != kInvalidHandle; }
   [[nodiscard]] constexpr NativeHandle native_handle() const { return handle_; }
   [[nodiscard]] constexpr FileAccess access() const { return access_; }
 

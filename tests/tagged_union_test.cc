@@ -22,7 +22,7 @@ namespace {
 
 // Helper enum class for explicit TaggedUnion testing.
 enum class CustomTag : u8 {
-  Int = 0,
+  Integer = 0,
   StringView = 1,
   Float = 2,
 };
@@ -66,7 +66,7 @@ TEST_CASE("Explicit TaggedUnion basic construction and custom enum tag",
     CHECK(u.is<i32>());
     CHECK_FALSE(u.is<std::string_view>());
     CHECK_FALSE(u.is<f64>());
-    CHECK(u.tag() == CustomTag::Int);
+    CHECK(u.tag() == CustomTag::Integer);
     CHECK(u.tag() == U::TagOf<i32>);
     CHECK(u.tag_raw() == 0);
     CHECK(u.get<i32>() == 42);
@@ -88,7 +88,7 @@ TEST_CASE("Explicit TaggedUnion move assignment cleanup",
           "[base][tagged_union]") {
   enum class TrackerTag : u8 {
     Dtor = 0,
-    Int = 1,
+    Integer = 1,
   };
   using U = TaggedUnion<TrackerTag, DtorTracker, i32>;
 
@@ -184,7 +184,7 @@ TEST_CASE("AutoTaggedUnion copy semantics", "[base][tagged_union]") {
 
   SECTION("Copy constructor") {
     // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-    U const u2(u1);
+    const U u2(u1);
     CHECK(u2.is<CopyTracker>());
     CHECK(copy_count == 1);
   }

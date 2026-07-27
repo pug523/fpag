@@ -108,6 +108,9 @@ bool MemoryMappedFile::map(const FileHandle& file,
   if (populate_now) {
     flags |= MAP_POPULATE;
   }
+#else
+  // To avoid unused parameter warnings
+  (void)(populate_now);
 #endif
 
   void* ptr = ::mmap(nullptr, size_, prot, flags, file.native_handle(),

@@ -73,7 +73,7 @@ void StackTrace::collect_trace() {
 void StackTrace::print_trace(std::string_view prefix) const {
   if (status_ == StackTraceStatus::Failed) [[unlikely]] {
     constexpr const char* kError = "stack trace collection failed";
-    ::base::write(kStderrFd, kError, const_strlen(kError));
+    base::write(kStderrFd, kError, const_strlen(kError));
     return;
   }
 
@@ -82,7 +82,7 @@ void StackTrace::print_trace(std::string_view prefix) const {
       "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
-  ::base::write(kStdoutFd, out.data(), out.size());
+  base::write(kStdoutFd, out.data(), out.size());
 }
 
 std::string StackTrace::to_string() const {

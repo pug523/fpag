@@ -88,16 +88,14 @@ class TaggedUnion {
   constexpr ~TaggedUnion() noexcept { destroy_current(); }
 
   // Returns current active tag.
-  inline constexpr Tag tag() const noexcept { return static_cast<Tag>(tag_); }
+  constexpr Tag tag() const noexcept { return static_cast<Tag>(tag_); }
 
   // Returns current active raw tag index as usize.
-  inline constexpr usize tag_raw() const noexcept {
-    return static_cast<usize>(tag_);
-  }
+  constexpr usize tag_raw() const noexcept { return static_cast<usize>(tag_); }
 
   // Checks if current active type is T.
   template <typename T>
-  inline constexpr bool is() const noexcept {
+  constexpr bool is() const noexcept {
     static_assert(internal::ContainsType<T, Ts...>::value,
                   "Type T is not part of TaggedUnion.");
     return static_cast<usize>(tag_) == internal::TypeIndex<T, Ts...>::value;
@@ -105,19 +103,19 @@ class TaggedUnion {
 
   // Accessors for contained type T with pointer laundering.
   template <typename T>
-  inline constexpr T& get() & noexcept {
+  constexpr T& get() & noexcept {
     FPAG_DCHECK(is<T>());
     return *std::launder(reinterpret_cast<T*>(storage_));
   }
 
   template <typename T>
-  inline constexpr const T& get() const& noexcept {
+  constexpr const T& get() const& noexcept {
     FPAG_DCHECK(is<T>());
     return *std::launder(reinterpret_cast<const T*>(storage_));
   }
 
   template <typename T>
-  inline constexpr T&& get() && noexcept {
+  constexpr T&& get() && noexcept {
     FPAG_DCHECK(is<T>());
     return std::move(*std::launder(reinterpret_cast<T*>(storage_)));
   }
