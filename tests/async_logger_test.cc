@@ -20,13 +20,14 @@
 namespace logging {
 
 TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
-  // AsyncLogger<StdoutSink, LogLevel::Trace> logger;
+  // AsyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
   //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
   //     true));
   AsyncLogger<NullSink, LogLevel::Trace> logger;
   logger.init(NullSink{});
+
   logger.start_backend_worker();
 
   SECTION("simple logging") {
@@ -36,6 +37,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.warn("async sample warning");
     logger.error("async some error");
     logger.fatal("async fatal test");
+    logger.wo_prefix("async wo prefix test");
     logger.flush();
 
     i32 i = 8000;
@@ -77,6 +79,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.warn(FMT_COMPILE("async compiled sample warning"));
     logger.error(FMT_COMPILE("async compiled some error"));
     logger.fatal(FMT_COMPILE("async compiled fatal test"));
+    logger.fatal(FMT_COMPILE("async compiled wo prefix test"));
     logger.flush();
 
     i32 i = 8000;

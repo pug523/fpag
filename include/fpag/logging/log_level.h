@@ -21,7 +21,9 @@ enum class LogLevel : u8 {
   Error = 4,
   Fatal = 5,
 
-  Off = 6,
+  WithoutPrefix = 6,
+
+  Off = (1 << 8) - 1,
   All = 0,
 };
 
@@ -65,10 +67,13 @@ static constexpr std::string_view kAnsiTrueColorPrefixes[] = {
 };
 
 inline constexpr std::string_view log_prefix(LogLevel level,
-                                             base::ColorStyle mode) {
-  using C = base::ColorStyle;
+                                             base::ColorStyle style) {
+  if (level >= LogLevel::WithoutPrefix) {
+    return "";
+  }
   const u8 l = static_cast<u8>(level);
-  switch (mode) {
+  switch (style) {
+    using C = base::ColorStyle;
     case C::Off: return kPlainPrefixes[l];
     case C::Ansi16: return kAnsi16Prefixes[l];
     case C::Ansi256: return kAnsi256Prefixes[l];

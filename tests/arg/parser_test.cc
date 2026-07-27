@@ -379,7 +379,7 @@ TEST_CASE("Parser builtin help and version triggers", "[arg][parser]") {
     const ParseStatus status = parser.parse(args, &matches);
     CHECK(status == ParseStatus::HelpRequested);
     CHECK_FALSE(parser.help_message().empty());
-    FPAG_DLOG("sample help message:\n{}", parser.help_message());
+    // FPAG_DLOG("sample help message:\n{}", parser.help_message());
   }
 
   SECTION("Trigger builtin help (-h)") {

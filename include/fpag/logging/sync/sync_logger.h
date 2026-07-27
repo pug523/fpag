@@ -66,6 +66,11 @@ class SyncLogger {
     log<LogLevel::Fatal>(fmt, std::forward<Args>(args)...);
   }
 
+  template <typename Format, typename... Args>
+  void wo_prefix(Format fmt, Args&&... args) {
+    log<LogLevel::WithoutPrefix>(fmt, std::forward<Args>(args)...);
+  }
+
  private:
   static consteval bool should_log(LogLevel level) {
     return level >= kMinLevel;

@@ -10,7 +10,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
 #include "fpag/base/console.h"
-#include "fpag/base/debug/dlog.h"
+// #include "fpag/base/debug/dlog.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"
@@ -21,7 +21,7 @@
 namespace logging {
 
 TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
-  // SyncLogger<StdoutSink, LogLevel::Off> logger;
+  // SyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
   //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
@@ -36,6 +36,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.warn("synced sample warning");
     logger.error("synced some error");
     logger.fatal("synced fatal test");
+    logger.wo_prefix("synced wo prefix test");
     logger.flush();
 
     i32 i = 8000;
@@ -75,6 +76,7 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.warn(FMT_COMPILE("synced compiled sample warning"));
     logger.error(FMT_COMPILE("synced compiled some error"));
     logger.fatal(FMT_COMPILE("synced compiled fatal test"));
+    logger.wo_prefix(FMT_COMPILE("synced compiled wo prefix test"));
     logger.flush();
 
     i32 i = 8000;
@@ -109,11 +111,11 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
     logger.flush();
   }
 
-  SECTION("dlog") {
-    FPAG_DLOG("dlog testing {}", 168);
-    const i32 i = 8910;
-    FPAG_DLOG("dlog testing2 {}", i);
-  }
+  // SECTION("dlog") {
+  //   FPAG_DLOG("dlog testing {}", 168);
+  //   const i32 i = 8910;
+  //   FPAG_DLOG("dlog testing2 {}", i);
+  // }
 }
 
 }  // namespace logging

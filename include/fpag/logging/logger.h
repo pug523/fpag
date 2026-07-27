@@ -18,6 +18,7 @@ concept Logger = requires(T& logger) {
   logger.warn("{}", 168);
   logger.error("{}", 168);
   logger.fatal("{}", 168);
+  logger.wo_prefix("{}", 168);
 
   logger.trace(std::string_view{});
   logger.debug(std::string_view{});
@@ -25,6 +26,7 @@ concept Logger = requires(T& logger) {
   logger.warn(std::string_view{});
   logger.error(std::string_view{});
   logger.fatal(std::string_view{});
+  logger.wo_prefix(std::string_view{});
 
   logger.trace(FMT_COMPILE("{}"), 8000);
   logger.debug(FMT_COMPILE("{}"), 8000);
@@ -32,4 +34,5 @@ concept Logger = requires(T& logger) {
   logger.warn(FMT_COMPILE("{}"), 8000);
   logger.error(FMT_COMPILE("{}"), 8000);
   logger.fatal(FMT_COMPILE("{}"), 8000);
+  logger.wo_prefix(FMT_COMPILE("{}"), 8000);
 };

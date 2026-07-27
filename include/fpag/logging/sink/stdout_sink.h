@@ -42,7 +42,7 @@ class StdoutSink {
     // Prefix is " info: ", "error: ", etc.
     const std::string_view prefix = log_prefix(entry.level, color_style_);
 
-    if (!use_buffer_) {
+    if (!use_buffer_ && !prefix.empty()) {
       directly_write(prefix, entry.message);
       return;
     }

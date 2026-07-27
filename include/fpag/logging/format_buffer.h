@@ -5,9 +5,10 @@
 #pragma once
 
 #include "fmt/format.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace logging {
 
-using format_buffer = fmt::basic_memory_buffer<char, 4096>;
+using format_buffer = fmt::basic_memory_buffer<char, mem::kPageSize>;
 
 }
