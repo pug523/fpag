@@ -67,17 +67,17 @@ class SimpleConcurrentHashMap {
     return *this;
   }
 
-  inline void reserve(u64 capacity) {
+  void reserve(u64 capacity) {
     FPAG_DCHECK_MSG(is_power_of_two(capacity),
                     "capacity must be a power of two");
-    capacity_ = capacity;
+    capacity_ = base::round_up(capacity, mem::page_size());
     void* const raw_mem = mem::allocate_pages(sizeof(Entry) * capacity_);
     std::memset(raw_mem, 0, sizeof(Entry) * capacity_);
     entries_ = static_cast<Entry*>(raw_mem);
     FPAG_DCHECK(entries_);
   }
 
-  inline void reset() {
+  void reset() {
     if (entries_) {
       mem::free_pages(
           entries_, sizeof(Entry) * capacity_.load(std::memory_order_relaxed));
@@ -193,7 +193,7 @@ class SimpleConcurrentHashMap {
   static constexpr u64 kEmptyHash = 0;
   static constexpr u64 kLockedHash = std::numeric_limits<u64>::max();
 
-  inline u64 hash(const K& key) const {
+  u64 hash(const K& key) const {
     const u64 h = hasher_(key);
     if (h == kEmptyHash || h == kLockedHash) [[unlikely]] {
       return 1;

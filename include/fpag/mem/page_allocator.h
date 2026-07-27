@@ -58,5 +58,4 @@ inline bool is_mmap_aligned_size(usize size) {
   return size % mmap_alignment() == 0;
 }
 
-
 }  // namespace mem
