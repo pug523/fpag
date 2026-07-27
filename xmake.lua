@@ -135,19 +135,14 @@ end
 local subdirs = { "src", "include", "tests", "benchmarks" }
 
 local function source_files()
-  local files = os.files("src/**/*.cc")
-  table.join2(files, os.files("src/**/*.h"))
-  table.join2(files, os.files("include/**/*.h"))
-
-  if has_config("tests") then
-    table.join2(files, os.files("tests/**/*.cc"))
-    table.join2(files, os.files("tests/**/*.h"))
-  end
-
-  if has_config("benchmarks") then
-    table.join2(files, os.files("benchmarks/**/*.cc"))
-    table.join2(files, os.files("benchmarks/**/*.h"))
-  end
+  local files = {}
+  table.join2(files, os.files("src/**.cc"))
+  table.join2(files, os.files("src/**.h"))
+  table.join2(files, os.files("include/**.h"))
+  table.join2(files, os.files("tests/**.cc"))
+  table.join2(files, os.files("tests/**.h"))
+  table.join2(files, os.files("benchmarks/**.cc"))
+  table.join2(files, os.files("benchmarks/**.h"))
   return files
 end
 
