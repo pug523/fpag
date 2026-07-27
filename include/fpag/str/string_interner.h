@@ -33,19 +33,19 @@ class StringInterner {
   StringInterner(StringInterner&&) noexcept = delete;
   StringInterner& operator=(StringInterner&&) noexcept = delete;
 
-  void init(usize map_capacity) { map_.reserve(map_capacity); }
+  constexpr void init(usize map_capacity) { map_.reserve(map_capacity); }
 
   // Interns the string and returns a stable StringId.
   StringId intern(const std::string_view str);
 
-  inline std::string_view get(StringId id) const { return pool_.get(id); }
-  inline const StringPool& pool() const { return pool_; }
-  inline const Map& map() const { return map_; }
+  constexpr std::string_view get(StringId id) const { return pool_.get(id); }
+  constexpr const StringPool& pool() const { return pool_; }
+  constexpr const Map& map() const { return map_; }
 
   // Returns the total size of all strings in the pool.
-  inline usize size() const { return pool_.size(); }
+  constexpr usize size() const { return pool_.size(); }
   // Returns the number of strings in the pool.
-  inline usize string_count() const { return pool_.string_count(); }
+  constexpr usize string_count() const { return pool_.string_count(); }
 
  private:
   StringPool pool_;

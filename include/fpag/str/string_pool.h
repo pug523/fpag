@@ -29,22 +29,22 @@ class StringPool {
   StringPoolId append(const std::string_view str,
                       std::string_view* out = nullptr);
 
-  inline std::string_view get(StringPoolId id) const {
+  std::string_view get(StringPoolId id) const {
     return {reinterpret_cast<const char*>(arena_.base_ptr()) + id.offset,
             id.length};
   }
 
-  inline void reset() {
+  constexpr void reset() {
     arena_.reset();
     size_.store(0, std::memory_order_relaxed);
     string_count_.store(0, std::memory_order_relaxed);
   }
 
   // Returns the total size of all strings in the pool.
-  inline usize size() const { return size_; }
+  constexpr usize size() const { return size_; }
 
   // Returns the number of strings in the pool.
-  inline usize string_count() const { return string_count_; }
+  constexpr usize string_count() const { return string_count_; }
 
   static constexpr usize kMaxStringPoolCapacity = 64ull * 1024 * 1024 * 1024;
 
