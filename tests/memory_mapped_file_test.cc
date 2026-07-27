@@ -5,14 +5,15 @@
 #include "fpag/base/memory_mapped_file.h"
 
 #include <cstring>
+#include <span>
 #include <string_view>
 #include <utility>
-#include <span>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/file_handle.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/temp_file.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace base {
 
@@ -23,7 +24,7 @@ constexpr std::string_view kTestContent = "Hello, MemoryMappedFile Test!";
 }  // namespace
 
 TEST_CASE("FileHandle basic lifetime and resizing", "[base][file_handle]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   FileHandle handle;
@@ -59,7 +60,7 @@ TEST_CASE("FileHandle basic lifetime and resizing", "[base][file_handle]") {
 
 TEST_CASE("MemoryMappedFile write and read roundtrip",
           "[base][memory_mapped_file]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   constexpr usize kFileSize = 1024;
@@ -78,7 +79,7 @@ TEST_CASE("MemoryMappedFile write and read roundtrip",
 
       mmap_writer.advise(AdviceHint::Sequential);
 
-      std::span<u8> const buffer = mmap_writer.as_span();
+      const std::span<u8> buffer = mmap_writer.as_span();
       std::memcpy(buffer.data(), kTestContent.data(), kTestContent.size());
 
       CHECK(mmap_writer.flush(/*synchronous=*/true));
@@ -94,7 +95,7 @@ TEST_CASE("MemoryMappedFile write and read roundtrip",
       CHECK(mmap_reader.is_mapped());
       CHECK(mmap_reader.size() == kFileSize);
 
-      std::span<const u8> const read_buffer = mmap_reader.as_span();
+      const std::span<const u8> read_buffer = mmap_reader.as_span();
       std::string_view read_text(
           reinterpret_cast<const char*>(read_buffer.data()),
           kTestContent.size());
@@ -106,7 +107,7 @@ TEST_CASE("MemoryMappedFile write and read roundtrip",
 
 TEST_CASE("MemoryMappedFile move semantics and resource cleanup",
           "[base][memory_mapped_file]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   constexpr usize kFileSize = 512;
@@ -145,10 +146,10 @@ TEST_CASE("MemoryMappedFile move semantics and resource cleanup",
 
 TEST_CASE("MemoryMappedFile offset and partial mapping",
           "[base][memory_mapped_file]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
-  constexpr usize kPageSize = 4096;
+  using mem::kPageSize;
   constexpr usize kTotalSize = kPageSize * 2;
 
   FileHandle file;
@@ -161,10 +162,17 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
   CHECK(mmap.is_mapped());
   CHECK(mmap.size() == kPageSize);
 
-  std::span<u8> const buffer = mmap.as_span();
+  const std::span<u8> buffer = mmap.as_span();
   buffer[0] = 'Z';
 
   CHECK(mmap.flush());
+
+  SECTION("Map with offset or length out of file bounds should fail") {
+    MemoryMappedFile mmap_invalid;
+
+    CHECK_FALSE(mmap_invalid.map(file, kTotalSize, kPageSize));
+    CHECK_FALSE(mmap_invalid.map(file, kPageSize, kTotalSize));
+  }
 }
 
 }  // namespace base

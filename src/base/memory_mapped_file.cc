@@ -63,7 +63,18 @@ bool MemoryMappedFile::map(const FileHandle& file,
     return false;
   }
 
-  size_ = (length == 0) ? (file_size - offset) : length;
+  if (offset >= file_size) {
+    return false;
+  }
+
+  if (length == 0) {
+    size_ = file_size - offset;
+  } else {
+    if (offset + length < offset || (offset + length) > file_size) {
+      return false;
+    }
+    size_ = length;
+  }
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   const bool read_write = (file.access() == FileAccess::ReadWrite);
@@ -150,10 +161,13 @@ bool MemoryMappedFile::flush(bool synchronous) {
   }
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
+  (void)(synchronous);
   return ::FlushViewOfFile(data_, size_) != 0;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   const i32 flags = synchronous ? MS_SYNC : MS_ASYNC;
   return ::msync(data_, size_, flags) == 0;
+#else
+  (void)(synchronous);
 #endif
 }
 
@@ -171,6 +185,8 @@ void MemoryMappedFile::advise(AdviceHint hint) {
     default: break;
   }
   ::madvise(data_, size_, native_hint);
+#else
+  (void)(hint);
 #endif
 }
 
