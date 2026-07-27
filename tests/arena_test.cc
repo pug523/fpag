@@ -15,7 +15,7 @@
 
 namespace mem {
 
-TEST_CASE("Arena basic allocation and alignment", "[base][arena]") {
+TEST_CASE("Arena basic allocation and alignment", "[mem][arena]") {
   Arena arena;
 
   SECTION("Initial state is zeroed") {
@@ -54,7 +54,7 @@ TEST_CASE("Arena basic allocation and alignment", "[base][arena]") {
   }
 }
 
-TEST_CASE("Arena object creation", "[base][arena]") {
+TEST_CASE("Arena object creation", "[mem][arena]") {
   Arena arena;
   arena.reserve(kPageSize);
 
@@ -93,7 +93,7 @@ TEST_CASE("Arena object creation", "[base][arena]") {
   }
 }
 
-TEST_CASE("Arena move semantics", "[base][arena]") {
+TEST_CASE("Arena move semantics", "[mem][arena]") {
   SECTION("Move constructor") {
     Arena arena1;
     arena1.reserve(kPageSize);
@@ -117,7 +117,7 @@ TEST_CASE("Arena move semantics", "[base][arena]") {
   }
 }
 
-TEST_CASE("Arena edge cases", "[base][arena]") {
+TEST_CASE("Arena edge cases", "[mem][arena]") {
   Arena arena;
   arena.reserve(64ull * 1024 * 1024 * 1024);  // 64 GiB
 
