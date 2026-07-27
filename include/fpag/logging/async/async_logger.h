@@ -36,7 +36,7 @@ class AsyncLogger {
   constexpr void init(
       S&& sink,
       usize interner_map_capacity = static_cast<usize>(16 * 1024),
-      usize queue_capacity = base::SpscQueue::kDefaultCapacity,
+      usize queue_capacity = base::SpscQueue::default_capacity(),
       base::SpscQueue::Mode mode = base::SpscQueue::Mode::Default) {
     interner_.init(interner_map_capacity);
     worker_.init(std::move(sink), &interner_, queue_capacity, mode);

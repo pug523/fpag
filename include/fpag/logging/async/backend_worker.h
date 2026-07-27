@@ -45,7 +45,7 @@ class BackendWorker {
 
   void init(S&& sink,
             const str::StringInterner* interner,
-            usize queue_capacity = base::SpscQueue::kDefaultCapacity,
+            usize queue_capacity = base::SpscQueue::default_capacity(),
             base::SpscQueue::Mode mode = base::SpscQueue::Mode::Default) {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                        InternalStatus::NotInitialized,

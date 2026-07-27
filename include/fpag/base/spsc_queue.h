@@ -6,8 +6,10 @@
 
 #include <atomic>
 
+#include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
 #include "fpag/mem/cache.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace base {
 
@@ -42,7 +44,7 @@ class SpscQueue {
 
   // Initialize the queue with the given data buffer and capacity.
   // `capacity` must be a power of 2.
-  void init(usize capacity = kDefaultCapacity, Mode mode = Mode::Default);
+  void init(usize capacity = default_capacity(), Mode mode = Mode::Default);
   void reset();
 
   // Zero-copied consumer interface
@@ -59,42 +61,44 @@ class SpscQueue {
   // Copied enqueue (wrapper of reserve/commit)
   EnqueueStatus enqueue(const void* new_data, usize size, usize align = 1);
 
-  inline usize capacity() const { return capacity_; }
-  inline usize size() const {
+  usize capacity() const { return capacity_; }
+  usize size() const {
     return tail_.load(std::memory_order_relaxed) -
            head_.load(std::memory_order_relaxed);
   }
-  inline bool empty() const { return size() == 0; }
-  inline usize available() const { return capacity_ - size(); }
+  bool empty() const { return size() == 0; }
+  usize available() const { return capacity_ - size(); }
 
-  inline usize size_consumer() const {
+  usize size_consumer() const {
     return tail_.load(std::memory_order_relaxed) - head_cache_;
   }
-  inline usize size_producer() const {
+  usize size_producer() const {
     return tail_cache_ - head_.load(std::memory_order_relaxed);
   }
 
-  inline const char* head_ptr() const {
+  const char* head_ptr() const {
     return data_ + (head_.load(std::memory_order_acquire) & capacity_mask());
   }
 
-  inline char* tail_ptr() {
+  char* tail_ptr() {
     return data_ + (tail_.load(std::memory_order_acquire) & capacity_mask());
   }
 
-  inline usize head_cache() const { return head_cache_; }
-  inline usize tail_cache() const { return tail_cache_; }
+  usize head_cache() const { return head_cache_; }
+  usize tail_cache() const { return tail_cache_; }
 
-  inline usize dropped_count() const { return dropped_count_; }
-  inline usize blocked_count() const { return blocked_count_; }
+  usize dropped_count() const { return dropped_count_; }
+  usize blocked_count() const { return blocked_count_; }
 
-  static constexpr usize kDefaultCapacity = 1 << 12;                  // 4 KiB
+  static usize default_capacity() {
+    return base::next_power_of_two(mem::page_size());
+  }
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
 
  private:
-  inline usize capacity_mask() const { return capacity_ - 1; }
+  usize capacity_mask() const { return capacity_ - 1; }
 
-  inline usize available_producer() const;
+  usize available_producer() const;
 
   void wait_for_space_producer(usize size) const;
 

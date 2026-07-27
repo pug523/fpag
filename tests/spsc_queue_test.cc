@@ -14,17 +14,17 @@ namespace {
 TEST_CASE("SpscQueue Constructor and Capacity", "[SpscQueueTest]") {
   SpscQueue queue_small;
   queue_small.init();
-  CHECK(queue_small.capacity() == SpscQueue::kDefaultCapacity);
+  CHECK(queue_small.capacity() == SpscQueue::default_capacity());
   CHECK(queue_small.empty());
   CHECK(queue_small.size() == 0);
-  CHECK(queue_small.available() == SpscQueue::kDefaultCapacity);
+  CHECK(queue_small.available() == SpscQueue::default_capacity());
 
   SpscQueue queue_large;
-  queue_large.init(SpscQueue::kDefaultCapacity * 1024);
-  CHECK(queue_large.capacity() == SpscQueue::kDefaultCapacity * 1024);
+  queue_large.init(SpscQueue::default_capacity() * 1024);
+  CHECK(queue_large.capacity() == SpscQueue::default_capacity() * 1024);
   CHECK(queue_large.empty());
   CHECK(queue_large.size() == 0);
-  CHECK(queue_large.available() == SpscQueue::kDefaultCapacity * 1024);
+  CHECK(queue_large.available() == SpscQueue::default_capacity() * 1024);
 }
 
 TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
@@ -44,7 +44,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     queue.commit(sizeof(kDataIn));
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kDataIn));
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kDataIn));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kDataIn));
 
     const char* peeked = queue.peek(sizeof(kDataIn));
     const i32* data_out_ptr = reinterpret_cast<const i32*>(peeked);
@@ -52,7 +52,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     queue.discard(sizeof(data_out_copied));
     CHECK(queue.empty());
     CHECK(queue.size() == 0);
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity);
+    CHECK(queue.available() == SpscQueue::default_capacity());
     CHECK(data_out_copied == kDataIn);
   }
 
@@ -68,7 +68,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     queue.commit(sizeof(kCharIn));
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kCharIn));
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kCharIn));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kCharIn));
 
     const char char_out =
         *reinterpret_cast<const char*>(queue.peek(sizeof(kCharIn)));
@@ -85,13 +85,13 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kDataIn));
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kDataIn));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kDataIn));
 
     i32 data_out = 0;
     queue.dequeue(static_cast<void*>(&data_out), sizeof(data_out));
     CHECK(queue.empty());
     CHECK(queue.size() == 0);
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity);
+    CHECK(queue.available() == SpscQueue::default_capacity());
     CHECK(data_out == kDataIn);
   }
 
@@ -103,7 +103,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
     CHECK(queue.size() == sizeof(kCharIn));
-    CHECK(queue.available() == SpscQueue::kDefaultCapacity - sizeof(kCharIn));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kCharIn));
 
     char char_out = 0;
     queue.dequeue(&char_out, sizeof(kCharIn));
