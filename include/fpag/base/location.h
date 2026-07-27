@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <source_location>
 #include <string_view>
 
 #include "fpag/base/numeric.h"
-#include "fpag/build/build_config.h"
 
 namespace base {
 
@@ -17,33 +17,27 @@ struct Location {
   u32 line = 0;
   u32 column = 0;
 
-  constexpr std::string_view file_name() const { return file; };
-  constexpr std::string_view function_name() const { return function; };
+  constexpr std::string_view file_name() const { return file; }
+  constexpr std::string_view function_name() const { return function; }
 
-  constexpr bool valid_file() const { return file[0] != '\0'; }
-  constexpr bool valid_function() const { return function[0] != '\0'; }
+  constexpr bool valid_file() const { return file && file[0] != '\0'; }
+  constexpr bool valid_function() const {
+    return function && function[0] != '\0';
+  }
   constexpr bool valid_line() const { return line > 0; }
   constexpr bool valid_column() const { return column > 0; }
+
+  static constexpr Location current(
+      std::source_location loc = std::source_location::current()) noexcept {
+    return Location{
+        .file = loc.file_name(),
+        .function = loc.function_name(),
+        .line = loc.line(),
+        .column = loc.column(),
+    };
+  }
 };
 
 }  // namespace base
 
-#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
-#define BASE_LOCATION_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
-#define BASE_LOCATION_PRETTY_FUNCTION __FUNCSIG__
-#else
-#define BASE_LOCATION_PRETTY_FUNCTION __func__
-#endif
-
-#if defined(__has_builtin) && __has_builtin(__builtin_COLUMN)
-#define BASE_LOCATION_COLUMN __builtin_COLUMN()
-#else
-#define BASE_LOCATION_COLUMN 0
-#endif
-
-#define FROM_HERE()                                              \
-  ::base::Location {                                             \
-    .file = __FILE__, .function = BASE_LOCATION_PRETTY_FUNCTION, \
-    .line = __LINE__, .column = BASE_LOCATION_COLUMN,            \
-  }
+#define FROM_HERE() ::base::Location::current()

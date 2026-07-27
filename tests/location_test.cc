@@ -12,7 +12,7 @@ namespace base {
 
 TEST_CASE("Location default initialization and validity", "[base][location]") {
   SECTION("Default constructed Location") {
-    Location const loc{};
+    const Location loc{};
     CHECK(loc.file_name().empty());
     CHECK(loc.function_name().empty());
     CHECK(loc.line == 0);
@@ -25,7 +25,7 @@ TEST_CASE("Location default initialization and validity", "[base][location]") {
   }
 
   SECTION("Custom populated Location") {
-    Location const loc{
+    const Location loc{
         .file = "test_file.cc",
         .function = "test_func",
         .line = 168,
@@ -43,6 +43,17 @@ TEST_CASE("Location default initialization and validity", "[base][location]") {
 
 TEST_CASE("FROM_HERE macro validation", "[base][location]") {
   const Location loc = FROM_HERE();
+
+  CHECK(loc.valid_file());
+  CHECK(loc.valid_function());
+  CHECK(loc.valid_line());
+  CHECK(loc.file_name().ends_with("location_test.cc"));
+  CHECK_FALSE(loc.function_name().empty());
+  CHECK(loc.line > 0);
+}
+
+TEST_CASE("Location::current construction validation", "[base][location]") {
+  const Location loc = Location::current();
 
   CHECK(loc.valid_file());
   CHECK(loc.valid_function());

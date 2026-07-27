@@ -8,8 +8,8 @@
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/debug/thread_id.h"
 #include "fpag/base/debug/process_id.h"
+#include "fpag/base/debug/thread_id.h"
 #include "fpag/base/location.h"
 #include "fpag/base/profiler/profile_event.h"
 
@@ -25,7 +25,7 @@ TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
     test_profiler.record_event(ProfileEvent{
         .name = "ignored_event",
         .category = "test",
-        .location = FROM_HERE(),
+        .location = Location::current(),
         .start_time_ns = 1000,
         .duration_ns = 500,
         .thread_id = 1,
@@ -39,7 +39,7 @@ TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
     Profiler test_profiler;
     test_profiler.start();
 
-    const Location loc = FROM_HERE();
+    const Location loc = Location::current();
     test_profiler.record_event(ProfileEvent{
         .name = "valid_event",
         .category = "test",

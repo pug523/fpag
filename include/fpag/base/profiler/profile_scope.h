@@ -65,15 +65,16 @@ class ProfileScope {
 #define FPAG_PROFILE_SCOPE_CONCAT(a, b) FPAG_PROFILE_SCOPE_CONCAT_IMPL(a, b)
 
 // Profiler injection macros
-#define PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, category) \
-  const ::base::ProfileScope FPAG_PROFILE_SCOPE_CONCAT(                    \
-      _profile_scope_, __LINE__)(profiler, name, FROM_HERE(), category)
+#define PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, category)    \
+  const ::base::ProfileScope FPAG_PROFILE_SCOPE_CONCAT(                       \
+      _profile_scope_, __LINE__)(profiler, name, ::base::Location::current(), \
+                                 category)
 
 #define PROFILE_SCOPE_WITH_PROFILER(profiler, name) \
   PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, "default")
 
 #define PROFILE_FUNCTION_WITH_PROFILER(profiler) \
-  PROFILE_SCOPE_WITH_PROFILER(profiler, BASE_LOCATION_PRETTY_FUNCTION)
+  PROFILE_SCOPE_WITH_PROFILER(profiler, ::base::Location::current().function)
 
 // Default global profiler macros
 #define PROFILE_SCOPE_WITH_CATEGORY(name, category)                           \
