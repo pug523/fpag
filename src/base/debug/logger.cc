@@ -10,7 +10,7 @@ namespace base {
 
 DebugLogger debug_logger;
 
-void init_logger() {
+void init_debug_logger() {
   // debug_logger.init(logging::StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
   //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
