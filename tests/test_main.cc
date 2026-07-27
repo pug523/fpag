@@ -8,6 +8,9 @@
 #include "fpag/base/debug/terminate_handler.h"
 #include "fpag/base/exit_handler.h"
 #include "fpag/base/numeric.h"
+#include "fpag/base/profiler/profile_scope.h"
+#include "fpag/base/profiler/profiler.h"
+#include "fpag/base/profiler/time_trace_formatter.h"
 
 #define CATCH_CONFIG_RUNNER
 
@@ -16,15 +19,18 @@ void init() {
   base::register_exit_handler();
   base::register_terminate_handler();
   base::register_signal_handlers();
+
+  base::Profiler::global().start();
 }
 
 void clean_up() {
-  // noop
+  base::Profiler::global().stop();
+  base::TimeTraceFormatter::write_to_file("test_time_trace.json",
+                                          base::Profiler::global().events());
 }
 
-i32 main(i32 argc, char** argv) {
-  init();
-
+i32 run_tests(i32 argc, char** argv) {
+  PROFILE_FUNCTION();
   Catch::Session session;
 
   const i32 return_code = session.applyCommandLine(argc, argv);
@@ -32,7 +38,13 @@ i32 main(i32 argc, char** argv) {
     return return_code;
   }
 
-  const i32 result = session.run();
+  return session.run();
+}
+
+i32 main(i32 argc, char** argv) {
+  init();
+
+  const i32 result = run_tests(argc, argv);
 
   clean_up();
 
