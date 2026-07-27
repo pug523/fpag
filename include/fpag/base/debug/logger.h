@@ -13,6 +13,8 @@ namespace base {
 using DebugLogger =
     logging::SyncLogger<logging::StdoutSink, logging::LogLevel::Debug>;
 
-DebugLogger& debug_logger();
+extern DebugLogger debug_logger;
+
+void init_debug_logger();
 
 }  // namespace base
