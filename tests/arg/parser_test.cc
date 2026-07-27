@@ -15,7 +15,7 @@
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_status.h"
-#include "fpag/base/debug/dlog.h"
+// #include "fpag/base/debug/dlog.h"
 
 namespace arg {
 
@@ -397,7 +397,7 @@ TEST_CASE("Parser builtin help and version triggers", "[arg][parser]") {
     const ParseStatus status = parser.parse(args, &matches);
     CHECK(status == ParseStatus::VersionRequested);
     CHECK(parser.root_command().version() == "1.0.0");
-    FPAG_DLOG("sample version message:\n{}", parser.version_message());
+    // FPAG_DLOG("sample version message:\n{}", parser.version_message());
   }
 
   SECTION("Trigger builtin version (-v)") {
