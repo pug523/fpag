@@ -10,7 +10,7 @@
 namespace mem {
 
 TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
-  const usize size = kPageSize * 4;
+  const usize size = page_size() * 4;
 
   SECTION("Standard page allocation") {
     // Test basic allocation and deallocation.
@@ -53,16 +53,10 @@ TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
   }
 
   SECTION("Huge page allocation") {
-    void* ptr = allocate_huge_pages(kHugePageSize);
+    void* ptr = allocate_huge_pages(huge_page_size());
     CHECK(ptr != nullptr);
-    free_pages(ptr, kHugePageSize);
+    free_pages(ptr, huge_page_size());
   }
-}
-
-TEST_CASE("Constants validation", "[base][memory]") {
-  // Ensure constants match expected architectural values
-  CHECK(kPageSize == 4096);
-  CHECK(kHugePageSize == 2097152);  // 2 MiB
 }
 
 }  // namespace mem

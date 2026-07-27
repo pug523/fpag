@@ -97,7 +97,7 @@ void* ConcurrentArena::alloc(usize size, usize align) {
       break;
     }
 
-    usize new_committed = base::round_up(new_size, kPageSize);
+    usize new_committed = base::round_up(new_size, page_size());
     if (new_committed > capacity_) [[unlikely]] {
       new_committed = capacity_;
     }

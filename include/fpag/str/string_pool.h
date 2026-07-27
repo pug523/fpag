@@ -34,17 +34,17 @@ class StringPool {
             id.length};
   }
 
-  constexpr void reset() {
+  void reset() {
     arena_.reset();
     size_.store(0, std::memory_order_relaxed);
     string_count_.store(0, std::memory_order_relaxed);
   }
 
   // Returns the total size of all strings in the pool.
-  constexpr usize size() const { return size_; }
+  usize size() const { return size_; }
 
   // Returns the number of strings in the pool.
-  constexpr usize string_count() const { return string_count_; }
+  usize string_count() const { return string_count_; }
 
   static constexpr usize kMaxStringPoolCapacity = 64ull * 1024 * 1024 * 1024;
 

@@ -226,4 +226,30 @@ void free_pages(void* ptr, usize size) {
 #endif
 }
 
+usize page_size() {
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
+  static const usize page_size = static_cast<usize>(::sysconf(_SC_PAGESIZE));
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
+  static const usize page_size = []() {
+    SYSTEM_INFO sys_info;
+    ::GetSystemInfo(&sys_info);
+    return static_cast<usize>(sys_info.dwPageSize);
+  }();
+#else
+  static const usize page_size = 4096;
+#endif
+  return page_size;
+}
+
+usize huge_page_size() {
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+  static const usize sz = []() {
+    return static_cast<usize>(::GetLargePageMinimum());
+  }();
+  return sz;
+#else
+  return static_cast<usize>(2 * 1024 * 1024);
+#endif
+}
+
 }  // namespace mem

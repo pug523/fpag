@@ -24,13 +24,13 @@ TEST_CASE("Arena basic allocation and alignment", "[mem][arena]") {
   }
 
   SECTION("Reserve") {
-    arena.reserve(kPageSize);
-    CHECK(arena.capacity() == kPageSize);
+    arena.reserve(page_size());
+    CHECK(arena.capacity() == page_size());
     CHECK(arena.size() == 0);
   }
 
   SECTION("Small allocation alignment") {
-    arena.reserve(kPageSize);
+    arena.reserve(page_size());
 
     // Preservation with default alignment
     void* ptr1 = arena.alloc(1);
@@ -45,7 +45,7 @@ TEST_CASE("Arena basic allocation and alignment", "[mem][arena]") {
   }
 
   SECTION("Custom alignment requirements") {
-    arena.reserve(kPageSize);
+    arena.reserve(page_size());
 
     // Preservation with 64 B alignment
     void* ptr = arena.alloc(10, 64);
@@ -56,7 +56,7 @@ TEST_CASE("Arena basic allocation and alignment", "[mem][arena]") {
 
 TEST_CASE("Arena object creation", "[mem][arena]") {
   Arena arena;
-  arena.reserve(kPageSize);
+  arena.reserve(page_size());
 
   SECTION("create<T> for i32") {
     i32* i = arena.create<i32>(10);
@@ -96,7 +96,7 @@ TEST_CASE("Arena object creation", "[mem][arena]") {
 TEST_CASE("Arena move semantics", "[mem][arena]") {
   SECTION("Move constructor") {
     Arena arena1;
-    arena1.reserve(kPageSize);
+    arena1.reserve(page_size());
     void* p = arena1.alloc(1024);
     CHECK(p != nullptr);
     const usize size_before = arena1.size();
@@ -106,7 +106,7 @@ TEST_CASE("Arena move semantics", "[mem][arena]") {
 
   SECTION("Move assignment") {
     Arena arena2;
-    arena2.reserve(kPageSize);
+    arena2.reserve(page_size());
     void* p = arena2.alloc(1024);
     CHECK(p != nullptr);
 

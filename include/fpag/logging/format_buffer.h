@@ -5,10 +5,12 @@
 #pragma once
 
 #include "fmt/format.h"
-#include "fpag/mem/page_allocator.h"
+#include "fpag/base/numeric.h"
 
 namespace logging {
 
-using format_buffer = fmt::basic_memory_buffer<char, mem::kPageSize>;
+constexpr usize kFormatBufferSize = 4096;  // 4 KiB buffer
 
-}
+using format_buffer = fmt::basic_memory_buffer<char, kFormatBufferSize>;
+
+}  // namespace logging

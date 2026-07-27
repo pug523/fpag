@@ -23,8 +23,8 @@ namespace logging {
 TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
   // SyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
-  //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
-  //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
+  //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
+  //     mem::page_size(), base::console_color_style(base::Stream::Stdout),
   //     true));
   SyncLogger<NullSink, LogLevel::Off> logger;
   logger.init(NullSink{});

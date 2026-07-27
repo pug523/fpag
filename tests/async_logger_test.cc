@@ -22,8 +22,8 @@ namespace logging {
 TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   // AsyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
-  //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
-  //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
+  //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
+  //     mem::page_size(), base::console_color_style(base::Stream::Stdout),
   //     true));
   AsyncLogger<NullSink, LogLevel::Trace> logger;
   logger.init(NullSink{});

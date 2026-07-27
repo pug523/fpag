@@ -12,8 +12,8 @@ DebugLogger debug_logger;
 
 void init_debug_logger() {
   // debug_logger.init(logging::StdoutSink(
-  //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
-  //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
+  //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
+  //     mem::page_size(), base::console_color_style(base::Stream::Stdout),
   //     true));
   debug_logger.init(logging::StdoutSink(
       nullptr, 0, base::console_color_style(base::Stream::Stdout), false));

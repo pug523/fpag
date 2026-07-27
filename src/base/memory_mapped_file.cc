@@ -121,7 +121,7 @@ bool MemoryMappedFile::map(const FileHandle& file,
   }
 #else
   // To avoid unused parameter warnings
-  (void)(populate_now);
+  (void)populate_now;
 #endif
 
   void* ptr = ::mmap(nullptr, size_, prot, flags, file.native_handle(),
@@ -161,13 +161,13 @@ bool MemoryMappedFile::flush(bool synchronous) {
   }
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  (void)(synchronous);
+  (void)synchronous;
   return ::FlushViewOfFile(data_, size_) != 0;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   const i32 flags = synchronous ? MS_SYNC : MS_ASYNC;
   return ::msync(data_, size_, flags) == 0;
 #else
-  (void)(synchronous);
+  (void)synchronous;
 #endif
 }
 
@@ -186,7 +186,7 @@ void MemoryMappedFile::advise(AdviceHint hint) {
   }
   ::madvise(data_, size_, native_hint);
 #else
-  (void)(hint);
+  (void)hint;
 #endif
 }
 

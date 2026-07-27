@@ -69,7 +69,7 @@ void Arena::commit_until(usize end_offset) {
     return;
   }
 
-  usize target_end = base::round_up(end_offset, kPageSize);
+  usize target_end = base::round_up(end_offset, page_size());
   if (target_end > capacity_) {
     target_end = capacity_;
   }
