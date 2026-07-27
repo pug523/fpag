@@ -29,8 +29,8 @@ template <Logger L>
 void cleanup(L* logger, usize dropped_count) {
   logger->stop_backend_worker();
   if (dropped_count > 0) {
-    base::debug_logger().warn("async logger dropped {} logs", dropped_count);
-    base::debug_logger().flush();
+    base::debug_logger.warn("async logger dropped {} logs", dropped_count);
+    base::debug_logger.flush();
   }
 }
 

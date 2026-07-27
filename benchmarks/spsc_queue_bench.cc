@@ -23,8 +23,7 @@ void spsc_queue_simple_enqueue_single_thread(benchmark::State& state) {
   }
 
   if (queue.dropped_count() > 0) {
-    base::debug_logger().warn("spsc queue dropped {} entries",
-                              queue.dropped_count());
+    debug_logger.warn("spsc queue dropped {} entries", queue.dropped_count());
   }
 }
 BENCHMARK(spsc_queue_simple_enqueue_single_thread);

@@ -6,12 +6,13 @@
 
 #include "fmt/compile.h"
 #include "fpag/base/debug/logger.h"
+#include "fpag/base/debug/process_id.h"
+#include "fpag/base/debug/thread_id.h"
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-#include <unistd.h>
 #else
 #error "Unsupported platform for signal handling"
 #endif
@@ -22,7 +23,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <ctime>
-#include <thread>
 
 #include "fmt/chrono.h"   // IWYU pragma: keep
 #include "fmt/ostream.h"  // IWYU pragma: keep
@@ -32,18 +32,6 @@
 #include "fpag/base/numeric.h"
 
 namespace base {
-
-namespace {
-
-inline i32 current_pid() {
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-  return static_cast<i32>(GetCurrentProcessId());
-#else
-  return getpid();
-#endif
-}
-
-}  // namespace
 
 const char* signal_to_string(i32 signal_number) {
   switch (signal_number) {
@@ -74,10 +62,10 @@ void signal_handler(i32 signal_number) {
   const time_point<std::chrono::system_clock> tp{std::chrono::seconds(now)};
 
   const char* sig = signal_to_string(signal_number);
-  const i32 pid = current_pid();
-  const std::thread::id tid = std::this_thread::get_id();
+  const u32 pid = current_process_id();
+  const u64 tid = current_thread_id();
 
-  DebugLogger& logger = debug_logger();
+  DebugLogger& logger = debug_logger;
   logger.fatal(FMT_COMPILE(R"(Aborted at {:%Y-%m-%d %H:%M:%S}
 ({} in UNIX Time)
 {} Received by PID {}  (TID {})

@@ -5,20 +5,18 @@
 #include "fpag/base/debug/logger.h"
 
 #include "fpag/base/console.h"
-#include "fpag/mem/page_allocator.h"
 
 namespace base {
 
-DebugLogger& debug_logger() {
-  static DebugLogger logger = [] {
-    DebugLogger l;
-    l.init(logging::StdoutSink(
-        static_cast<char*>(mem::allocate_pages(mem::kPageSize)), mem::kPageSize,
-        base::console_color_style(base::Stream::Stdout), true));
-    return l;
-  }();
+DebugLogger debug_logger;
 
-  return logger;
+void init_logger() {
+  // debug_logger.init(logging::StdoutSink(
+  //     static_cast<char*>(mem::allocate_pages(mem::kPageSize)),
+  //     mem::kPageSize, base::console_color_style(base::Stream::Stdout),
+  //     true));
+  debug_logger.init(logging::StdoutSink(
+      nullptr, 0, base::console_color_style(base::Stream::Stdout), false));
 }
 
 }  // namespace base

@@ -40,7 +40,7 @@ void unreachable_impl(const char* file,
                       i32 line,
                       const char* func,
                       std::string_view msg) {
-  DebugLogger& logger = debug_logger();
+  DebugLogger& logger = debug_logger;
   logger.fatal(FMT_COMPILE("UNREACHABLE\n{}\n  at {}:{} ({})"), msg, file, line,
                func);
   logger.flush();

@@ -16,7 +16,7 @@ void dlog_impl(std::string_view formatted_msg,
                const char* file,
                i32 line,
                const char* func) {
-  DebugLogger& logger = debug_logger();
+  DebugLogger& logger = debug_logger;
   logger.debug(FMT_COMPILE("{}   [on {} ({}:{})]"), formatted_msg, func, file,
                line);
   logger.flush();

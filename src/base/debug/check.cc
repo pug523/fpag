@@ -23,7 +23,7 @@ void check_fail_impl(const char* expr,
                      i32 line,
                      const char* func,
                      std::string_view msg) {
-  DebugLogger& logger = debug_logger();
+  DebugLogger& logger = debug_logger;
   if (msg.empty()) {
     logger.fatal(FMT_COMPILE("Check failed!\nExpected: '{}'\n  at {}:{} ({})"),
                  expr, file, line, func);
@@ -45,7 +45,7 @@ void check_op_fail_impl(const char* expected,
                         i32 line,
                         const char* func,
                         std::string_view msg) {
-  DebugLogger& logger = debug_logger();
+  DebugLogger& logger = debug_logger;
   if (msg.empty()) {
     logger.fatal(
         FMT_COMPILE(

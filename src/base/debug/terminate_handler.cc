@@ -15,7 +15,7 @@ namespace base {
 namespace {
 
 void terminate_handler() {
-  debug_logger().fatal("Program terminated unexpectedly");
+  debug_logger.fatal("Program terminated unexpectedly");
   print_stack_trace_from_here();
   internal::fatal_crash_impl();
 }
