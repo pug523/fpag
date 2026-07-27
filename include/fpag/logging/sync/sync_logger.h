@@ -20,59 +20,59 @@
 
 namespace logging {
 
-template <IsSink S, LogLevel min_level>
+template <Sink S, LogLevel kMinLevel>
 class SyncLogger {
  public:
-  SyncLogger() = default;
-  ~SyncLogger() { flush(); }
+  constexpr SyncLogger() = default;
+  constexpr ~SyncLogger() { flush(); }
 
-  SyncLogger(const SyncLogger&) = delete;
-  SyncLogger& operator=(const SyncLogger&) = delete;
+  constexpr SyncLogger(const SyncLogger&) = delete;
+  constexpr SyncLogger& operator=(const SyncLogger&) = delete;
 
-  SyncLogger(SyncLogger&&) noexcept = default;
-  SyncLogger& operator=(SyncLogger&&) noexcept = default;
+  constexpr SyncLogger(SyncLogger&&) noexcept = default;
+  constexpr SyncLogger& operator=(SyncLogger&&) noexcept = default;
 
-  inline void init(S&& sink) { sink_ = std::move(sink); }
+  constexpr void init(S&& sink) { sink_ = std::move(sink); }
 
-  inline void flush() { sink_.flush(); }
+  constexpr void flush() { sink_.flush(); }
 
   template <typename Format, typename... Args>
-  inline void trace(Format fmt, Args&&... args) {
+  void trace(Format fmt, Args&&... args) {
     log<LogLevel::Trace>(fmt, std::forward<Args>(args)...);
   }
 
   template <typename Format, typename... Args>
-  inline void debug(Format fmt, Args&&... args) {
+  void debug(Format fmt, Args&&... args) {
     log<LogLevel::Debug>(fmt, std::forward<Args>(args)...);
   }
 
   template <typename Format, typename... Args>
-  inline void info(Format fmt, Args&&... args) {
+  void info(Format fmt, Args&&... args) {
     log<LogLevel::Info>(fmt, std::forward<Args>(args)...);
   }
 
   template <typename Format, typename... Args>
-  inline void warn(Format fmt, Args&&... args) {
+  void warn(Format fmt, Args&&... args) {
     log<LogLevel::Warn>(fmt, std::forward<Args>(args)...);
   }
 
   template <typename Format, typename... Args>
-  inline void error(Format fmt, Args&&... args) {
+  void error(Format fmt, Args&&... args) {
     log<LogLevel::Error>(fmt, std::forward<Args>(args)...);
   }
 
   template <typename Format, typename... Args>
-  inline void fatal(Format fmt, Args&&... args) {
+  void fatal(Format fmt, Args&&... args) {
     log<LogLevel::Fatal>(fmt, std::forward<Args>(args)...);
   }
 
  private:
-  inline static consteval bool should_log(LogLevel level) {
-    return level >= min_level;
+  static consteval bool should_log(LogLevel level) {
+    return level >= kMinLevel;
   }
 
   template <LogLevel level, typename Format, typename... Args>
-  inline void log(Format format, Args&&... args) {
+  void log(Format format, Args&&... args) {
     if constexpr (!should_log(level)) {
       return;
     }
@@ -83,10 +83,12 @@ class SyncLogger {
                      std::forward<Args>(args)...);
     } else if constexpr (std::is_convertible_v<Format, std::string_view>) {
       const std::string_view fmt = static_cast<std::string_view>(format);
+      // fmt::format_to(std::back_inserter(format_buf), fmt,
+      //                std::forward<Args>(args)...);
       fmt::vformat_to(std::back_inserter(format_buf), fmt,
                       fmt::make_format_args((args)...));
     } else {
-      static_assert(false && "Unsupported format string type");
+      static_assert(!sizeof(Format*), "Unsupported format string type");
     }
     const std::string_view msg{format_buf.data(), format_buf.size()};
 

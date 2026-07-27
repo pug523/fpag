@@ -13,7 +13,7 @@
 namespace logging {
 
 template <typename... Sinks>
-class CompositeSink : public Sink<CompositeSink<Sinks...>> {
+class CompositeSink {
  public:
   explicit CompositeSink(Sinks&&... sinks)
       : sinks_(std::forward<Sinks>(sinks)...) {}
@@ -33,5 +33,7 @@ class CompositeSink : public Sink<CompositeSink<Sinks...>> {
  private:
   std::tuple<Sinks...> sinks_;
 };
+
+static_assert(Sink<CompositeSink<>>);
 
 }  // namespace logging

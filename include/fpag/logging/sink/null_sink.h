@@ -9,7 +9,7 @@
 
 namespace logging {
 
-class NullSink : public Sink<NullSink> {
+class NullSink {
  public:
   NullSink() = default;
   ~NullSink() = default;
@@ -20,6 +20,8 @@ class NullSink : public Sink<NullSink> {
   void log(const LogEntry&) {}
   void flush() {}
 };
+
+static_assert(Sink<NullSink>);
 
 }  // namespace logging
 

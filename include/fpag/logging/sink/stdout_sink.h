@@ -17,7 +17,7 @@
 
 namespace logging {
 
-class StdoutSink final : public Sink<StdoutSink> {
+class StdoutSink {
  public:
   explicit StdoutSink(char* buffer_ptr = nullptr,
                       usize buffer_capacity = 0,
@@ -88,5 +88,7 @@ class StdoutSink final : public Sink<StdoutSink> {
   base::ColorStyle color_style_;
   bool use_buffer_;
 };
+
+static_assert(Sink<StdoutSink>);
 
 }  // namespace logging

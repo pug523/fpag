@@ -5,7 +5,6 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -17,17 +16,17 @@
 #include "fpag/base/numeric.h"
 #include "fpag/base/spsc_queue.h"
 #include "fpag/base/time_util.h"
-#include "fpag/build/build_flag.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/sink.h"
+#include "fpag/logging/wait_strategy.h"
 #include "fpag/str/string_interner.h"
 
 namespace logging {
 
-template <IsSink S>
+template <Sink S, WaitStrategy Wait>
 class BackendWorker {
  public:
   BackendWorker() = default;
@@ -85,6 +84,7 @@ class BackendWorker {
                        InternalStatus::Running, "BackendWorker is not running");
     flush();
     internal_status_.store(InternalStatus::Stopping, std::memory_order_release);
+    wait_.notify();
     if (thread_) [[likely]] {
       thread_->join();
       thread_ = nullptr;
@@ -97,6 +97,7 @@ class BackendWorker {
     // Do not flush on force stopping
     internal_status_.store(InternalStatus::ForceStopping,
                            std::memory_order_release);
+    wait_.notify();
     if (thread_) [[likely]] {
       thread_->join();
       thread_ = nullptr;
@@ -107,6 +108,7 @@ class BackendWorker {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                        InternalStatus::Running, "BackendWorker is not running");
     flush_requested_.store(true, std::memory_order_release);
+    wait_.notify();
     wait_for_flush();
   }
 
@@ -114,6 +116,8 @@ class BackendWorker {
     return internal_status_.load(std::memory_order_acquire) ==
            InternalStatus::Running;
   }
+
+  inline void notify_producer() { wait_.notify(); }
 
   // cpplint's issue: it suggests `#include <utility>` because of `swap`
   // method's name.
@@ -154,6 +158,7 @@ class BackendWorker {
       if (flush_requested_.load(std::memory_order_acquire)) [[unlikely]] {
         sink_.flush();
         flush_requested_.store(false, std::memory_order_release);
+        wait_.notify();
       }
       if (status == InternalStatus::Stopping && !processed && queue_.empty())
           [[unlikely]] {
@@ -162,6 +167,7 @@ class BackendWorker {
 
       if (processed) {
         count_from_last_processed = 0;
+        wait_.reset();
       } else if (++count_from_last_processed >= 512) {
         wait_for_next();
       }
@@ -214,57 +220,27 @@ class BackendWorker {
   }
 
   void wait_for_next() {
-    u32 spin_count = 0;
-    while (queue_.empty()) {
-      if (spin_count % 32 == 0 &&
-          internal_status_.load(std::memory_order_acquire) !=
-              InternalStatus::Running) {
-        return;
-      }
-
-      if (spin_count < 64) {
-      } else if (spin_count < 1024) {
-#if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) && FPAG_BUILD_FLAG(IS_COMPILER_GCC)
-        __builtin_ia32_pause();
-#else
-        std::this_thread::yield();
-#endif
-      } else if (spin_count < 1024 * 1024) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(128));
-      } else if (spin_count < 1024 * 1024 * 1024) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(128 * 1024));
-      } else {
-        std::this_thread::sleep_for(
-            std::chrono::nanoseconds(128 * 1024 * 1024));
-      }
-      ++spin_count;
+    std::atomic<bool> stopping{
+        internal_status_.load(std::memory_order_relaxed) !=
+        InternalStatus::Running};
+    while (queue_.empty() && !stopping.load(std::memory_order_relaxed)) {
+      wait_.wait_for_next(queue_, stopping);
+      stopping.store(internal_status_.load(std::memory_order_relaxed) !=
+                         InternalStatus::Running,
+                     std::memory_order_relaxed);
     }
   }
 
   void wait_for_flush() {
-    u32 spin_count = 0;
+    std::atomic<bool> dummy_stopping{false};
     while (!queue_.empty()) {
-      if (spin_count < 64) {
-      } else if (spin_count < 1024) {
-#if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) && FPAG_BUILD_FLAG(IS_COMPILER_GCC)
-        __builtin_ia32_pause();
-#else
-        std::this_thread::yield();
-#endif
-      } else if (spin_count < 1024 * 1024) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(128));
-      } else if (spin_count < 1024 * 1024 * 1024) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(128 * 1024));
-      } else {
-        std::this_thread::sleep_for(
-            std::chrono::nanoseconds(128 * 1024 * 1024));
-      }
-      ++spin_count;
+      wait_.wait_for_flush(queue_, dummy_stopping);
     }
   }
 
   base::SpscQueue queue_;
   S sink_;
+  Wait wait_;
   std::unique_ptr<std::thread> thread_ = nullptr;
   const str::StringInterner* interner_ = nullptr;
 
