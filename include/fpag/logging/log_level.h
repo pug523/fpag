@@ -4,10 +4,6 @@
 
 #pragma once
 
-#include <string_view>
-
-#include "fpag/base/color_style.h"
-#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
@@ -26,61 +22,6 @@ enum class LogLevel : u8 {
   Off = (1 << 8) - 1,
   All = 0,
 };
-
-static constexpr std::string_view kPlainPrefixes[] = {
-    "trace: ",  // Trace
-    "debug: ",  // Debug
-    " info: ",  // Info
-    " warn: ",  // Warn
-    "error: ",  // Error
-    "fatal: ",  // Fatal
-};
-
-// 16 color
-static constexpr std::string_view kAnsi16Prefixes[] = {
-    "\033[1;90mtrace\033[0m: ",  // Trace: Bright Black (Gray)
-    "\033[1;34mdebug\033[0m: ",  // Debug: Blue
-    "\033[1;32m info\033[0m: ",  // Info: Green
-    "\033[1;33m warn\033[0m: ",  // Warn: Yellow
-    "\033[1;31merror\033[0m: ",  // Error: Red
-    "\033[1;35mfatal\033[0m: ",  // Fatal: Magenta
-};
-
-// 256 color
-static constexpr std::string_view kAnsi256Prefixes[] = {
-    "\033[1;38;5;242mtrace\033[0m: ",  // Trace: Gray
-    "\033[1;38;5;39mdebug\033[0m: ",   // Debug: Sky Blue
-    "\033[1;38;5;40m info\033[0m: ",   // Info: Green
-    "\033[1;38;5;220m warn\033[0m: ",  // Warn: Gold/Yellow
-    "\033[1;38;5;196merror\033[0m: ",  // Error: Red
-    "\033[1;38;5;201mfatal\033[0m: ",  // Fatal: Pink/Magenta
-};
-
-// True color
-static constexpr std::string_view kAnsiTrueColorPrefixes[] = {
-    "\033[1;38;2;100;100;100mtrace\033[0m: ",  // Trace: Gray
-    "\033[1;38;2;040;190;240mdebug\033[0m: ",  // Debug: Sky Blue
-    "\033[1;38;2;025;210;025m info\033[0m: ",  // Info: Green
-    "\033[1;38;2;225;230;015m warn\033[0m: ",  // Warn: Yellow
-    "\033[1;38;2;250;060;060merror\033[0m: ",  // Error: Red
-    "\033[1;38;2;255;040;255mfatal\033[0m: ",  // Fatal: Magenta
-};
-
-inline constexpr std::string_view log_prefix(LogLevel level,
-                                             base::ColorStyle style) {
-  if (level >= LogLevel::WithoutPrefix) {
-    return "";
-  }
-  const u8 l = static_cast<u8>(level);
-  switch (style) {
-    using C = base::ColorStyle;
-    case C::Off: return kPlainPrefixes[l];
-    case C::Ansi16: return kAnsi16Prefixes[l];
-    case C::Ansi256: return kAnsi256Prefixes[l];
-    case C::AnsiTrueColor: return kAnsiTrueColorPrefixes[l];
-    default: FPAG_UNREACHABLE();
-  }
-}
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 constexpr LogLevel kDefaultLogLevel = LogLevel::Debug;
