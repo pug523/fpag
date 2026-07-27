@@ -228,6 +228,55 @@
 #endif
 #endif
 
+// x86 SIMD
+#if defined(ARCH_CPU_X86_FAMILY)
+#if defined(__SSE2__) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || \
+    defined(ARCH_CPU_X86_64)
+#define CPU_X86_SSE2 1
+#endif
+#if defined(__SSSE3__)
+#define CPU_X86_SSSE3 1
+#endif
+#if defined(__SSE4_1__)
+#define CPU_X86_SSE4_1 1
+#endif
+#if defined(__SSE4_2__)
+#define CPU_X86_SSE4_2 1
+#endif
+#if defined(__AVX__)
+#define CPU_X86_AVX 1
+#endif
+#if defined(__AVX2__)
+#define CPU_X86_AVX2 1
+#endif
+#if defined(__AVX512F__)
+#define CPU_X86_AVX512 1
+#endif
+#endif
+
+// PowerPC (VSX / Altivec)
+#if defined(ARCH_CPU_PPC64_FAMILY)
+#if defined(__VSX__)
+#define CPU_PPC_VSX 1
+#elif defined(__ALTIVEC__)
+#define CPU_PPC_ALTIVEC 1
+#endif
+#endif
+
+// RISC-V Vector Extension
+#if defined(ARCH_CPU_RISCV_FAMILY)
+#if defined(__riscv_vector)
+#define CPU_RISCV_VECTOR 1
+#endif
+#endif
+
+// WebAssembly SIMD
+#if defined(OS_ASMJS) || defined(__wasm__)
+#if defined(__wasm_simd128__)
+#define CPU_WASM_SIMD128 1
+#endif
+#endif
+
 // INTERNAL Build Flags Unified Interface
 
 // Disable cpplint and clang-format to keep line length > 80 characters as is.
@@ -565,15 +614,82 @@
 #endif
 
 #if defined(CPU_ARM_NEON)
-#define FPAG_BUILD_FLAG_INTERNAL_CPU_ARM_NEON() (1)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_ARM_NEON() (1)
 #else
-#define FPAG_BUILD_FLAG_INTERNAL_CPU_ARM_NEON() (0)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_ARM_NEON() (0)
 #endif
 
 #if defined(HAVE_MIPS_MSA_INTRINSICS)
 #define FPAG_BUILD_FLAG_INTERNAL_HAVE_MIPS_MSA_INTRINSICS() (1)
 #else
 #define FPAG_BUILD_FLAG_INTERNAL_HAVE_MIPS_MSA_INTRINSICS() (0)
+#endif
+
+// SIMD Internal Flags
+#if defined(CPU_X86_SSE2)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE2() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE2() (0)
+#endif
+
+#if defined(CPU_X86_SSSE3)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSSE3() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSSE3() (0)
+#endif
+
+#if defined(CPU_X86_SSE4_1)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE4_1() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE4_1() (0)
+#endif
+
+#if defined(CPU_X86_SSE4_2)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE4_2() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_SSE4_2() (0)
+#endif
+
+#if defined(CPU_X86_AVX)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX() (0)
+#endif
+
+#if defined(CPU_X86_AVX2)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX2() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX2() (0)
+#endif
+
+#if defined(CPU_X86_AVX512)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX512() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_X86_AVX512() (0)
+#endif
+
+#if defined(CPU_PPC_ALTIVEC)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_PPC_ALTIVEC() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_PPC_ALTIVEC() (0)
+#endif
+
+#if defined(CPU_PPC_VSX)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_PPC_VSX() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_PPC_VSX() (0)
+#endif
+
+#if defined(CPU_RISCV_VECTOR)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_RISCV_VECTOR() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_RISCV_VECTOR() (0)
+#endif
+
+#if defined(CPU_WASM_SIMD128)
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_WASM_SIMD128() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_IS_CPU_WASM_SIMD128() (0)
 #endif
 // clang-format on
 // NOLINTEND(whitespace/line_length)
