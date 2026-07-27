@@ -306,17 +306,14 @@ on_load(function(target)
   target:set("encodings", "source:utf-8", "utf-8")
 
   target:add("includedirs", "src", "include", "third_party")
-  target:add(
-    "defines",
-    'FPAG_PROJECT_VERSION="' .. project_version .. '"',
-    { public = true }
-  )
+  target:add("defines", 'FPAG_PROJECT_VERSION="' .. project_version .. '"')
   target:add("defines", {
     "__STDC_CONSTANT_MACROS",
     "__STDC_FORMAT_MACROS",
     "FMT_USE_CONSTEXPR=1",
     "FMT_USE_CONSTEVAL=1",
   })
+  target:add("defines", "NOMINMAX")
 
   target:set("exceptions", "none")
   target:add("cxxflags", { "-fno-exceptions", "-fno-rtti" })
