@@ -20,14 +20,14 @@
 namespace logging {
 
 TEST_CASE("FileSink output validation", "[logging][sink][file_sink]") {
-  base::TempFile const temp_file;
+  const base::TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   FileSink sink(temp_file.path());
   const u64 ts = base::current_timestamp_ns();
-  LogEntry const entry1{.level = LogLevel::Info,
-                  .message = "FileSink write test",
-                  .timestamp_ns = ts};
+  const LogEntry entry1{.level = LogLevel::Info,
+                        .message = "FileSink write test",
+                        .timestamp_ns = ts};
   sink.log(entry1);
   sink.flush();
 
@@ -37,9 +37,9 @@ TEST_CASE("FileSink output validation", "[logging][sink][file_sink]") {
   base::MemoryMappedFile mmap;
   REQUIRE(mmap.map(handle, 0, 0));
 
-  std::string_view const content(reinterpret_cast<const char*>(mmap.data()),
-                           mmap.size());
-  std::string const formatted_ts = fmt::format("[{}]", ts);
+  const std::string_view content(reinterpret_cast<const char*>(mmap.data()),
+                                 mmap.size());
+  const std::string formatted_ts = fmt::format("[{}]", ts);
   CHECK(content.find(formatted_ts) != std::string::npos);
   CHECK(content.find("[INFO ]") != std::string::npos);
   CHECK(content.find("FileSink write test\n") != std::string::npos);
@@ -47,15 +47,15 @@ TEST_CASE("FileSink output validation", "[logging][sink][file_sink]") {
 
 TEST_CASE("JsonLinesSink output validation",
           "[logging][sink][json_lines_sink]") {
-  base::TempFile const temp_file;
+  const base::TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   JsonLinesSink sink(temp_file.path());
 
   const u64 ts = base::current_timestamp_ns();
-  LogEntry const entry{.level = LogLevel::Error,
-                 .message = "Failed to connect to cluster",
-                 .timestamp_ns = ts};
+  const LogEntry entry{.level = LogLevel::Error,
+                       .message = "Failed to connect to cluster",
+                       .timestamp_ns = ts};
   sink.log(entry);
   sink.flush();
 
@@ -65,9 +65,9 @@ TEST_CASE("JsonLinesSink output validation",
   base::MemoryMappedFile mmap;
   REQUIRE(mmap.map(handle, 0, 0));
 
-  std::string_view const content(reinterpret_cast<const char*>(mmap.data()),
-                           mmap.size());
-  std::string const formatted_ts = fmt::format("\"ts\":{}", ts);
+  const std::string_view content(reinterpret_cast<const char*>(mmap.data()),
+                                 mmap.size());
+  const std::string formatted_ts = fmt::format("\"ts\":{}", ts);
   CHECK(content.find("\"level\":\"error\"") != std::string::npos);
   CHECK(content.find("\"msg\":\"Failed to connect to cluster\"") !=
         std::string::npos);

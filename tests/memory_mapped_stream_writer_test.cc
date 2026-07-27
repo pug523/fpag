@@ -24,7 +24,7 @@ constexpr std::string_view kSmallText = "Hello, MemoryMappedStreamWriter!";
 
 TEST_CASE("MemoryMappedStreamWriter basic open and write",
           "[base][mmap_stream_writer]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   MemoryMappedStreamWriter writer;
@@ -56,7 +56,7 @@ TEST_CASE("MemoryMappedStreamWriter basic open and write",
 
 TEST_CASE("MemoryMappedStreamWriter automatic capacity expansion",
           "[base][mmap_stream_writer]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   MemoryMappedStreamWriter writer;
@@ -87,7 +87,7 @@ TEST_CASE("MemoryMappedStreamWriter automatic capacity expansion",
 
 TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
           "[base][mmap_stream_writer]") {
-  TempFile const temp_file;
+  const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   MemoryMappedStreamWriter writer;

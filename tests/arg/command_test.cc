@@ -14,9 +14,9 @@
 namespace arg {
 
 TEST_CASE("Command basic getters and configuration", "[arg][command]") {
-  Command const command = CommandBuilder("myapp", "1.2.3")
-                        .about("A sample CLI application")
-                        .build();
+  const Command command = CommandBuilder("myapp", "1.2.3")
+                              .about("A sample CLI application")
+                              .build();
 
   CHECK(command.name() == "myapp");
   CHECK(command.version() == "1.2.3");
@@ -36,7 +36,7 @@ TEST_CASE("CommandBuilder and Command state construction", "[arg][command]") {
         .add_arg(ArgBuilder("verbose").short_name('v').is_flag().build())
         .add_subcommand(std::move(sub_cmd));
 
-    Command const root_cmd = std::move(root_builder).build();
+    const Command root_cmd = std::move(root_builder).build();
 
     CHECK(root_cmd.name() == "app");
     CHECK(root_cmd.version() == "1.0.0");
@@ -56,7 +56,7 @@ TEST_CASE("CommandBuilder and Command state construction", "[arg][command]") {
 }
 
 TEST_CASE("Command lookup helpers", "[arg][command]") {
-  Command const cmd =
+  const Command cmd =
       CommandBuilder("app", "1.0.0")
           .add_arg(ArgBuilder("port").short_name('p').long_name("port").build())
           .add_subcommand(CommandBuilder("run").build())
