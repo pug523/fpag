@@ -252,4 +252,20 @@ usize huge_page_size() {
 #endif
 }
 
+usize mmap_alignment() {
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+  static const usize alignment = []() {
+    SYSTEM_INFO sys_info;
+    ::GetSystemInfo(&sys_info);
+    return static_cast<usize>(sys_info.dwAllocationGranularity);
+  }();
+  return alignment;
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+  static const usize alignment = static_cast<usize>(::sysconf(_SC_PAGESIZE));
+  return alignment;
+#else
+  return static_cast<usize>(64 * 1024);
+#endif
+}
+
 }  // namespace mem

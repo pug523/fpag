@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 
 #include "fpag/base/numeric.h"
@@ -41,6 +40,8 @@ usize page_size();
 
 usize huge_page_size();
 
+usize mmap_alignment();
+
 inline bool is_page_aligned_ptr(void* ptr) {
   return reinterpret_cast<uintptr_t>(ptr) % page_size() == 0;
 }
@@ -52,5 +53,10 @@ inline bool is_page_aligned_size(usize size) {
 inline bool is_huge_page_aligned_size(usize size) {
   return size % huge_page_size() == 0;
 }
+
+inline bool is_mmap_aligned_size(usize size) {
+  return size % mmap_alignment() == 0;
+}
+
 
 }  // namespace mem

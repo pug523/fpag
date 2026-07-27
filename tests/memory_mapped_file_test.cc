@@ -149,8 +149,9 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
   const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
-  const usize page_size = mem::page_size();
-  const usize total_size = page_size * 2;
+  // const usize page_size = mem::page_size();
+  const usize mmap_alignment = mem::mmap_alignment();
+  const usize total_size = mmap_alignment * 2;
 
   FileHandle file;
   REQUIRE(file.open(temp_file.path(), FileAccess::ReadWrite));
@@ -158,9 +159,9 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
 
   MemoryMappedFile mmap;
   // Map starting from page offset.
-  REQUIRE(mmap.map(file, page_size, page_size));
+  REQUIRE(mmap.map(file, mmap_alignment, mmap_alignment));
   CHECK(mmap.is_mapped());
-  CHECK(mmap.size() == page_size);
+  CHECK(mmap.size() == mmap_alignment);
 
   const std::span<u8> buffer = mmap.as_span();
   buffer[0] = 'Z';
@@ -170,8 +171,8 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
   SECTION("Map with offset or length out of file bounds should fail") {
     MemoryMappedFile mmap_invalid;
 
-    CHECK_FALSE(mmap_invalid.map(file, total_size, page_size));
-    CHECK_FALSE(mmap_invalid.map(file, page_size, total_size));
+    CHECK_FALSE(mmap_invalid.map(file, total_size, mmap_alignment));
+    CHECK_FALSE(mmap_invalid.map(file, mmap_alignment, total_size));
   }
 }
 
