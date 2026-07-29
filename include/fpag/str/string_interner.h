@@ -17,9 +17,9 @@ namespace str {
 // Concurrent string interner that uses a StringPool for storage.
 class StringInterner {
  public:
-  using Map = base::SimpleConcurrentHashMap<std::string_view,
-                                            StringPoolId,
-                                            base::Xxh3Hasher64>;
+  using Map = container::SimpleConcurrentHashMap<std::string_view,
+                                                 StringPoolId,
+                                                 hash::Xxh3Hasher64>;
 
   using StringId = StringPoolId;
 

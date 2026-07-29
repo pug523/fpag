@@ -10,7 +10,7 @@
 #include "fpag/debug/logger.h"
 #include "fpag/debug/stack_trace/stack_trace.h"
 
-namespace base {
+namespace debug {
 
 namespace {
 
@@ -26,4 +26,4 @@ void register_terminate_handler() {
   std::set_terminate(terminate_handler);
 }
 
-}  // namespace base
+}  // namespace debug

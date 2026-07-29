@@ -8,7 +8,7 @@
 #include "fpag/term/color_mode.h"
 #include "fpag/term/color_style.h"
 
-namespace base {
+namespace term {
 
 enum class Stream : u8 {
   Stdout,
@@ -22,4 +22,4 @@ ColorStyle console_color_style(Stream stream,
 
 void register_console();
 
-}  // namespace base
+}  // namespace term

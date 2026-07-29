@@ -12,7 +12,7 @@
 #include "fpag/base/attributes.h"
 #endif
 
-namespace base {
+namespace debug {
 
 TEST_CASE("capture_stack_addresses basic functionality",
           "[base][debug][stack_trace]") {
@@ -102,4 +102,4 @@ TEST_CASE("capture_stack_addresses skip functionality",
 
 #endif
 
-}  // namespace base
+}  // namespace debug

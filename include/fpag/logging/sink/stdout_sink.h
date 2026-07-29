@@ -21,7 +21,7 @@ class StdoutSink {
  public:
   explicit StdoutSink(char* buffer_ptr = nullptr,
                       usize buffer_capacity = 0,
-                      base::ColorStyle color_style = base::ColorStyle::Ansi16,
+                      term::ColorStyle color_style = term::ColorStyle::Ansi16,
                       bool use_buffer = false)
       : buffer_(buffer_ptr),
         capacity_(buffer_capacity),
@@ -67,7 +67,7 @@ class StdoutSink {
 
   void flush() {
     if (offset_ > 0 && use_buffer_) [[likely]] {
-      base::write(base::kStdoutFd, buffer_, offset_);
+      io::write(io::kStdoutFd, buffer_, offset_);
       offset_ = 0;
     }
   }
@@ -77,15 +77,15 @@ class StdoutSink {
 
   inline void directly_write(const std::string_view& prefix,
                              const std::string_view& message) {
-    base::write(base::kStdoutFd, prefix.data(), prefix.size());
-    base::write(base::kStdoutFd, message.data(), message.size());
-    base::write(base::kStdoutFd, "\n", 1);
+    io::write(io::kStdoutFd, prefix.data(), prefix.size());
+    io::write(io::kStdoutFd, message.data(), message.size());
+    io::write(io::kStdoutFd, "\n", 1);
   }
 
   char* buffer_;
   usize capacity_;
   usize offset_ = 0;
-  base::ColorStyle color_style_;
+  term::ColorStyle color_style_;
   bool use_buffer_;
 };
 

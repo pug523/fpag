@@ -12,7 +12,7 @@
 #include "fpag/build/build_config.h"
 #include "fpag/debug/stack_trace/stack_frame.h"
 
-namespace base {
+namespace debug {
 
 enum class StackTraceStatus : u8 {
   Uninitialized,
@@ -83,4 +83,4 @@ class StackTrace {
 // Simple helper that prints the current stack trace to the console.
 void print_stack_trace_from_here();
 
-}  // namespace base
+}  // namespace debug

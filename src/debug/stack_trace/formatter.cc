@@ -12,7 +12,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/stack_trace/stack_frame.h"
 
-namespace base {
+namespace debug {
 
 void append_frame(std::string* out,
                   const StackTraceFrame& frame,
@@ -74,4 +74,4 @@ std::string format_frames(const StackTraceFrame* frames,
   return out;
 }
 
-}  // namespace base
+}  // namespace debug

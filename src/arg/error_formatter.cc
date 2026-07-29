@@ -22,15 +22,15 @@ namespace arg {
 std::string DefaultErrorFormatter::operator()(
     std::string_view command_name,
     const std::vector<ParseError>& errors,
-    base::ColorStyle style) const {
+    term::ColorStyle style) const {
   std::string result;
   constexpr usize kEstimatedStrLenPerError = 256;
   result.reserve(kEstimatedStrLenPerError * errors.size());
   const std::back_insert_iterator<std::string> out = std::back_inserter(result);
 
-  const char* bold = base::style_code(base::kBold, style);
-  const char* bright_red = base::style_code(base::kBrightRed, style);
-  const char* reset = base::style_code(base::kReset, style);
+  const char* bold = term::style_code(term::kBold, style);
+  const char* bright_red = term::style_code(term::kBrightRed, style);
+  const char* reset = term::style_code(term::kReset, style);
 
   for (const ParseError& err : errors) {
     // "error: " header
@@ -44,7 +44,7 @@ std::string DefaultErrorFormatter::operator()(
   }
 
   // Hint
-  const char* cyan = base::style_code(base::kBrightCyan, style);
+  const char* cyan = term::style_code(term::kBrightCyan, style);
   fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
                  command_name, cyan, reset);
   return result;

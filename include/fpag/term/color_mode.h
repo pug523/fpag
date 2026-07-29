@@ -8,7 +8,7 @@
 
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace term {
 
 enum class ColorMode : u8 {
   Auto,
@@ -38,5 +38,5 @@ inline constexpr const char* color_mode_to_str(ColorMode c) {
   }
 }
 
-}  // namespace base
+}  // namespace term
 

@@ -13,7 +13,7 @@
 #include <windows.h>
 #endif
 
-namespace base {
+namespace io {
 
 enum class FileAccess : u8 {
   Read,
@@ -56,4 +56,4 @@ class FileHandle {
   FileAccess access_ = FileAccess::Read;
 };
 
-}  // namespace base
+}  // namespace io

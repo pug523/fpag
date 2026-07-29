@@ -13,7 +13,7 @@
 #include <thread>
 #endif
 
-namespace base {
+namespace hardware {
 
 inline void cpu_yield() {
 #if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY)
@@ -25,4 +25,4 @@ inline void cpu_yield() {
 #endif
 }
 
-}  // namespace base
+}  // namespace hardware

@@ -10,7 +10,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/logger.h"
 
-namespace base::internal {
+namespace debug::internal {
 
 void dlog_impl(std::string_view formatted_msg,
                const char* file,
@@ -22,4 +22,4 @@ void dlog_impl(std::string_view formatted_msg,
   logger.flush();
 }
 
-}  // namespace base::internal
+}  // namespace debug::internal

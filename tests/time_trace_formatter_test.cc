@@ -14,7 +14,7 @@
 #include "fpag/debug/location.h"
 #include "fpag/debug/profiler/profile_event.h"
 
-namespace base {
+namespace debug {
 
 TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
   const char* kTestFilename = "test_chrome_trace.json";
@@ -91,4 +91,4 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
   }
 }
 
-}  // namespace base
+}  // namespace debug

@@ -9,7 +9,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/debug/profiler/profiler.h"
 
-namespace base {
+namespace debug {
 
 namespace {
 
@@ -48,4 +48,4 @@ TEST_CASE("ProfileScope RAII measurement", "[base][profiler][scope]") {
   test_profiler.stop();
 }
 
-}  // namespace base
+}  // namespace debug

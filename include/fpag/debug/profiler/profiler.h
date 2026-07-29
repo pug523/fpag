@@ -13,7 +13,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/profiler/profile_event.h"
 
-namespace base {
+namespace debug {
 
 class Profiler {
  public:
@@ -86,4 +86,4 @@ class Profiler {
   std::unique_ptr<ProfileEvent[]> events_;
 };
 
-}  // namespace base
+}  // namespace debug

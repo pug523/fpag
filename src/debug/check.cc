@@ -16,7 +16,7 @@
 #include "fpag/debug/string.h"
 #include "fpag/io/io_util.h"
 
-namespace base::internal {
+namespace debug::internal {
 
 void check_fail_impl(const char* expr,
                      const char* file,
@@ -77,28 +77,28 @@ void raw_check_fail_impl(const char* expr,
   constexpr const char* kFuncSuffix = ")\n";
   constexpr const char* kNewline = "\n";
 
-  base::write(kStderrFd, kHeaderPrefix, const_strlen(kHeaderPrefix));
-  base::write(kStderrFd, expr, std::strlen(expr));
-  base::write(kStderrFd, kHeaderSuffix, const_strlen(kHeaderSuffix));
+  io::write(io::kStderrFd, kHeaderPrefix, const_strlen(kHeaderPrefix));
+  io::write(io::kStderrFd, expr, std::strlen(expr));
+  io::write(io::kStderrFd, kHeaderSuffix, const_strlen(kHeaderSuffix));
 
-  base::write(kStderrFd, kAt, const_strlen(kAt));
-  base::write(kStderrFd, file, std::strlen(file));
-  base::write(kStderrFd, kColon, const_strlen(kColon));
+  io::write(io::kStderrFd, kAt, const_strlen(kAt));
+  io::write(io::kStderrFd, file, std::strlen(file));
+  io::write(io::kStderrFd, kColon, const_strlen(kColon));
 
   char line_buf[kLineBufSize];
   auto result = fmt::format_to_n(line_buf, sizeof(line_buf), "{}", line);
-  base::write(kStderrFd, line_buf, result.size);
+  io::write(io::kStderrFd, line_buf, result.size);
 
-  base::write(kStderrFd, kFuncPrefix, const_strlen(kFuncPrefix));
-  base::write(kStderrFd, func, std::strlen(func));
-  base::write(kStderrFd, kFuncSuffix, const_strlen(kFuncSuffix));
+  io::write(io::kStderrFd, kFuncPrefix, const_strlen(kFuncPrefix));
+  io::write(io::kStderrFd, func, std::strlen(func));
+  io::write(io::kStderrFd, kFuncSuffix, const_strlen(kFuncSuffix));
 
   if (!msg.empty()) {
-    base::write(kStderrFd, msg.data(), msg.size());
-    base::write(kStderrFd, kNewline, const_strlen(kNewline));
+    io::write(io::kStderrFd, msg.data(), msg.size());
+    io::write(io::kStderrFd, kNewline, const_strlen(kNewline));
   }
 
   fatal_crash_impl();
 }
 
-}  // namespace base::internal
+}  // namespace debug::internal

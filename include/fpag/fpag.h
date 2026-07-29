@@ -16,7 +16,7 @@
 // #include "fpag/container/simple_concurrent_hash_map.h"
 #include "fpag/container/spsc_queue.h"
 #include "fpag/term/style.h"
-#include "fpag/time/time_util.h"
+#include "fpag/debug/time_util.h"
 #include "fpag/hash/xxh3_hasher.h"
 
 #include "fpag/debug/check.h"

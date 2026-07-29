@@ -12,13 +12,11 @@
 
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/build/build_config.h"
 #include "fpag/debug/check.h"
 #include "fpag/hardware/cpu_yield.h"
 #include "fpag/mem/page_allocator.h"
 
-namespace base {
-
+namespace container {
 SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
   data_ = other.data_;
   capacity_ = other.capacity_;
@@ -170,7 +168,7 @@ void SpscQueue::wait_for_space_producer(usize size) const {
   while (available_producer() < size) {
     if (spin_count < 64) {
     } else if (spin_count < 1024) {
-      cpu_yield();
+      hardware::cpu_yield();
     } else if (spin_count < 1024 * 1024) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(128));
     } else if (spin_count < 1024 * 1024 * 1024) {
@@ -182,4 +180,4 @@ void SpscQueue::wait_for_space_producer(usize size) const {
   }
 }
 
-}  // namespace base
+}  // namespace container

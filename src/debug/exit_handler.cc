@@ -11,16 +11,16 @@
 #include "fpag/term/console.h"
 #include "fpag/term/style.h"
 
-namespace base {
+namespace debug {
 
 namespace {
 
 void reset_console_colors() {
-  if (is_ansi_available(Stream::Stdout)) {
-    base::write(kStdoutFd, kReset, const_strlen(kReset));
+  if (is_ansi_available(term::Stream::Stdout)) {
+    io::write(io::kStdoutFd, term::kReset, const_strlen(term::kReset));
   }
-  if (is_ansi_available(Stream::Stderr)) {
-    base::write(kStderrFd, kReset, const_strlen(kReset));
+  if (is_ansi_available(term::Stream::Stderr)) {
+    io::write(io::kStderrFd, term::kReset, const_strlen(term::kReset));
   }
 }
 
@@ -34,4 +34,4 @@ void register_exit_handler() {
   std::atexit(on_exit);
 }
 
-}  // namespace base
+}  // namespace debug

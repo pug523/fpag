@@ -4,8 +4,8 @@
 
 #pragma once
 
-namespace base {
+namespace debug {
 
 void register_signal_handlers();
 
-}  // namespace base
+}  // namespace debug

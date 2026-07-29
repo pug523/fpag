@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #endif
 
-namespace base {
+namespace io {
 
 MemoryMappedFile::MemoryMappedFile(MemoryMappedFile&& other) noexcept
     : data_(other.data_),
@@ -190,4 +190,4 @@ void MemoryMappedFile::advise(AdviceHint hint) {
 #endif
 }
 
-}  // namespace base
+}  // namespace io

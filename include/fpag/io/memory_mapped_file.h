@@ -14,7 +14,7 @@
 #include <windows.h>
 #endif
 
-namespace base {
+namespace io {
 
 enum class AdviceHint : u8 {
   Normal,
@@ -68,4 +68,4 @@ class MemoryMappedFile {
 #endif
 };
 
-}  // namespace base
+}  // namespace io

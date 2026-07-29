@@ -18,7 +18,7 @@
 #include <unistd.h>
 #endif
 
-namespace base {
+namespace io {
 
 TempFile::TempFile() {
   create_temp_file("temp_file_");
@@ -95,4 +95,4 @@ bool TempFile::create_temp_file(std::string_view prefix) {
 #endif
 }
 
-}  // namespace base
+}  // namespace io

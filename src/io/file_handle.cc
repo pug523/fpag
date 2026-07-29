@@ -19,7 +19,7 @@
 #include <unistd.h>
 #endif
 
-namespace base {
+namespace io {
 
 FileHandle::FileHandle(FileHandle&& other) noexcept
     : handle_(other.handle_), access_(other.access_) {
@@ -111,4 +111,4 @@ usize FileHandle::get_size() const {
 #endif
 }
 
-}  // namespace base
+}  // namespace io

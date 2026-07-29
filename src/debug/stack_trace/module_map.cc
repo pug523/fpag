@@ -26,7 +26,7 @@
 #error "Unsupported platform for module lookup"
 #endif
 
-namespace base {
+namespace debug {
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
 
@@ -137,4 +137,4 @@ bool lookup_module_for_address(const void* address, ModuleInfo* out) {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug

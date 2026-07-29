@@ -12,7 +12,7 @@
 #include "fmt/format.h"
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace debug {
 
 template <typename T, typename Char = char>
 concept Formattable = requires(T& val, fmt::format_context ctx) {
@@ -43,4 +43,4 @@ inline consteval usize const_strlen(const char* s) {
   return len;
 }
 
-}  // namespace base
+}  // namespace debug

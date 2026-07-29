@@ -11,8 +11,7 @@
 #include "fpag/mem/cache.h"
 #include "fpag/mem/page_allocator.h"
 
-namespace base {
-
+namespace container {
 // SPSC (Single-Producer Single-Consumer) Queue
 class SpscQueue {
  public:
@@ -118,4 +117,4 @@ class SpscQueue {
   alignas(mem::kCacheLineSize) usize tail_cache_ = 0;
 };
 
-}  // namespace base
+}  // namespace container

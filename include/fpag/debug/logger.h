@@ -8,7 +8,7 @@
 #include "fpag/logging/sink/stdout_sink.h"
 #include "fpag/logging/sync/sync_logger.h"
 
-namespace base {
+namespace debug {
 
 using DebugLogger =
     logging::SyncLogger<logging::StdoutSink, logging::LogLevel::Debug>;
@@ -17,4 +17,4 @@ extern DebugLogger debug_logger;
 
 void init_debug_logger();
 
-}  // namespace base
+}  // namespace debug

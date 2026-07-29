@@ -13,7 +13,7 @@
 #include <windows.h>
 #endif
 
-namespace base {
+namespace debug {
 
 inline u32 current_process_id() noexcept {
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
@@ -25,5 +25,5 @@ inline u32 current_process_id() noexcept {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug
 

@@ -10,9 +10,9 @@
 #include "fpag/debug/profiler/profile_event.h"
 #include "fpag/debug/profiler/profiler.h"
 #include "fpag/debug/thread_id.h"
-#include "fpag/time/time_util.h"
+#include "fpag/debug/time_util.h"
 
-namespace base {
+namespace debug {
 
 class ProfileScope {
  public:
@@ -25,7 +25,7 @@ class ProfileScope {
         category_(category),
         location_(location) {
     if (profiler_ != nullptr && profiler_->is_enabled()) [[likely]] {
-      start_time_ns_ = current_timestamp_ns();
+      start_time_ns_ = debug::current_timestamp_ns();
     }
   }
 
@@ -33,7 +33,7 @@ class ProfileScope {
     if (profiler_ == nullptr || !profiler_->is_enabled()) [[unlikely]] {
       return;
     }
-    const u64 end_time_ns = current_timestamp_ns();
+    const u64 end_time_ns = debug::current_timestamp_ns();
     profiler_->record_event(ProfileEvent{
         .name = name_,
         .category = category_,
@@ -59,30 +59,30 @@ class ProfileScope {
   u64 start_time_ns_ = 0;
 };
 
-}  // namespace base
+}  // namespace debug
 
 #define FPAG_PROFILE_SCOPE_CONCAT_IMPL(a, b) a##b
 #define FPAG_PROFILE_SCOPE_CONCAT(a, b) FPAG_PROFILE_SCOPE_CONCAT_IMPL(a, b)
 
 // Profiler injection macros
-#define PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, category)    \
-  const ::base::ProfileScope FPAG_PROFILE_SCOPE_CONCAT(                       \
-      _profile_scope_, __LINE__)(profiler, name, ::base::Location::current(), \
+#define PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, category)     \
+  const ::debug::ProfileScope FPAG_PROFILE_SCOPE_CONCAT(                       \
+      _profile_scope_, __LINE__)(profiler, name, ::debug::Location::current(), \
                                  category)
 
 #define PROFILE_SCOPE_WITH_PROFILER(profiler, name) \
   PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(profiler, name, "default")
 
 #define PROFILE_FUNCTION_WITH_PROFILER(profiler) \
-  PROFILE_SCOPE_WITH_PROFILER(profiler, ::base::Location::current().function)
+  PROFILE_SCOPE_WITH_PROFILER(profiler, ::debug::Location::current().function)
 
 // Default global profiler macros
-#define PROFILE_SCOPE_WITH_CATEGORY(name, category)                           \
-  PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(&::base::Profiler::global(), name, \
+#define PROFILE_SCOPE_WITH_CATEGORY(name, category)                            \
+  PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(&::debug::Profiler::global(), name, \
                                            category)
 
 #define PROFILE_SCOPE(name) \
-  PROFILE_SCOPE_WITH_PROFILER(&::base::Profiler::global(), name)
+  PROFILE_SCOPE_WITH_PROFILER(&::debug::Profiler::global(), name)
 
 #define PROFILE_FUNCTION() \
-  PROFILE_FUNCTION_WITH_PROFILER(&::base::Profiler::global())
+  PROFILE_FUNCTION_WITH_PROFILER(&::debug::Profiler::global())

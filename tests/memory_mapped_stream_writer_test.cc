@@ -14,7 +14,7 @@
 #include "fpag/io/memory_mapped_file.h"
 #include "fpag/io/temp_file.h"
 
-namespace base {
+namespace io {
 
 namespace {
 
@@ -115,4 +115,4 @@ TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
   CHECK(file_content == kDirectData);
 }
 
-}  // namespace base
+}  // namespace io

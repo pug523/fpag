@@ -16,7 +16,7 @@
 #include <chrono>
 #endif
 
-namespace base {
+namespace debug {
 
 inline u64 current_timestamp_ns() noexcept {
 #if FPAG_BUILD_FLAG(IS_OS_LINUX)
@@ -30,4 +30,4 @@ inline u64 current_timestamp_ns() noexcept {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug

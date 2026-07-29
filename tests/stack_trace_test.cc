@@ -18,7 +18,7 @@
 #include "catch2/matchers/catch_matchers_string.hpp"
 #endif
 
-namespace base {
+namespace debug {
 
 FPAG_NOINLINE void anonymous_func_inner(StackTrace* trace) {
   trace->collect_trace();
@@ -137,4 +137,4 @@ TEST_CASE("StackTrace Symbol Resolution", "[base][stack_trace]") {
   }
 }
 
-}  // namespace base
+}  // namespace debug

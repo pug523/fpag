@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace base {
+namespace io {
 
 class TempFile {
  public:
@@ -33,4 +33,4 @@ class TempFile {
   std::string path_;
 };
 
-}  // namespace base
+}  // namespace io

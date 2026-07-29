@@ -9,7 +9,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/term/color_style.h"
 
-namespace base {
+namespace term {
 
 // Format
 constexpr const char* kReset = "\033[0m";
@@ -72,4 +72,4 @@ inline constexpr const char* style_code(const char* code,
   return mode != ColorStyle::Off ? code : "";
 }
 
-}  // namespace base
+}  // namespace term

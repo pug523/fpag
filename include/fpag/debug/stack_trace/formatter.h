@@ -10,7 +10,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/stack_trace/stack_frame.h"
 
-namespace base {
+namespace debug {
 
 // Controls what information is included when formatting a frame.
 struct FrameFormatOptions {
@@ -40,4 +40,4 @@ std::string format_frames(const StackTraceFrame* frames,
 // std::string format_frame(const StackTraceFrame& frame,
 //                          const FrameFormatOptions& opts = {});
 
-}  // namespace base
+}  // namespace debug

@@ -13,13 +13,13 @@
 #include "fpag/debug/profiler/profile_event.h"
 #include "fpag/io/memory_mapped_stream_writer.h"
 
-namespace base {
+namespace debug {
 
 // static
 bool TimeTraceFormatter::write_to_file(
     const std::string_view file_path,
     const std::span<const ProfileEvent> events) {
-  MemoryMappedStreamWriter writer;
+  io::MemoryMappedStreamWriter writer;
 
   // Initial allocation hint: ~200 bytes per event + JSON header/footer wrapper.
   const usize estimated_size = events.size() * 200 + 512;
@@ -71,4 +71,4 @@ bool TimeTraceFormatter::write_to_file(
   return true;
 }
 
-}  // namespace base
+}  // namespace debug

@@ -13,7 +13,7 @@
 // NOLINTNEXTLINE(build/include_subdir)
 #include "xxh3.h"
 
-namespace base {
+namespace hash {
 
 // A wrapper around the XXH3_64bits from xxhash.
 struct Xxh3Hasher64 {
@@ -30,4 +30,4 @@ struct Xxh3Hasher64 {
   }
 };
 
-}  // namespace base
+}  // namespace hash

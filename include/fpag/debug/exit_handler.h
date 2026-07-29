@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace base {
+namespace debug {
 
 void register_exit_handler();
 

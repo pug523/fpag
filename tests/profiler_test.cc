@@ -13,7 +13,7 @@
 #include "fpag/debug/profiler/profile_event.h"
 #include "fpag/debug/thread_id.h"
 
-namespace base {
+namespace debug {
 
 TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
   SECTION("Events are ignored when disabled") {
@@ -84,4 +84,4 @@ TEST_CASE("Profiler capacity boundary checks", "[base][profiler]") {
   test_profiler.stop();
 }
 
-}  // namespace base
+}  // namespace debug

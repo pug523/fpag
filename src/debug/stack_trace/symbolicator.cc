@@ -40,7 +40,7 @@
 
 #endif
 
-namespace base {
+namespace debug {
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
 
@@ -189,4 +189,4 @@ SymbolInfo Symbolicator::resolve(const void* address) const {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug

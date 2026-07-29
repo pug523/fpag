@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace base {
+namespace debug {
 
 // Demangles `mangled_name` into a human-readable C++ symbol name.
 // Returns the demangled string on success, or a copy of `mangled_name` if
@@ -17,4 +17,4 @@ namespace base {
 // Windows: UnDecorateSymbolName
 std::string demangle(const std::string& mangled_name);
 
-}  // namespace base
+}  // namespace debug

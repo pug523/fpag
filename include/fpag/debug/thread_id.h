@@ -13,7 +13,7 @@
 #include <windows.h>
 #endif
 
-namespace base {
+namespace debug {
 
 inline u64 current_thread_id() noexcept {
 #if FPAG_BUILD_FLAG(IS_OS_APPLE)
@@ -29,5 +29,5 @@ inline u64 current_thread_id() noexcept {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug
 

@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <string>
 
-namespace base {
+namespace debug {
 
 // Describes the loaded module (shared library or executable) that contains a
 // given address.
@@ -21,4 +21,4 @@ struct ModuleInfo {
 // Returns `true` if a module was found, `false` otherwise.
 bool lookup_module_for_address(const void* address, ModuleInfo* out);
 
-}  // namespace base
+}  // namespace debug

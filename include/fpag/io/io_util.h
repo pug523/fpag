@@ -18,7 +18,7 @@
 #error "Unsupported platform for SyncLogger"
 #endif
 
-namespace base {
+namespace io {
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 constexpr i32 kStdoutFd = 1;
@@ -36,4 +36,4 @@ inline void write(i32 fd, const char* data, usize size) {
 #endif
 }
 
-}  // namespace base
+}  // namespace io

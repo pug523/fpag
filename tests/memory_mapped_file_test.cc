@@ -15,7 +15,7 @@
 #include "fpag/io/temp_file.h"
 #include "fpag/mem/page_allocator.h"
 
-namespace base {
+namespace io {
 
 namespace {
 
@@ -176,4 +176,4 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
   }
 }
 
-}  // namespace base
+}  // namespace io

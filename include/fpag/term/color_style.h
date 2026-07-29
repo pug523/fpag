@@ -6,7 +6,7 @@
 
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace term {
 
 enum class ColorStyle : u8 {
   Off = 0,
@@ -15,4 +15,4 @@ enum class ColorStyle : u8 {
   AnsiTrueColor = 3,
 };
 
-}  // namespace base
+}  // namespace term

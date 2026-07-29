@@ -31,7 +31,7 @@
 #include "fpag/debug/fatal.h"
 #include "fpag/debug/stack_trace/stack_trace.h"
 
-namespace base {
+namespace debug {
 
 const char* signal_to_string(i32 signal_number) {
   switch (signal_number) {
@@ -95,4 +95,4 @@ void register_signal_handlers() {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug

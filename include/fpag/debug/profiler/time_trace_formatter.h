@@ -9,7 +9,7 @@
 
 #include "fpag/debug/profiler/profile_event.h"
 
-namespace base {
+namespace debug {
 
 class TimeTraceFormatter {
  public:
@@ -21,4 +21,4 @@ class TimeTraceFormatter {
                             std::span<const ProfileEvent> events);
 };
 
-}  // namespace base
+}  // namespace debug

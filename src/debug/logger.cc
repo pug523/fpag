@@ -6,17 +6,17 @@
 
 #include "fpag/term/console.h"
 
-namespace base {
+namespace debug {
 
 DebugLogger debug_logger;
 
 void init_debug_logger() {
   // debug_logger.init(logging::StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
-  //     mem::page_size(), base::console_color_style(base::Stream::Stdout),
+  //     mem::page_size(), term::console_color_style(term::Stream::Stdout),
   //     true));
   debug_logger.init(logging::StdoutSink(
-      nullptr, 0, base::console_color_style(base::Stream::Stdout), false));
+      nullptr, 0, term::console_color_style(term::Stream::Stdout), false));
 }
 
-}  // namespace base
+}  // namespace debug

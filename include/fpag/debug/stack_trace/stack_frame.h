@@ -7,7 +7,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/location.h"
 
-namespace base {
+namespace debug {
 
 struct StackTraceFrame {
   void* address = nullptr;
@@ -15,4 +15,4 @@ struct StackTraceFrame {
   Location location = {};
 };
 
-}  // namespace base
+}  // namespace debug

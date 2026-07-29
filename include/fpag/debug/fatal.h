@@ -9,7 +9,7 @@
 #include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
 
-namespace base::internal {
+namespace debug::internal {
 
 [[noreturn]] FPAG_COLD void fatal_crash_impl();
 
@@ -18,10 +18,10 @@ namespace base::internal {
                                              const char* func,
                                              std::string_view msg = "");
 
-}  // namespace base::internal
+}  // namespace debug::internal
 
 #define FPAG_UNREACHABLE() \
-  ::base::internal::unreachable_impl(__FILE__, __LINE__, __func__);
+  ::debug::internal::unreachable_impl(__FILE__, __LINE__, __func__);
 
 #define FPAG_UNREACHABLE_MSG(msg) \
-  ::base::internal::unreachable_impl(__FILE__, __LINE__, __func__, msg);
+  ::debug::internal::unreachable_impl(__FILE__, __LINE__, __func__, msg);

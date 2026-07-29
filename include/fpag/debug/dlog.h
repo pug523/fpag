@@ -19,7 +19,7 @@
 #include "fpag/base/numeric.h"
 #endif
 
-namespace base::internal {
+namespace debug::internal {
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 void dlog_impl(std::string_view formatted_msg,
@@ -50,14 +50,15 @@ inline constexpr void dlog_internal(const char* file,
 }
 #endif
 
-}  // namespace base::internal
+}  // namespace debug::internal
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 
 // NOLINTBEGIN(whitespace/parens)
-#define FPAG_DLOG(fmt, ...)                                     \
-  ::base::internal::dlog_internal(__FILE__, __LINE__, __func__, \
-                                  FMT_COMPILE(fmt) __VA_OPT__(, ) __VA_ARGS__)
+#define FPAG_DLOG(fmt, ...)                                        \
+  ::debug::internal::dlog_internal(__FILE__, __LINE__, __func__,   \
+                                   FMT_COMPILE(fmt) __VA_OPT__(, ) \
+                                       __VA_ARGS__)
 // NOLINTEND(whitespace/parens)
 
 #else

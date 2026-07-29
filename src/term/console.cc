@@ -20,7 +20,7 @@
 #include "fpag/term/color_style.h"
 #include "fpag/term/console.h"
 
-namespace base {
+namespace term {
 
 namespace {
 
@@ -121,4 +121,4 @@ void register_console() {
   console_color_style(Stream::Stderr);
 }
 
-}  // namespace base
+}  // namespace term

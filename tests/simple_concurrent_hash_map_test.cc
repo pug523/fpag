@@ -11,7 +11,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace container {
 
 TEST_CASE("SimpleConcurrentHashMap basic operations",
           "[base][container][hashmap]") {
@@ -97,4 +97,4 @@ TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
   }
 }
 
-}  // namespace base
+}  // namespace container

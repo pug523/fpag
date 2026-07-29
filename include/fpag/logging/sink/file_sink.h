@@ -60,7 +60,7 @@ class FileSink {
   void flush() { writer_.finish(); }
 
  private:
-  base::MemoryMappedStreamWriter writer_;
+  io::MemoryMappedStreamWriter writer_;
 };
 
 static_assert(Sink<FileSink>);

@@ -9,7 +9,7 @@
 
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace debug {
 
 struct Location {
   const char* file = "";
@@ -38,6 +38,6 @@ struct Location {
   }
 };
 
-}  // namespace base
+}  // namespace debug
 
-#define FROM_HERE() ::base::Location::current()
+#define FROM_HERE() ::debug::Location::current()

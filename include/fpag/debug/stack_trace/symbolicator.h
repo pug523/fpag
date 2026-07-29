@@ -13,7 +13,7 @@
 // #include "fpag/debug/dwarf/provider.h"
 #endif
 
-namespace base {
+namespace debug {
 
 // Result of symbolicating a single address. All strings are owned by this
 // struct (not views) because the symbolication layer may allocate them.
@@ -57,4 +57,4 @@ class Symbolicator {
 #endif
 };
 
-}  // namespace base
+}  // namespace debug

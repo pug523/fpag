@@ -20,7 +20,7 @@ template <Logger L>
 void setup(L* logger,
            usize map_capacity,
            usize queue_capacity,
-           base::SpscQueue::Mode queue_mode) {
+           container::SpscQueue::Mode queue_mode) {
   logger->init({}, map_capacity, queue_capacity, queue_mode);
   logger->start_backend_worker();
 }
@@ -29,14 +29,14 @@ template <Logger L>
 void cleanup(L* logger, usize dropped_count) {
   logger->stop_backend_worker();
   if (dropped_count > 0) {
-    base::debug_logger.warn("async logger dropped {} logs", dropped_count);
-    base::debug_logger.flush();
+    debug::debug_logger.warn("async logger dropped {} logs", dropped_count);
+    debug::debug_logger.flush();
   }
 }
 
 constexpr usize kMapCap = 1 << 16;
 constexpr usize kQueueCap = 1 << 30;
-constexpr base::SpscQueue::Mode kMode = base::SpscQueue::Mode::Drop;
+constexpr container::SpscQueue::Mode kMode = container::SpscQueue::Mode::Drop;
 
 // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 void async_logger_log_literal_compiled_string_w_interner(

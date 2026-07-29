@@ -17,8 +17,7 @@
 #include "fpag/debug/fatal.h"
 #include "fpag/mem/page_allocator.h"
 
-namespace base {
-
+namespace container {
 // Lock-free fast concurrent hash map.
 // Has no resizing.
 template <typename K, typename V, typename Hash = std::hash<K>>
@@ -68,7 +67,7 @@ class SimpleConcurrentHashMap {
   }
 
   void reserve(u64 capacity) {
-    FPAG_DCHECK_MSG(is_power_of_two(capacity),
+    FPAG_DCHECK_MSG(base::is_power_of_two(capacity),
                     "capacity must be a power of two");
     capacity_ = base::round_up(capacity, mem::page_size());
     void* const raw_mem = mem::allocate_pages(sizeof(Entry) * capacity_);
@@ -108,7 +107,8 @@ class SimpleConcurrentHashMap {
           size_.fetch_add(1, std::memory_order_relaxed);
           return;
         }
-        // If compare_exchange failed, `expected` now holds the observed value.
+        // If compare_exchange failed, `expected` now holds the observed
+        // value.
       }
 
       // Check if entry matches the key.
@@ -214,4 +214,4 @@ class SimpleConcurrentHashMap {
   Hash hasher_;
 };
 
-}  // namespace base
+}  // namespace container

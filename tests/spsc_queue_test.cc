@@ -7,7 +7,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace container {
 
 namespace {
 
@@ -114,4 +114,4 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
 
 }  // namespace
 
-}  // namespace base
+}  // namespace container

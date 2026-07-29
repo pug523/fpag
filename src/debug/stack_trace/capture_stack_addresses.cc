@@ -24,7 +24,7 @@
 #error "Unsupported platform for stack trace capture"
 #endif
 
-namespace base {
+namespace debug {
 
 namespace {
 
@@ -163,4 +163,4 @@ FPAG_NOINLINE usize capture_stack_addresses(void** out_frames,
 #endif
 }
 
-}  // namespace base
+}  // namespace debug

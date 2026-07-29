@@ -7,7 +7,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/location.h"
 
-namespace base {
+namespace debug {
 
 struct ProfileEvent {
   const char* name = nullptr;
@@ -19,4 +19,4 @@ struct ProfileEvent {
   u32 process_id = 0;
 };
 
-}  // namespace base
+}  // namespace debug

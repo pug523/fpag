@@ -69,11 +69,11 @@ void render_option_line(std::back_insert_iterator<std::string> out,
                         std::string_view help_text,
                         std::string_view default_value,
                         bool is_required,
-                        base::ColorStyle color_style) {
-  const char* italic = base::style_code(base::kItalic, color_style);
-  const char* reset = base::style_code(base::kReset, color_style);
-  const char* bright_cyan = base::style_code(base::kBrightCyan, color_style);
-  const char* gray = base::style_code(base::kGray, color_style);
+                        term::ColorStyle color_style) {
+  const char* italic = term::style_code(term::kItalic, color_style);
+  const char* reset = term::style_code(term::kReset, color_style);
+  const char* bright_cyan = term::style_code(term::kBrightCyan, color_style);
+  const char* gray = term::style_code(term::kGray, color_style);
 
   // Option specification with padding
   const usize visible_len = opt_spec.size();
@@ -99,7 +99,7 @@ void render_option_line(std::back_insert_iterator<std::string> out,
 
 std::string DefaultHelpFormatter::operator()(
     const Command& command,
-    base::ColorStyle color_style) const {
+    term::ColorStyle color_style) const {
   std::string result;
 
   constexpr usize kMargin = 512;
@@ -112,12 +112,12 @@ std::string DefaultHelpFormatter::operator()(
 
   constexpr usize kTerminalWidth = 60;
 
-  const char* bold = base::style_code(base::kBold, color_style);
-  const char* underline = base::style_code(base::kUnderline, color_style);
-  const char* reset = base::style_code(base::kReset, color_style);
-  const char* blue = base::style_code(base::kBlue, color_style);
+  const char* bold = term::style_code(term::kBold, color_style);
+  const char* underline = term::style_code(term::kUnderline, color_style);
+  const char* reset = term::style_code(term::kReset, color_style);
+  const char* blue = term::style_code(term::kBlue, color_style);
   const char* bright_magenta =
-      base::style_code(base::kBrightMagenta, color_style);
+      term::style_code(term::kBrightMagenta, color_style);
 
   // Title section
   if (!command.name().empty()) {

@@ -12,10 +12,10 @@
 namespace {
 
 void init() {
-  base::register_console();
-  base::register_exit_handler();
-  base::register_terminate_handler();
-  base::register_signal_handlers();
+  term::register_console();
+  debug::register_exit_handler();
+  debug::register_terminate_handler();
+  debug::register_signal_handlers();
 }
 
 }  // namespace

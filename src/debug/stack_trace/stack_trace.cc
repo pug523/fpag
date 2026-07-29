@@ -16,7 +16,7 @@
 #include "fpag/debug/string.h"
 #include "fpag/io/io_util.h"
 
-namespace base {
+namespace debug {
 
 void StackTrace::init(StackTraceFrame* frames_buf, usize depth, usize skip) {
   frames_ = frames_buf;
@@ -73,7 +73,7 @@ void StackTrace::collect_trace() {
 void StackTrace::print_trace(std::string_view prefix) const {
   if (status_ == StackTraceStatus::Failed) [[unlikely]] {
     constexpr const char* kError = "stack trace collection failed";
-    base::write(kStderrFd, kError, const_strlen(kError));
+    io::write(io::kStderrFd, kError, const_strlen(kError));
     return;
   }
 
@@ -82,7 +82,7 @@ void StackTrace::print_trace(std::string_view prefix) const {
       "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
-  base::write(kStdoutFd, out.data(), out.size());
+  io::write(io::kStdoutFd, out.data(), out.size());
 }
 
 std::string StackTrace::to_string() const {
@@ -112,4 +112,4 @@ void print_stack_trace_from_here() {
   trace.print_trace();
 }
 
-}  // namespace base
+}  // namespace debug

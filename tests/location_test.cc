@@ -8,7 +8,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 
-namespace base {
+namespace debug {
 
 TEST_CASE("Location default initialization and validity", "[base][location]") {
   SECTION("Default constructed Location") {
@@ -63,4 +63,4 @@ TEST_CASE("Location::current construction validation", "[base][location]") {
   CHECK(loc.line > 0);
 }
 
-}  // namespace base
+}  // namespace debug

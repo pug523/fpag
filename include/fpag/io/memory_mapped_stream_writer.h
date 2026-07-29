@@ -11,7 +11,7 @@
 #include "fpag/io/file_handle.h"
 #include "fpag/io/memory_mapped_file.h"
 
-namespace base {
+namespace io {
 
 class MemoryMappedStreamWriter {
  public:
@@ -110,4 +110,4 @@ class MemoryMappedStreamWriter {
   usize write_offset_ = 0;
 };
 
-}  // namespace base
+}  // namespace io

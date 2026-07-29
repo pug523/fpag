@@ -36,7 +36,7 @@ class Serializer {
 
   static void serialize_to(LogLevel level,
                            str::StringInterner* interner,
-                           base::SpscQueue* queue,
+                           container::SpscQueue* queue,
                            Format fmt,
                            Args&&... args) {
     constexpr bool kAreAllArgsFixedSize =
@@ -45,7 +45,7 @@ class Serializer {
     using Deserializer = Deserializer<Format, kUseInterner, Args...>;
     static constexpr DeserializeFunction kDeserializeFunc =
         &Deserializer::deserialize;
-    using Eqs = base::SpscQueue::EnqueueStatus;
+    using Eqs = container::SpscQueue::EnqueueStatus;
 
     if constexpr (sizeof...(Args) == 0) {
       void* out_ptr = nullptr;

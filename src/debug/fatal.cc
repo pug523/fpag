@@ -16,7 +16,7 @@
 #include <intrin.h>
 #endif
 
-namespace base::internal {
+namespace debug::internal {
 
 void fatal_crash_impl() {
 #if FPAG_BUILD_FLAG(IS_DEBUG)
@@ -47,4 +47,4 @@ void unreachable_impl(const char* file,
   fatal_crash_impl();
 }
 
-}  // namespace base::internal
+}  // namespace debug::internal

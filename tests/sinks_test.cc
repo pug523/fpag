@@ -8,6 +8,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/format.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/time_util.h"
 #include "fpag/io/file_handle.h"
 #include "fpag/io/memory_mapped_file.h"
 #include "fpag/io/temp_file.h"
@@ -15,26 +16,25 @@
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/file_sink.h"
 #include "fpag/logging/sink/json_lines_sink.h"
-#include "fpag/time/time_util.h"
 
 namespace logging {
 
 TEST_CASE("FileSink output validation", "[logging][sink][file_sink]") {
-  const base::TempFile temp_file;
+  const io::TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   FileSink sink(temp_file.path());
-  const u64 ts = base::current_timestamp_ns();
+  const u64 ts = debug::current_timestamp_ns();
   const LogEntry entry1{.level = LogLevel::Info,
                         .message = "FileSink write test",
                         .timestamp_ns = ts};
   sink.log(entry1);
   sink.flush();
 
-  base::FileHandle handle;
-  REQUIRE(handle.open(temp_file.path(), base::FileAccess::Read));
+  io::FileHandle handle;
+  REQUIRE(handle.open(temp_file.path(), io::FileAccess::Read));
 
-  base::MemoryMappedFile mmap;
+  io::MemoryMappedFile mmap;
   REQUIRE(mmap.map(handle, 0, 0));
 
   const std::string_view content(reinterpret_cast<const char*>(mmap.data()),
@@ -47,22 +47,22 @@ TEST_CASE("FileSink output validation", "[logging][sink][file_sink]") {
 
 TEST_CASE("JsonLinesSink output validation",
           "[logging][sink][json_lines_sink]") {
-  const base::TempFile temp_file;
+  const io::TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
   JsonLinesSink sink(temp_file.path());
 
-  const u64 ts = base::current_timestamp_ns();
+  const u64 ts = debug::current_timestamp_ns();
   const LogEntry entry{.level = LogLevel::Error,
                        .message = "Failed to connect to cluster",
                        .timestamp_ns = ts};
   sink.log(entry);
   sink.flush();
 
-  base::FileHandle handle;
-  REQUIRE(handle.open(temp_file.path(), base::FileAccess::Read));
+  io::FileHandle handle;
+  REQUIRE(handle.open(temp_file.path(), io::FileAccess::Read));
 
-  base::MemoryMappedFile mmap;
+  io::MemoryMappedFile mmap;
   REQUIRE(mmap.map(handle, 0, 0));
 
   const std::string_view content(reinterpret_cast<const char*>(mmap.data()),

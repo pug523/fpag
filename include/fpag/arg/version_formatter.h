@@ -16,14 +16,14 @@ template <typename F>
 concept VersionFormatter = requires(const F& f,
                                     std::string_view command_name,
                                     std::string_view version,
-                                    base::ColorStyle color_style) {
+                                    term::ColorStyle color_style) {
   { f(command_name, version, color_style) } -> std::same_as<std::string>;
 };
 
 struct DefaultVersionFormatter {
   std::string operator()(std::string_view command_name,
                          std::string_view version,
-                         base::ColorStyle color_style) const;
+                         term::ColorStyle color_style) const;
 };
 
 }  // namespace arg

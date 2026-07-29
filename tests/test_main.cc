@@ -15,18 +15,18 @@
 #define CATCH_CONFIG_RUNNER
 
 void init() {
-  base::register_console();
-  base::register_exit_handler();
-  base::register_terminate_handler();
-  base::register_signal_handlers();
+  term::register_console();
+  debug::register_exit_handler();
+  debug::register_terminate_handler();
+  debug::register_signal_handlers();
 
-  base::Profiler::global().start();
+  debug::Profiler::global().start();
 }
 
 void clean_up() {
-  base::Profiler::global().stop();
-  base::TimeTraceFormatter::write_to_file("test_time_trace.json",
-                                          base::Profiler::global().events());
+  debug::Profiler::global().stop();
+  debug::TimeTraceFormatter::write_to_file("test_time_trace.json",
+                                           debug::Profiler::global().events());
 }
 
 i32 run_tests(i32 argc, char** argv) {

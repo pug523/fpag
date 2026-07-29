@@ -18,14 +18,14 @@ template <typename F>
 concept ErrorFormatter = requires(const F& f,
                                   std::string_view command_name,
                                   const std::vector<ParseError>& errors,
-                                  base::ColorStyle color_style) {
+                                  term::ColorStyle color_style) {
   { f(command_name, errors, color_style) } -> std::same_as<std::string>;
 };
 
 struct DefaultErrorFormatter {
   std::string operator()(std::string_view command_name,
                          const std::vector<ParseError>& errors,
-                         base::ColorStyle color_style) const;
+                         term::ColorStyle color_style) const;
 };
 
 }  // namespace arg

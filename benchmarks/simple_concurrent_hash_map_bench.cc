@@ -9,7 +9,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/container/simple_concurrent_hash_map.h"
 
-namespace base {
+namespace container {
 
 namespace {
 
@@ -81,4 +81,4 @@ BENCHMARK(simple_concurrent_hash_map_concurrent_insert_multi_thread);
 
 }  // namespace
 
-}  // namespace base
+}  // namespace container

@@ -15,7 +15,7 @@
 #include "fpag/debug/common.h"
 #endif
 
-namespace base::internal {
+namespace debug::internal {
 
 [[noreturn]] FPAG_COLD void check_fail_impl(const char* expr,
                                             const char* file,
@@ -51,7 +51,7 @@ namespace base::internal {
                                                 const char* func,
                                                 std::string_view msg = "");
 
-}  // namespace base::internal
+}  // namespace debug::internal
 
 #define FPAG_CHECK_EVALUATE(expr, on_failed)      \
   do {                                            \
@@ -73,32 +73,32 @@ namespace base::internal {
     }                                                     \
   } while (false)
 
-#define FPAG_CHECK(expr)                                       \
-  FPAG_CHECK_EVALUATE(expr, ::base::internal::check_fail_impl( \
+#define FPAG_CHECK(expr)                                        \
+  FPAG_CHECK_EVALUATE(expr, ::debug::internal::check_fail_impl( \
                                 #expr, __FILE__, __LINE__, __func__))
 
-#define FPAG_CHECK_MSG(expr, msg)                              \
-  FPAG_CHECK_EVALUATE(expr, ::base::internal::check_fail_impl( \
+#define FPAG_CHECK_MSG(expr, msg)                               \
+  FPAG_CHECK_EVALUATE(expr, ::debug::internal::check_fail_impl( \
                                 #expr, __FILE__, __LINE__, __func__, msg))
 
 // No heap allocations on failure.
-#define FPAG_RAW_CHECK(expr)                                       \
-  FPAG_CHECK_EVALUATE(expr, ::base::internal::raw_check_fail_impl( \
+#define FPAG_RAW_CHECK(expr)                                        \
+  FPAG_CHECK_EVALUATE(expr, ::debug::internal::raw_check_fail_impl( \
                                 #expr, __FILE__, __LINE__, __func__))
 
-#define FPAG_RAW_CHECK_MSG(expr, msg)                              \
-  FPAG_CHECK_EVALUATE(expr, ::base::internal::raw_check_fail_impl( \
+#define FPAG_RAW_CHECK_MSG(expr, msg)                               \
+  FPAG_CHECK_EVALUATE(expr, ::debug::internal::raw_check_fail_impl( \
                                 #expr, __FILE__, __LINE__, __func__, msg))
 
-#define FPAG_CHECK_OP(lhs, rhs, op)             \
-  FPAG_CHECK_OP_EVALUATE(                       \
-      lhs, rhs, op,                             \
-      ::base::internal::check_op_fail_internal( \
+#define FPAG_CHECK_OP(lhs, rhs, op)              \
+  FPAG_CHECK_OP_EVALUATE(                        \
+      lhs, rhs, op,                              \
+      ::debug::internal::check_op_fail_internal( \
           #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, __LINE__, __func__))
 
 #define FPAG_CHECK_OP_MSG(lhs, rhs, op, msg)                              \
   FPAG_CHECK_OP_EVALUATE(lhs, rhs, op,                                    \
-                         ::base::internal::check_op_fail_internal(        \
+                         ::debug::internal::check_op_fail_internal(       \
                              #lhs " " #op " " #rhs, _lhs, _rhs, __FILE__, \
                              __LINE__, __func__, msg))
 

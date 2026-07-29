@@ -24,7 +24,7 @@
 #error "Unsupported platform for symbol demangling"
 #endif
 
-namespace base {
+namespace debug {
 
 namespace {
 
@@ -85,4 +85,4 @@ std::string demangle(const std::string& mangled_name) {
 #endif
 }
 
-}  // namespace base
+}  // namespace debug
