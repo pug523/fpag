@@ -6,10 +6,10 @@
 
 #include <string_view>
 
-#include "fpag/base/color_style.h"
-#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/fatal.h"
 #include "fpag/logging/log_level.h"
+#include "fpag/term/color_style.h"
 
 namespace logging {
 

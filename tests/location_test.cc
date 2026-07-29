@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/location.h"
+#include "fpag/debug/location.h"
 
 #include <string_view>
 

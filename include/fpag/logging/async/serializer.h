@@ -10,10 +10,10 @@
 #include <type_traits>
 
 #include "fmt/compile.h"
-#include "fpag/base/debug/check.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/check.h"
 #include "fpag/logging/async/codec/codec.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/log_level.h"

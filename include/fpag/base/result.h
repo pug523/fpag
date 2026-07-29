@@ -7,11 +7,11 @@
 #include <type_traits>
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/tagged_union.h"
+#include "fpag/debug/check.h"
 
 namespace base {
-//
+
 // Lightweight wrapper types to assist construction
 template <typename T>
 struct Ok {

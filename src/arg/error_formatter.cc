@@ -13,9 +13,9 @@
 #include "fmt/core.h"
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/parse_error.h"
-#include "fpag/base/color_style.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/style.h"
+#include "fpag/term/color_style.h"
+#include "fpag/term/style.h"
 
 namespace arg {
 

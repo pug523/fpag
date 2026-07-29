@@ -11,11 +11,10 @@
 #include <thread>
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
-#include "fpag/base/time_util.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/check.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
@@ -23,6 +22,7 @@
 #include "fpag/logging/sink/sink.h"
 #include "fpag/logging/wait_strategy.h"
 #include "fpag/str/string_interner.h"
+#include "fpag/time/time_util.h"
 
 namespace logging {
 

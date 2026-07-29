@@ -7,8 +7,8 @@
 #include <cstddef>
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
 #include "fpag/mem/arena_ptr.h"
 
 namespace mem {

@@ -20,9 +20,9 @@
 #include "fpag/arg/parse_result.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/version_formatter.h"
-#include "fpag/base/color_style.h"
-#include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
+#include "fpag/term/color_style.h"
+#include "fpag/term/console.h"
 
 namespace arg {
 

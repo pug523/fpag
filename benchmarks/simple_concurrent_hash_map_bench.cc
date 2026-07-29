@@ -7,7 +7,7 @@
 
 #include "benchmark/benchmark.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/simple_concurrent_hash_map.h"
+#include "fpag/container/simple_concurrent_hash_map.h"
 
 namespace base {
 

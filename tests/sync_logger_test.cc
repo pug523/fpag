@@ -9,8 +9,8 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
-#include "fpag/base/console.h"
-// #include "fpag/base/debug/dlog.h"
+#include "fpag/term/console.h"
+// #include "fpag/debug/dlog.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"

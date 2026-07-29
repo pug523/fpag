@@ -3,14 +3,14 @@
 // which can be found in the LICENSE file.
 
 #include "catch2/catch_session.hpp"
-#include "fpag/base/console.h"
-#include "fpag/base/debug/signal_handler.h"
-#include "fpag/base/debug/terminate_handler.h"
-#include "fpag/base/exit_handler.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/profiler/profile_scope.h"
-#include "fpag/base/profiler/profiler.h"
-#include "fpag/base/profiler/time_trace_formatter.h"
+#include "fpag/debug/exit_handler.h"
+#include "fpag/debug/profiler/profile_scope.h"
+#include "fpag/debug/profiler/profiler.h"
+#include "fpag/debug/profiler/time_trace_formatter.h"
+#include "fpag/debug/signal_handler.h"
+#include "fpag/debug/terminate_handler.h"
+#include "fpag/term/console.h"
 
 #define CATCH_CONFIG_RUNNER
 

@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-#include "fpag/base/color_style.h"
+#include "fpag/term/color_style.h"
 
 namespace arg {
 

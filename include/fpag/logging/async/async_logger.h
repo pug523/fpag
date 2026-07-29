@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
 #include "fpag/logging/async/backend_worker.h"
 #include "fpag/logging/async/serializer.h"
 #include "fpag/logging/log_level.h"

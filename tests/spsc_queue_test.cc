@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"

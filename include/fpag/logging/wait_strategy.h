@@ -11,8 +11,8 @@
 #include <thread>
 
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
 #include "fpag/build/build_config.h"
+#include "fpag/container/spsc_queue.h"
 
 namespace logging {
 

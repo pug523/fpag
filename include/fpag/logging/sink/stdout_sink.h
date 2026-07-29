@@ -7,13 +7,13 @@
 #include <cstring>
 #include <string_view>
 
-#include "fpag/base/color_style.h"
-#include "fpag/base/debug/check.h"
-#include "fpag/base/io_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
+#include "fpag/io/io_util.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level_util.h"
 #include "fpag/logging/sink/sink.h"
+#include "fpag/term/color_style.h"
 
 namespace logging {
 

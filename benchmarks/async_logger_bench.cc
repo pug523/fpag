@@ -4,9 +4,9 @@
 
 #include "benchmark/benchmark.h"
 #include "fmt/compile.h"
-#include "fpag/base/debug/logger.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/logger.h"
 #include "fpag/logging/async/async_logger.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/logger.h"

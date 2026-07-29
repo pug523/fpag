@@ -12,11 +12,11 @@
 #include "fmt/base.h"
 #include "fmt/compile.h"
 #include "fmt/format.h"
-#include "fpag/base/time_util.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/sink.h"
+#include "fpag/time/time_util.h"
 
 namespace logging {
 

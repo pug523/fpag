@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "fpag/arg/parse_error.h"
-#include "fpag/base/color_style.h"
+#include "fpag/term/color_style.h"
 
 namespace arg {
 

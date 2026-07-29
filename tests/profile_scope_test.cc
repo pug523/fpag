@@ -2,12 +2,12 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/profiler/profile_scope.h"
+#include "fpag/debug/profiler/profile_scope.h"
 
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/profiler/profiler.h"
+#include "fpag/debug/profiler/profiler.h"
 
 namespace base {
 

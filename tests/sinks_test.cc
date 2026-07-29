@@ -7,15 +7,15 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/format.h"
-#include "fpag/base/file_handle.h"
-#include "fpag/base/memory_mapped_file.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/temp_file.h"
-#include "fpag/base/time_util.h"
+#include "fpag/io/file_handle.h"
+#include "fpag/io/memory_mapped_file.h"
+#include "fpag/io/temp_file.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/file_sink.h"
 #include "fpag/logging/sink/json_lines_sink.h"
+#include "fpag/time/time_util.h"
 
 namespace logging {
 

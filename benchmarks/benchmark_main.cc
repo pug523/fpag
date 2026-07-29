@@ -3,11 +3,11 @@
 // which can be found in the LICENSE file.
 
 #include "benchmark/benchmark.h"
-#include "fpag/base/console.h"
-#include "fpag/base/debug/signal_handler.h"
-#include "fpag/base/debug/terminate_handler.h"
-#include "fpag/base/exit_handler.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/exit_handler.h"
+#include "fpag/debug/signal_handler.h"
+#include "fpag/debug/terminate_handler.h"
+#include "fpag/term/console.h"
 
 namespace {
 

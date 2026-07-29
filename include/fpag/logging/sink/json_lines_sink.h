@@ -8,8 +8,8 @@
 
 #include "fmt/base.h"
 #include "fmt/compile.h"
-#include "fpag/base/memory_mapped_stream_writer.h"
 #include "fpag/base/numeric.h"
+#include "fpag/io/memory_mapped_stream_writer.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level_util.h"
 #include "fpag/logging/sink/sink.h"

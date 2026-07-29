@@ -7,8 +7,8 @@
 #include <string_view>
 
 #include "fpag/base/numeric.h"
-#include "fpag/base/simple_concurrent_hash_map.h"
-#include "fpag/base/xxh3_hasher.h"
+#include "fpag/container/simple_concurrent_hash_map.h"
+#include "fpag/hash/xxh3_hasher.h"
 #include "fpag/str/string_pool.h"
 #include "fpag/str/string_pool_id.h"
 

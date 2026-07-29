@@ -2,16 +2,16 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/debug/stack_trace/stack_trace.h"
+#include "fpag/debug/stack_trace/stack_trace.h"
 
 #include <string>
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/attributes.h"
-#include "fpag/base/debug/stack_trace/stack_frame.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
+#include "fpag/debug/stack_trace/stack_frame.h"
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include "catch2/matchers/catch_matchers.hpp"
