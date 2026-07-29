@@ -7,8 +7,8 @@
 #include <string_view>
 
 #include "fpag/base/numeric.h"
-#include "fpag/base/simple_concurrent_hash_map.h"
-#include "fpag/base/xxh3_hasher.h"
+#include "fpag/container/simple_concurrent_hash_map.h"
+#include "fpag/hash/xxh3_hasher.h"
 #include "fpag/str/string_pool.h"
 #include "fpag/str/string_pool_id.h"
 
@@ -17,9 +17,9 @@ namespace str {
 // Concurrent string interner that uses a StringPool for storage.
 class StringInterner {
  public:
-  using Map = base::SimpleConcurrentHashMap<std::string_view,
-                                            StringPoolId,
-                                            base::Xxh3Hasher64>;
+  using Map = container::SimpleConcurrentHashMap<std::string_view,
+                                                 StringPoolId,
+                                                 hash::Xxh3Hasher64>;
 
   using StringId = StringPoolId;
 

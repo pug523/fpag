@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/xxh3_hasher.h"
+#include "fpag/hash/xxh3_hasher.h"
 
 #include <string>
 #include <string_view>
@@ -10,7 +10,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace hash {
 
 TEST_CASE("Xxh3Hasher basic functionality", "[base][hash][xxh3]") {
   const Xxh3Hasher64 hasher;
@@ -68,4 +68,4 @@ TEST_CASE("Xxh3Hasher stability", "[base][hash]") {
   }
 }
 
-}  // namespace base
+}  // namespace hash

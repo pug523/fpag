@@ -10,8 +10,8 @@
 
 #include "fpag/arg/parse_error.h"
 #include "fpag/arg/parse_status.h"
-#include "fpag/base/debug/check.h"
 #include "fpag/base/tagged_union.h"
+#include "fpag/debug/check.h"
 
 namespace arg {
 

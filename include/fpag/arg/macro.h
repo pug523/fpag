@@ -11,8 +11,8 @@
 #include "fpag/arg/matches.h"
 #include "fpag/arg/parse_result.h"
 #include "fpag/arg/parser.h"
-#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/fatal.h"
 
 namespace arg::detail {
 

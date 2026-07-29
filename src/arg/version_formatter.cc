@@ -8,14 +8,14 @@
 #include <string>
 #include <string_view>
 
-#include "fpag/base/color_style.h"
+#include "fpag/term/color_style.h"
 
 namespace arg {
 
 std::string DefaultVersionFormatter::operator()(
     std::string_view command_name,
     std::string_view version,
-    base::ColorStyle /* color_style */) const {
+    term::ColorStyle /* color_style */) const {
   std::string out;
   out.reserve(command_name.size() + sizeof(" version ") + version.size());
   out.append(command_name);

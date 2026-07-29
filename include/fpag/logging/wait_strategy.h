@@ -11,8 +11,8 @@
 #include <thread>
 
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
 #include "fpag/build/build_config.h"
+#include "fpag/container/spsc_queue.h"
 
 namespace logging {
 
@@ -35,12 +35,12 @@ struct BusySpin {
     ++spin_count;
   }
 
-  void wait_for_next(const base::SpscQueue& /* queue */,
+  void wait_for_next(const container::SpscQueue& /* queue */,
                      const std::atomic<bool>& /* stopping */) noexcept {
     wait();
   }
 
-  void wait_for_flush(const base::SpscQueue& /* queue */,
+  void wait_for_flush(const container::SpscQueue& /* queue */,
                       const std::atomic<bool>& /* stopping */) noexcept {
     wait();
   }
@@ -54,7 +54,7 @@ struct Blocking {
 
   void notify() noexcept { cv.notify_one(); }
 
-  void wait_for_next(const base::SpscQueue& queue,
+  void wait_for_next(const container::SpscQueue& queue,
                      const std::atomic<bool>& stopping) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     cv.wait_for(lock, std::chrono::milliseconds(10), [&] {
@@ -62,7 +62,7 @@ struct Blocking {
     });
   }
 
-  void wait_for_flush(const base::SpscQueue& queue,
+  void wait_for_flush(const container::SpscQueue& queue,
                       const std::atomic<bool>& /* stopping */) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     cv.wait_for(lock, std::chrono::milliseconds(10),
@@ -74,7 +74,7 @@ struct Blocking {
 
 template <typename T>
 concept WaitStrategy = requires(T& waiter,
-                                const base::SpscQueue& queue,
+                                const container::SpscQueue& queue,
                                 const std::atomic<bool>& stopping) {
   waiter.notify();
   waiter.wait_for_next(queue, stopping);

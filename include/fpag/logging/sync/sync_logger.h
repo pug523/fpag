@@ -12,7 +12,7 @@
 #include "fmt/base.h"
 #include "fmt/compile.h"
 #include "fmt/format.h"
-#include "fpag/base/time_util.h"
+#include "fpag/debug/time_util.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
@@ -100,7 +100,7 @@ class SyncLogger {
     sink_.log(LogEntry{
         .level = level,
         .message = msg,
-        .timestamp_ns = base::current_timestamp_ns(),
+        .timestamp_ns = debug::current_timestamp_ns(),
     });
   }
 

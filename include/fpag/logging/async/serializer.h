@@ -10,10 +10,10 @@
 #include <type_traits>
 
 #include "fmt/compile.h"
-#include "fpag/base/debug/check.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/check.h"
 #include "fpag/logging/async/codec/codec.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/log_level.h"
@@ -36,7 +36,7 @@ class Serializer {
 
   static void serialize_to(LogLevel level,
                            str::StringInterner* interner,
-                           base::SpscQueue* queue,
+                           container::SpscQueue* queue,
                            Format fmt,
                            Args&&... args) {
     constexpr bool kAreAllArgsFixedSize =
@@ -45,7 +45,7 @@ class Serializer {
     using Deserializer = Deserializer<Format, kUseInterner, Args...>;
     static constexpr DeserializeFunction kDeserializeFunc =
         &Deserializer::deserialize;
-    using Eqs = base::SpscQueue::EnqueueStatus;
+    using Eqs = container::SpscQueue::EnqueueStatus;
 
     if constexpr (sizeof...(Args) == 0) {
       void* out_ptr = nullptr;

@@ -3,11 +3,11 @@
 // which can be found in the LICENSE file.
 
 #include "benchmark/benchmark.h"
-#include "fpag/base/debug/logger.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/logger.h"
 
-namespace base {
+namespace container {
 
 namespace {
 
@@ -23,7 +23,8 @@ void spsc_queue_simple_enqueue_single_thread(benchmark::State& state) {
   }
 
   if (queue.dropped_count() > 0) {
-    debug_logger.warn("spsc queue dropped {} entries", queue.dropped_count());
+    debug::debug_logger.warn("spsc queue dropped {} entries",
+                             queue.dropped_count());
   }
 }
 BENCHMARK(spsc_queue_simple_enqueue_single_thread);
@@ -31,5 +32,5 @@ BENCHMARK(spsc_queue_simple_enqueue_single_thread);
 
 }  // namespace
 
-}  // namespace base
+}  // namespace container
 

@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/debug/stack_trace/capture_stack_addresses.h"
+#include "fpag/debug/stack_trace/capture_stack_addresses.h"
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
@@ -12,7 +12,7 @@
 #include "fpag/base/attributes.h"
 #endif
 
-namespace base {
+namespace debug {
 
 TEST_CASE("capture_stack_addresses basic functionality",
           "[base][debug][stack_trace]") {
@@ -102,4 +102,4 @@ TEST_CASE("capture_stack_addresses skip functionality",
 
 #endif
 
-}  // namespace base
+}  // namespace debug

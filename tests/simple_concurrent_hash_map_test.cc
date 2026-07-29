@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/simple_concurrent_hash_map.h"
+#include "fpag/container/simple_concurrent_hash_map.h"
 
 #include <thread>
 #include <vector>
@@ -11,7 +11,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
-namespace base {
+namespace container {
 
 TEST_CASE("SimpleConcurrentHashMap basic operations",
           "[base][container][hashmap]") {
@@ -97,4 +97,4 @@ TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
   }
 }
 
-}  // namespace base
+}  // namespace container

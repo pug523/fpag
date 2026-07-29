@@ -6,10 +6,10 @@
 
 #include <string_view>
 
-#include "fpag/base/color_style.h"
-#include "fpag/base/debug/fatal.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/fatal.h"
 #include "fpag/logging/log_level.h"
+#include "fpag/term/color_style.h"
 
 namespace logging {
 
@@ -103,13 +103,13 @@ static constexpr std::string_view kAnsiTrueColorPrefixes[] = {
 };
 
 inline constexpr std::string_view log_prefix(LogLevel level,
-                                             base::ColorStyle style) {
+                                             term::ColorStyle style) {
   if (level >= LogLevel::WithoutPrefix) {
     return "";
   }
   const u8 l = static_cast<u8>(level);
   switch (style) {
-    using C = base::ColorStyle;
+    using C = term::ColorStyle;
     case C::Off: return kPlainPrefixes[l];
     case C::Ansi16: return kAnsi16Prefixes[l];
     case C::Ansi256: return kAnsi256Prefixes[l];

@@ -11,9 +11,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/tagged_union_internal.h"
+#include "fpag/debug/check.h"
 
 namespace base {
 

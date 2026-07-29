@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/profiler/time_trace_formatter.h"
+#include "fpag/debug/profiler/time_trace_formatter.h"
 
 #include <cstdio>
 #include <fstream>
@@ -11,10 +11,10 @@
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/location.h"
-#include "fpag/base/profiler/profile_event.h"
+#include "fpag/debug/location.h"
+#include "fpag/debug/profiler/profile_event.h"
 
-namespace base {
+namespace debug {
 
 TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
   const char* kTestFilename = "test_chrome_trace.json";
@@ -91,4 +91,4 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
   }
 }
 
-}  // namespace base
+}  // namespace debug

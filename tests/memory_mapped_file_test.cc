@@ -2,7 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/memory_mapped_file.h"
+#include "fpag/io/memory_mapped_file.h"
 
 #include <cstring>
 #include <span>
@@ -10,12 +10,12 @@
 #include <utility>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/file_handle.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/temp_file.h"
+#include "fpag/io/file_handle.h"
+#include "fpag/io/temp_file.h"
 #include "fpag/mem/page_allocator.h"
 
-namespace base {
+namespace io {
 
 namespace {
 
@@ -176,4 +176,4 @@ TEST_CASE("MemoryMappedFile offset and partial mapping",
   }
 }
 
-}  // namespace base
+}  // namespace io

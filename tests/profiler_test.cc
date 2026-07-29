@@ -2,18 +2,18 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/profiler/profiler.h"
+#include "fpag/debug/profiler/profiler.h"
 
 #include <span>
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/debug/process_id.h"
-#include "fpag/base/debug/thread_id.h"
-#include "fpag/base/location.h"
-#include "fpag/base/profiler/profile_event.h"
+#include "fpag/debug/location.h"
+#include "fpag/debug/process_id.h"
+#include "fpag/debug/profiler/profile_event.h"
+#include "fpag/debug/thread_id.h"
 
-namespace base {
+namespace debug {
 
 TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
   SECTION("Events are ignored when disabled") {
@@ -84,4 +84,4 @@ TEST_CASE("Profiler capacity boundary checks", "[base][profiler]") {
   test_profiler.stop();
 }
 
-}  // namespace base
+}  // namespace debug

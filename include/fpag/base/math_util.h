@@ -6,8 +6,8 @@
 
 #include <type_traits>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
 
 namespace base {
 

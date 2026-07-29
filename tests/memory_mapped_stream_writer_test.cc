@@ -2,19 +2,19 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "fpag/base/memory_mapped_stream_writer.h"
+#include "fpag/io/memory_mapped_stream_writer.h"
 
 #include <cstring>
 #include <string>
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
-#include "fpag/base/file_handle.h"
-#include "fpag/base/memory_mapped_file.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/temp_file.h"
+#include "fpag/io/file_handle.h"
+#include "fpag/io/memory_mapped_file.h"
+#include "fpag/io/temp_file.h"
 
-namespace base {
+namespace io {
 
 namespace {
 
@@ -115,4 +115,4 @@ TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
   CHECK(file_content == kDirectData);
 }
 
-}  // namespace base
+}  // namespace io

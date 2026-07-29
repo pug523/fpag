@@ -11,11 +11,11 @@
 #include <thread>
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/spsc_queue.h"
-#include "fpag/base/time_util.h"
+#include "fpag/container/spsc_queue.h"
+#include "fpag/debug/check.h"
+#include "fpag/debug/time_util.h"
 #include "fpag/logging/async/deserializer.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
@@ -43,10 +43,11 @@ class BackendWorker {
     return *this;
   }
 
-  void init(S&& sink,
-            const str::StringInterner* interner,
-            usize queue_capacity = base::SpscQueue::default_capacity(),
-            base::SpscQueue::Mode mode = base::SpscQueue::Mode::Default) {
+  void init(
+      S&& sink,
+      const str::StringInterner* interner,
+      usize queue_capacity = container::SpscQueue::default_capacity(),
+      container::SpscQueue::Mode mode = container::SpscQueue::Mode::Default) {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                        InternalStatus::NotInitialized,
                        "BackendWorker is not idling");
@@ -132,8 +133,8 @@ class BackendWorker {
                                  std::memory_order_release);
   }
 
-  inline constexpr base::SpscQueue* queue() { return &queue_; }
-  inline constexpr const base::SpscQueue* queue() const { return &queue_; }
+  inline constexpr container::SpscQueue* queue() { return &queue_; }
+  inline constexpr const container::SpscQueue* queue() const { return &queue_; }
 
  private:
   enum class InternalStatus : u8 {
@@ -184,7 +185,7 @@ class BackendWorker {
     const usize target_head = current_head + queue_size;
 
     // Precompute timestamp once per batch
-    const u64 timestamp_ns = base::current_timestamp_ns();
+    const u64 timestamp_ns = debug::current_timestamp_ns();
 
     while (current_head < target_head) {
       const char* const data_ptr =
@@ -238,7 +239,7 @@ class BackendWorker {
     }
   }
 
-  base::SpscQueue queue_;
+  container::SpscQueue queue_;
   S sink_;
   Wait wait_;
   std::unique_ptr<std::thread> thread_ = nullptr;

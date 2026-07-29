@@ -4,9 +4,9 @@
 
 #include "fpag/mem/page_allocator.h"
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
+#include "fpag/debug/check.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <windows.h>

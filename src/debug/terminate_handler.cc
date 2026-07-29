@@ -1,0 +1,29 @@
+// Copyright 2026 pugur
+// This source code is licensed under the Apache License, Version 2.0
+// which can be found in the LICENSE file.
+
+#include "fpag/debug/terminate_handler.h"
+
+#include <exception>
+
+#include "fpag/debug/fatal.h"
+#include "fpag/debug/logger.h"
+#include "fpag/debug/stack_trace/stack_trace.h"
+
+namespace debug {
+
+namespace {
+
+void terminate_handler() {
+  debug_logger.fatal("Program terminated unexpectedly");
+  print_stack_trace_from_here();
+  internal::fatal_crash_impl();
+}
+
+}  // namespace
+
+void register_terminate_handler() {
+  std::set_terminate(terminate_handler);
+}
+
+}  // namespace debug

@@ -9,11 +9,11 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
-#include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/null_sink.h"
+#include "fpag/term/console.h"
 // #include "fpag/logging/sink/stdout_sink.h"
 // #include "fpag/mem/page_allocator.h"
 
@@ -23,7 +23,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   // AsyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
-  //     mem::page_size(), base::console_color_style(base::Stream::Stdout),
+  //     mem::page_size(), term::console_color_style(term::Stream::Stdout),
   //     true));
   AsyncLogger<NullSink, LogLevel::Trace> logger;
   logger.init(NullSink{});
@@ -47,7 +47,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.info("async formatting f32: {}", f);
 
     i32 color =
-        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+        static_cast<i32>(term::console_color_style(term::Stream::Stdout));
     logger.info("async color style: {}", color);
 
     const char* s = "hello cstring";
@@ -89,7 +89,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
     logger.info(FMT_COMPILE("async compiled formatting float: {}"), f);
 
     i32 color =
-        static_cast<i32>(base::console_color_style(base::Stream::Stdout));
+        static_cast<i32>(term::console_color_style(term::Stream::Stdout));
     logger.info(FMT_COMPILE("async compiled color style: {}"), color);
 
     const char* s = "hello cstring";

@@ -6,9 +6,9 @@
 
 #include <utility>
 
-#include "fpag/base/debug/check.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
 #include "fpag/mem/page_allocator.h"
 
 namespace mem {

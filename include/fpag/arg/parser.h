@@ -20,9 +20,9 @@
 #include "fpag/arg/parse_result.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/version_formatter.h"
-#include "fpag/base/color_style.h"
-#include "fpag/base/console.h"
 #include "fpag/base/numeric.h"
+#include "fpag/term/color_style.h"
+#include "fpag/term/console.h"
 
 namespace arg {
 
@@ -83,24 +83,24 @@ class Parser {
   template <ErrorFormatter F = DefaultErrorFormatter>
   inline std::string error_message(
       F&& f = {},
-      base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) {
+      term::ColorStyle color_style =
+          term::console_color_style(term::Stream::Stdout)) {
     return std::move(f)(root_cmd_.name(), errors_, color_style);
   }
 
   template <HelpFormatter F = DefaultHelpFormatter>
   inline std::string help_message(
       F&& f = {},
-      base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) const {
+      term::ColorStyle color_style =
+          term::console_color_style(term::Stream::Stdout)) const {
     return std::move(f)(root_cmd_, color_style);
   }
 
   template <VersionFormatter F = DefaultVersionFormatter>
   inline std::string version_message(
       F&& f = {},
-      base::ColorStyle color_style =
-          base::console_color_style(base::Stream::Stdout)) const {
+      term::ColorStyle color_style =
+          term::console_color_style(term::Stream::Stdout)) const {
     return std::move(f)(root_cmd_.name(), root_cmd_.version(), color_style);
   }
 
