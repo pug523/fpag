@@ -32,7 +32,7 @@ inline void write(i32 fd, const char* data, usize size) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   ::_write(fd, data, static_cast<u32>(size));
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-  ::write(fd, data, size);
+  [[maybe_unused]] const ssize_t _ = ::write(fd, data, size);
 #endif
 }
 
