@@ -28,12 +28,20 @@ TEST_CASE("Result construction and status checks", "[base][result]") {
     REQUIRE(res.is_ok());
     CHECK_FALSE(res.is_err());
     CHECK(res.value() == 100);
+
+    auto void_res = Result<void, ErrorCode>(make_ok());
+    REQUIRE(void_res.is_ok());
+    CHECK_FALSE(void_res.is_err());
   }
 
   SECTION("Err variant construction via make_err") {
     auto res = Result<i32, ErrorCode>(make_err(ErrorCode::NotFound));
     REQUIRE(res.is_err());
     CHECK_FALSE(res.is_ok());
+
+    auto void_res = Result<void, ErrorCode>(make_err(ErrorCode::NotFound));
+    REQUIRE(void_res.is_err());
+    CHECK_FALSE(void_res.is_ok());
   }
 }
 
@@ -47,6 +55,10 @@ TEST_CASE("Result unwrap operations", "[base][result]") {
   SECTION("unwrap_err on Err") {
     auto res = Result<i32, ErrorCode>(make_err(ErrorCode::PermissionDenied));
     CHECK(std::move(res).unwrap_err() == ErrorCode::PermissionDenied);
+
+    auto void_res =
+        Result<void, ErrorCode>(make_err(ErrorCode::PermissionDenied));
+    CHECK(std::move(void_res).unwrap_err() == ErrorCode::PermissionDenied);
   }
 
   SECTION("unwrap_or with fallback value") {
@@ -91,6 +103,12 @@ TEST_CASE("Result map combinator", "[base][result]") {
 
     REQUIRE(mapped.is_err());
     CHECK(std::move(mapped).unwrap_err() == ErrorCode::NotFound);
+
+    auto void_res = Result<void, ErrorCode>(make_err(ErrorCode::NotFound));
+    auto void_mapped = std::move(void_res).map([]() {});
+
+    REQUIRE(void_mapped.is_err());
+    CHECK(std::move(void_mapped).unwrap_err() == ErrorCode::NotFound);
   }
 }
 
