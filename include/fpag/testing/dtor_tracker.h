@@ -21,6 +21,10 @@ class DtorTracker {
 
   DtorTracker& operator=(DtorTracker&& other) noexcept {
     if (this != &other) {
+      if (destroyed_ != nullptr) {
+        // Mark existing object as destroyed upon overwrite
+        *destroyed_ = true;
+      }
       destroyed_ = other.destroyed_;
       other.destroyed_ = nullptr;
     }

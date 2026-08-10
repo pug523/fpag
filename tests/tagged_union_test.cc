@@ -213,4 +213,105 @@ TEST_CASE("AutoTaggedUnion destructor propagation", "[base][tagged_union]") {
   CHECK(destroyed);
 }
 
+TEST_CASE("TaggedUnion void layout and static checks",
+          "[base][tagged_union][void]") {
+  using VoidFirst = AutoTaggedUnion<void, i32>;
+  using VoidSecond = AutoTaggedUnion<i32, void>;
+  using VoidOnly = AutoTaggedUnion<void>;
+
+  // A union containing only void should have size 1 (just the tag byte)
+  STATIC_REQUIRE(sizeof(VoidOnly) == sizeof(u8));
+
+  // Storage should not grow unnecessarily when paired with small types
+  STATIC_REQUIRE(sizeof(VoidFirst) ==
+                 base::round_up(sizeof(i32) + sizeof(u8), alignof(i32)));
+  STATIC_REQUIRE(alignof(VoidFirst) == alignof(i32));
+
+  STATIC_REQUIRE(sizeof(VoidSecond) ==
+                 base::round_up(sizeof(i32) + sizeof(u8), alignof(i32)));
+  STATIC_REQUIRE(alignof(VoidSecond) == alignof(i32));
+
+  // Traits verification
+  STATIC_REQUIRE(std::is_nothrow_move_constructible_v<VoidFirst>);
+  STATIC_REQUIRE(std::is_nothrow_move_assignable_v<VoidFirst>);
+  STATIC_REQUIRE(std::is_copy_constructible_v<VoidFirst>);
+  STATIC_REQUIRE(std::is_copy_assignable_v<VoidFirst>);
+}
+
+TEST_CASE("TaggedUnion with void basic construction and inspection",
+          "[base][tagged_union][void]") {
+  using U = AutoTaggedUnion<void, std::string>;
+
+  SECTION("Default construct as void") {
+    const U u;  // Calls TaggedUnion() default constructor for void state
+    CHECK(u.is<void>());
+    CHECK_FALSE(u.is<std::string>());
+    CHECK(u.tag() == U::TagOf<void>);
+    CHECK(u.tag_raw() == 0);
+
+    // Call get<void>() safely
+    u.get<void>();
+  }
+
+  SECTION("Construct with non-void type (std::string)") {
+    U u(std::string{"error_context"});
+    CHECK_FALSE(u.is<void>());
+    CHECK(u.is<std::string>());
+    CHECK(u.tag() == U::TagOf<std::string>);
+    CHECK(u.tag_raw() == 1);
+    CHECK(u.get<std::string>() == "error_context");
+  }
+}
+
+TEST_CASE("TaggedUnion with void transitions and assignments",
+          "[base][tagged_union][void]") {
+  using U = AutoTaggedUnion<void, DtorTracker>;
+
+  bool destroyed = false;
+
+  SECTION("Transition from non-void to void via move assignment") {
+    U u1((DtorTracker(&destroyed)));
+    CHECK(u1.is<DtorTracker>());
+
+    U u2;  // Void variant
+    u1 = std::move(u2);
+
+    CHECK(destroyed);
+    CHECK(u1.is<void>());
+  }
+
+  SECTION("Transition from void to non-void") {
+    U u1;  // Void variant
+    CHECK(u1.is<void>());
+
+    U u2((DtorTracker(&destroyed)));
+    u1 = std::move(u2);
+
+    CHECK(u1.is<DtorTracker>());
+    CHECK_FALSE(destroyed);
+  }
+}
+
+TEST_CASE("TaggedUnion with void copy and move semantics",
+          "[base][tagged_union][void]") {
+  using U = AutoTaggedUnion<void, CopyTracker>;
+
+  const i32 copy_count = 0;
+
+  SECTION("Copy void variant") {
+    const U u1;
+    const U u2(u1);
+    CHECK(u1.is<void>());
+    CHECK(u2.is<void>());
+    CHECK(copy_count == 0);
+  }
+
+  SECTION("Copy move void variant") {
+    U u1;
+    const U u2(std::move(u1));
+    CHECK(u2.is<void>());
+    CHECK(copy_count == 0);
+  }
+}
+
 }  // namespace base
