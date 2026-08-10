@@ -29,7 +29,7 @@ TEST_CASE("ProfileScope RAII measurement", "[base][profiler][scope]") {
                                                "compiler");
     }
 
-    auto events = test_profiler.events();
+    auto events = test_profiler.copy_events();
     REQUIRE(events.size() == 1);
     CHECK(std::string_view(events[0].name) == "custom_scope");
     CHECK(std::string_view(events[0].category) == "compiler");
@@ -39,7 +39,7 @@ TEST_CASE("ProfileScope RAII measurement", "[base][profiler][scope]") {
   SECTION("PROFILE_FUNCTION records pretty function name") {
     dummy_profiled_function(&test_profiler);
 
-    auto events = test_profiler.events();
+    auto events = test_profiler.copy_events();
     REQUIRE(events.size() == 1);
     CHECK(std::string_view(events[0].category) == "default");
     CHECK_FALSE(std::string_view(events[0].name).empty());

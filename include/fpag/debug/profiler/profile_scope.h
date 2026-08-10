@@ -4,13 +4,9 @@
 
 #pragma once
 
-#include "fpag/base/numeric.h"
 #include "fpag/debug/location.h"
-#include "fpag/debug/process_id.h"
-#include "fpag/debug/profiler/profile_event.h"
+#include "fpag/debug/profiler/profile_section.h"
 #include "fpag/debug/profiler/profiler.h"
-#include "fpag/debug/thread_id.h"
-#include "fpag/debug/time_util.h"
 
 namespace debug {
 
@@ -20,43 +16,21 @@ class ProfileScope {
                const char* name,
                const Location& location,
                const char* category = "default") noexcept
-      : profiler_(profiler),
-        name_(name),
-        category_(category),
-        location_(location) {
-    if (profiler_ != nullptr && profiler_->is_enabled()) [[likely]] {
-      start_time_ns_ = debug::current_timestamp_ns();
-    }
+      : section_(profiler, name, location, category) {
+    section_.start();
   }
 
-  ~ProfileScope() noexcept {
-    if (profiler_ == nullptr || !profiler_->is_enabled()) [[unlikely]] {
-      return;
-    }
-    const u64 end_time_ns = debug::current_timestamp_ns();
-    profiler_->record_event(ProfileEvent{
-        .name = name_,
-        .category = category_,
-        .location = location_,
-        .start_time_ns = start_time_ns_,
-        .duration_ns = end_time_ns - start_time_ns_,
-        .thread_id = current_thread_id(),
-        .process_id = current_process_id(),
-    });
-  }
+  ~ProfileScope() noexcept { section_.stop(); }
+
+  void stop() noexcept { section_.stop(); }
 
   ProfileScope(const ProfileScope&) = delete;
   ProfileScope& operator=(const ProfileScope&) = delete;
-
   ProfileScope(ProfileScope&&) = delete;
   ProfileScope& operator=(ProfileScope&&) = delete;
 
  private:
-  Profiler* profiler_ = nullptr;
-  const char* name_ = nullptr;
-  const char* category_ = nullptr;
-  Location location_;
-  u64 start_time_ns_ = 0;
+  ProfileSection section_;
 };
 
 }  // namespace debug

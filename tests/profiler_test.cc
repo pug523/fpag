@@ -4,7 +4,6 @@
 
 #include "fpag/debug/profiler/profiler.h"
 
-#include <span>
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
@@ -32,7 +31,7 @@ TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
         .process_id = 100,
     });
 
-    CHECK(test_profiler.events().empty());
+    CHECK(test_profiler.empty());
   }
 
   SECTION("Events are recorded when enabled") {
@@ -50,7 +49,7 @@ TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
         .process_id = 100,
     });
 
-    auto events = test_profiler.events();
+    auto events = test_profiler.copy_events();
     REQUIRE(events.size() == 1);
     CHECK(std::string_view(events[0].name) == "valid_event");
     CHECK(std::string_view(events[0].category) == "test");
@@ -64,10 +63,10 @@ TEST_CASE("Profiler basic recording lifecycle", "[base][profiler]") {
     Profiler test_profiler;
     test_profiler.start();
     test_profiler.record_event(ProfileEvent{.name = "event1"});
-    REQUIRE(test_profiler.events().size() == 1);
+    REQUIRE(test_profiler.size() == 1);
 
     test_profiler.start();
-    CHECK(test_profiler.events().empty());
+    CHECK(test_profiler.empty());
     test_profiler.stop();
   }
 }
