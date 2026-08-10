@@ -141,8 +141,6 @@ struct UnionStorage {
 
 template <usize Align>
 struct UnionStorage<Align, 0> {
-  FPAG_EMPTY_MEMBER EmptyStorage dummy;
-
   constexpr void* raw() noexcept { return nullptr; }
   constexpr const void* raw() const noexcept { return nullptr; }
 };
