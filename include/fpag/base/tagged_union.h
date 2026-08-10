@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/tagged_union_internal.h"
 #include "fpag/debug/check.h"
@@ -140,7 +141,7 @@ struct UnionStorage {
 
 template <usize Align>
 struct UnionStorage<Align, 0> {
-  [[no_unique_address]] EmptyStorage dummy;
+  FPAG_EMPTY_MEMBER EmptyStorage dummy;
 
   constexpr void* raw() noexcept { return nullptr; }
   constexpr const void* raw() const noexcept { return nullptr; }
@@ -367,8 +368,8 @@ class TaggedUnion {
   static constexpr usize kStorageMaxSize =
       std::max({internal::SafeSizeOf<Ts>...});
 
-  [[no_unique_address]] internal::UnionStorage<kStorageMaxAlign,
-                                               kStorageMaxSize> storage_;
+  FPAG_EMPTY_MEMBER internal::UnionStorage<kStorageMaxAlign, kStorageMaxSize>
+      storage_;
   TagStorageType tag_;
 };
 

@@ -37,3 +37,11 @@
 #else
 #define FPAG_VISIBLE
 #endif
+
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
+#define FPAG_EMPTY_MEMBER [[no_unique_address]]
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
+#define FPAG_EMPTY_MEMBER [[msvc::no_unique_address]]
+#else
+#define FPAG_EMPTY_MEMBER
+#endif
