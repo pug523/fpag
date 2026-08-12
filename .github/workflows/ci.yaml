@@ -66,7 +66,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: pug523/actions/cxx-xmake-setup@b2b06a62ddd6f1004be7c605ca2086079f3f65bc
+        uses: pug523/actions/cxx-xmake-setup@c23e9f05fc8de1f90cfd94356434724205a75e82
         with:
           os: ${{ runner.os }}
           plat: ${{ matrix.plat }}
