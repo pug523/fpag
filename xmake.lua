@@ -81,7 +81,7 @@ option_end()
 set_policy("build.ccache", true)
 set_policy("check.auto_ignore_flags", false)
 set_policy("build.optimization.lto", has_config("lto"))
-set_policy("build.c++.msvc.runtime", "MD")
+-- set_policy("build.c++.msvc.runtime", "MD")
 
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 -- add_rules("plugin.compile_commands.autoupdate", { outputdir = "build/" })
