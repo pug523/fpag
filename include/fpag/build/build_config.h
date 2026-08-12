@@ -575,5 +575,14 @@
 #else
 #define FPAG_BUILD_FLAG_INTERNAL_HAVE_MIPS_MSA_INTRINSICS() (0)
 #endif
+
+
+#if defined(FPAG_USE_LIBUNWIND) && FPAG_USE_LIBUNWIND
+#define FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND() (1)
+#else
+#define FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND() (0)
+#endif
+
 // clang-format on
 // NOLINTEND(whitespace/line_length)
+

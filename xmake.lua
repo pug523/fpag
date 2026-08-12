@@ -408,9 +408,9 @@ add_packages("xxhash", { public = true })
 
 if libunwind() then
   add_packages("libunwind", { public = false })
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=1", { public = false })
+  add_defines("FPAG_USE_LIBUNWIND=1", { public = false })
 else
-  add_defines("FPAG_BUILD_FLAG_INTERNAL_USE_LIBUNWIND()=0", { public = false })
+  add_defines("FPAG_USE_LIBUNWIND=0", { public = false })
 end
 
 add_packages("fmt", { public = true })
