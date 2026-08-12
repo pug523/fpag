@@ -4,10 +4,10 @@
 
 #include "fpag/base/math_util.h"
 
-#include <limits>
 #include <type_traits>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/limits.h"
 #include "fpag/base/numeric.h"
 
 namespace base {
@@ -26,7 +26,7 @@ TEST_CASE("is_power_of_two validates numbers correctly", "[base][math]") {
     CHECK_FALSE(is_power_of_two(3));
     CHECK_FALSE(is_power_of_two(7));
     CHECK_FALSE(is_power_of_two(1023));
-    CHECK_FALSE(is_power_of_two(std::numeric_limits<u64>::max()));
+    CHECK_FALSE(is_power_of_two(kU64Max));
   }
 
   SECTION("Negative numbers (if signed)") {

@@ -25,10 +25,6 @@ using usize = size_t;
 using f32 = float;
 using f64 = double;
 
-#if FPAG_BUILD_FLAG(IS_OS_POSIX)
-#include <unistd.h>
-using isize = ssize_t;
-#elif FPAG_BUILD_FLAG(IS_OS_WIN)
 #if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
 using isize = i64;
 #elif FPAG_BUILD_FLAG(IS_ARCH_32_BITS)
@@ -36,6 +32,4 @@ using isize = i32;
 #else
 #error "Unsupported cpu architecture"
 #endif
-#else
-#error "Unsupported os"
-#endif
+

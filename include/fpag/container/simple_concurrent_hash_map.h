@@ -8,9 +8,9 @@
 #include <cstddef>
 #include <cstring>
 #include <functional>
-#include <limits>
 #include <utility>
 
+#include "fpag/base/limits.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
 #include "fpag/debug/check.h"
@@ -191,7 +191,7 @@ class SimpleConcurrentHashMap {
 
  private:
   static constexpr u64 kEmptyHash = 0;
-  static constexpr u64 kLockedHash = std::numeric_limits<u64>::max();
+  static constexpr u64 kLockedHash = kU64Max;
 
   u64 hash(const K& key) const {
     const u64 h = hasher_(key);

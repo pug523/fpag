@@ -5,10 +5,10 @@
 #pragma once
 
 #include <cstddef>
-#include <limits>
 #include <type_traits>
 #include <utility>
 
+#include "fpag/base/limits.h"
 #include "fpag/base/numeric.h"
 
 namespace base::internal {
@@ -71,15 +71,16 @@ consteval bool validate_tag_enum() noexcept {
 // Selects the minimum unsigned integer type that can hold Count values.
 template <usize Count>
 struct TagTypeImpl {
+  static constexpr bool kTagU8 = Count <= kU8Max;
+  static constexpr bool kTagU16 = !kTagU8 && Count <= kU16Max;
+  static constexpr bool kTagU32 = !kTagU8 && !kTagU16 && Count <= kU32Max;
+  static constexpr bool kTagUsize = !kTagU8 && !kTagU16 && !kTagU32;
+
   using type = std::conditional_t<
-      (Count <= std::numeric_limits<u8>::max()),
+      kTagU8,
       u8,
-      std::conditional_t<
-          (Count <= std::numeric_limits<u16>::max()),
-          u16,
-          std::conditional_t<(Count <= std::numeric_limits<u32>::max()),
-                             u32,
-                             usize>>>;
+      std::
+          conditional_t<kTagU16, u16, std::conditional_t<kTagU32, u32, usize>>>;
 };
 
 template <usize Count>
