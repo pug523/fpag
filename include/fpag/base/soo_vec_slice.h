@@ -17,7 +17,7 @@
 namespace base {
 
 template <typename T, HasIdxType Idx>
-class SooVectorSlice {
+class SooVecSlice {
  public:
   using value_type = T;
   using pointer = T*;
@@ -30,35 +30,35 @@ class SooVectorSlice {
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   using IdxType = typename Idx::IdxType;
 
-  constexpr SooVectorSlice() noexcept = default;
-  constexpr SooVectorSlice(pointer data, usize size) noexcept
+  constexpr SooVecSlice() noexcept = default;
+  constexpr SooVecSlice(pointer data, usize size) noexcept
       : data_(data), size_(size) {}
-  constexpr SooVectorSlice(pointer begin, pointer end) noexcept
+  constexpr SooVecSlice(pointer begin, pointer end) noexcept
       : data_(begin),
         size_(static_cast<usize>(end >= begin ? end - begin : 0)) {
     FPAG_DCHECK_GE(end, begin);
   }
 
   template <typename Container>
-    requires(!std::is_same_v<std::decay_t<Container>, SooVectorSlice> &&
+    requires(!std::is_same_v<std::decay_t<Container>, SooVecSlice> &&
              requires(Container& c) {
                { c.data() } -> std::same_as<pointer>;
                { c.size() } -> std::convertible_to<usize>;
              })
-  constexpr explicit SooVectorSlice(Container& container) noexcept
+  constexpr explicit SooVecSlice(Container& container) noexcept
       : data_(container.data()), size_(container.size()) {}
 
-  constexpr ~SooVectorSlice() = default;
-  constexpr SooVectorSlice(const SooVectorSlice&) noexcept = default;
-  constexpr SooVectorSlice& operator=(const SooVectorSlice&) noexcept = default;
-  constexpr SooVectorSlice(SooVectorSlice&&) noexcept = default;
-  constexpr SooVectorSlice& operator=(SooVectorSlice&&) noexcept = default;
+  constexpr ~SooVecSlice() = default;
+  constexpr SooVecSlice(const SooVecSlice&) noexcept = default;
+  constexpr SooVecSlice& operator=(const SooVecSlice&) noexcept = default;
+  constexpr SooVecSlice(SooVecSlice&&) noexcept = default;
+  constexpr SooVecSlice& operator=(SooVecSlice&&) noexcept = default;
 
-  // Conversion from SooVectorSlice<T, Idx> to SooVectorSlice<const T, Idx>
+  // Implicit conversion from SooVecSlice<T, Idx> to SooVecSlice<const T, Idx>
   template <typename U = T>
     requires std::is_const_v<U>
-  explicit constexpr SooVectorSlice(
-      const SooVectorSlice<std::remove_const_t<T>, Idx>& other) noexcept
+  constexpr SooVecSlice(  // NOLINT
+      const SooVecSlice<std::remove_const_t<T>, Idx>& other) noexcept
       : data_(other.data()), size_(other.size()) {}
 
   [[nodiscard]] constexpr reference operator[](Idx idx) const noexcept {
@@ -92,6 +92,12 @@ class SooVectorSlice {
   [[nodiscard]] constexpr reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
   }
+  [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+  }
+  [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+  }
 
   [[nodiscard]] constexpr reference front() const noexcept {
     FPAG_DCHECK(!empty());
@@ -103,34 +109,45 @@ class SooVectorSlice {
     return data_[size_ - 1];
   }
 
+  constexpr void pop_front(usize count = 1) noexcept {
+    FPAG_DCHECK_LE(count, size_);
+    data_ += count;
+    size_ -= count;
+  }
+
+  constexpr void pop_back(usize count = 1) noexcept {
+    FPAG_DCHECK_LE(count, size_);
+    size_ -= count;
+  }
+
   [[nodiscard]] constexpr IdxRange<Idx> idx_range() const noexcept {
     return IdxRange<Idx>(Idx{0}, static_cast<IdxType>(size_));
   }
 
-  [[nodiscard]] constexpr SooVectorSlice subslice(usize offset,
-                                                  usize count) const noexcept {
+  [[nodiscard]] constexpr SooVecSlice subslice(usize offset,
+                                               usize count) const noexcept {
     FPAG_DCHECK_LE(offset, size_);
     FPAG_DCHECK_LE(count, size_ - offset);
-    return SooVectorSlice(data_ + offset, count);
+    return SooVecSlice(data_ + offset, count);
   }
 
-  [[nodiscard]] constexpr SooVectorSlice subslice(
+  [[nodiscard]] constexpr SooVecSlice subslice(
       IdxRange<Idx> range) const noexcept {
     const usize head = static_cast<usize>(range.head().idx);
     const usize len = static_cast<usize>(range.size());
     FPAG_DCHECK_LE(head, size_);
     FPAG_DCHECK_LE(len, size_ - head);
-    return SooVectorSlice(data_ + head, len);
+    return SooVecSlice(data_ + head, len);
   }
 
-  [[nodiscard]] constexpr SooVectorSlice first(usize count) const noexcept {
+  [[nodiscard]] constexpr SooVecSlice first(usize count) const noexcept {
     FPAG_DCHECK_LE(count, size_);
-    return SooVectorSlice(data_, count);
+    return SooVecSlice(data_, count);
   }
 
-  [[nodiscard]] constexpr SooVectorSlice last(usize count) const noexcept {
+  [[nodiscard]] constexpr SooVecSlice last(usize count) const noexcept {
     FPAG_DCHECK_LE(count, size_);
-    return SooVectorSlice(data_ + (size_ - count), count);
+    return SooVecSlice(data_ + (size_ - count), count);
   }
 
  private:
@@ -138,8 +155,8 @@ class SooVectorSlice {
   usize size_ = 0;
 };
 
-// Type alias for ConstSooVectorSlice
+// Type alias for ConstSooVecSlice
 template <typename T, HasIdxType Idx>
-using ConstSooVectorSlice = SooVectorSlice<const T, Idx>;
+using ConstSooVecSlice = SooVecSlice<const T, Idx>;
 
 }  // namespace base

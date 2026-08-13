@@ -54,10 +54,10 @@ class VecSlice {
   constexpr VecSlice(VecSlice&&) noexcept = default;
   constexpr VecSlice& operator=(VecSlice&&) noexcept = default;
 
-  // Conversion from VecSlice<T, Idx> to VecSlice<const T, Idx>
+  // Implicit conversion from VecSlice<T, Idx> to VecSlice<const T, Idx>
   template <typename U = T>
     requires std::is_const_v<U>
-  explicit constexpr VecSlice(
+  constexpr VecSlice(  // NOLINT
       const VecSlice<std::remove_const_t<T>, Idx>& other) noexcept
       : data_(other.data()), size_(other.size()) {}
 
@@ -92,6 +92,12 @@ class VecSlice {
   [[nodiscard]] constexpr reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
   }
+  [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+  }
+  [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+  }
 
   [[nodiscard]] constexpr reference front() const noexcept {
     FPAG_DCHECK(!empty());
@@ -101,6 +107,17 @@ class VecSlice {
   [[nodiscard]] constexpr reference back() const noexcept {
     FPAG_DCHECK(!empty());
     return data_[size_ - 1];
+  }
+
+  constexpr void pop_front(usize count = 1) noexcept {
+    FPAG_DCHECK_LE(count, size_);
+    data_ += count;
+    size_ -= count;
+  }
+
+  constexpr void pop_back(usize count = 1) noexcept {
+    FPAG_DCHECK_LE(count, size_);
+    size_ -= count;
   }
 
   [[nodiscard]] constexpr IdxRange<Idx> idx_range() const noexcept {

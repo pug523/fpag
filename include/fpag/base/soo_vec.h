@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <new>
 #include <utility>
@@ -13,31 +15,49 @@
 #include "fpag/base/idx.h"
 #include "fpag/base/idx_range.h"
 #include "fpag/base/numeric.h"
-#include "fpag/base/soo_vector_slice.h"
+#include "fpag/base/soo_vec_slice.h"
 #include "fpag/debug/check.h"
 
 namespace base {
 
 template <typename T,
-          base::HasIdxType Idx,
+          HasIdxType Idx,
           usize N = 8,
           typename Allocator = std::allocator<T>>
-class SooVector {
+class SooVec {
  public:
+  using value_type = T;
+  using allocator_type = Allocator;
+  using size_type = usize;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using reference = T&;
+  using const_reference = const T&;
+  using iterator = pointer;
+  using const_iterator = const_pointer;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   using IdxType = typename Idx::IdxType;
 
-  constexpr SooVector() noexcept = default;
+  constexpr SooVec() noexcept = default;
 
-  constexpr ~SooVector() { clear(); }
+  constexpr SooVec(std::initializer_list<T> init) {
+    reserve(init.size());
+    for (const auto& item : init) {
+      emplace_back(item);
+    }
+  }
 
-  constexpr SooVector(const SooVector& other) {
+  constexpr ~SooVec() { clear(); }
+
+  constexpr SooVec(const SooVec& other) {
     reserve(other.size_);
     for (usize i = 0; i < other.size_; ++i) {
       emplace_back(other[Idx(static_cast<IdxType>(i))]);
     }
   }
 
-  constexpr SooVector& operator=(const SooVector& other) {
+  constexpr SooVec& operator=(const SooVec& other) {
     if (this != &other) {
       clear();
       reserve(other.size_);
@@ -48,11 +68,9 @@ class SooVector {
     return *this;
   }
 
-  constexpr SooVector(SooVector&& other) noexcept {
-    move_from(std::move(other));
-  }
+  constexpr SooVec(SooVec&& other) noexcept { move_from(std::move(other)); }
 
-  constexpr SooVector& operator=(SooVector&& other) noexcept {
+  constexpr SooVec& operator=(SooVec&& other) noexcept {
     if (this != &other) {
       clear();
       move_from(std::move(other));
@@ -60,14 +78,24 @@ class SooVector {
     return *this;
   }
 
-  constexpr const T& operator[](const Idx idx) const {
+  [[nodiscard]] constexpr const T& operator[](const Idx idx) const {
     FPAG_DCHECK_LT(static_cast<usize>(idx.idx), size_);
     return data()[idx.idx];
   }
 
-  constexpr T& operator[](const Idx idx) {
+  [[nodiscard]] constexpr T& operator[](const Idx idx) {
     FPAG_DCHECK_LT(static_cast<usize>(idx.idx), size_);
     return data()[idx.idx];
+  }
+
+  [[nodiscard]] constexpr const T& operator[](usize offset) const {
+    FPAG_DCHECK_LT(offset, size_);
+    return data()[offset];
+  }
+
+  [[nodiscard]] constexpr T& operator[](usize offset) {
+    FPAG_DCHECK_LT(offset, size_);
+    return data()[offset];
   }
 
   constexpr void reserve(usize new_capacity) {
@@ -101,8 +129,8 @@ class SooVector {
     return Idx(static_cast<IdxType>(new_idx));
   }
 
-  constexpr void push_back(const T& value) { emplace_back(value); }
-  constexpr void push_back(T&& value) { emplace_back(std::move(value)); }
+  constexpr Idx push_back(const T& value) { return emplace_back(value); }
+  constexpr Idx push_back(T&& value) { return emplace_back(std::move(value)); }
 
   constexpr void pop_back() {
     FPAG_DCHECK_GT(size_, 0u);
@@ -127,6 +155,26 @@ class SooVector {
   [[nodiscard]] constexpr usize capacity() const noexcept { return capacity_; }
   [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
 
+  [[nodiscard]] constexpr reference front() noexcept {
+    FPAG_DCHECK(!empty());
+    return data()[0];
+  }
+
+  [[nodiscard]] constexpr const_reference front() const noexcept {
+    FPAG_DCHECK(!empty());
+    return data()[0];
+  }
+
+  [[nodiscard]] constexpr reference back() noexcept {
+    FPAG_DCHECK(!empty());
+    return data()[size_ - 1];
+  }
+
+  [[nodiscard]] constexpr const_reference back() const noexcept {
+    FPAG_DCHECK(!empty());
+    return data()[size_ - 1];
+  }
+
   [[nodiscard]] constexpr const T* data() const noexcept {
     return is_dynamic()
                ? dynamic_data_
@@ -138,28 +186,50 @@ class SooVector {
                         : std::launder(reinterpret_cast<T*>(inline_storage_));
   }
 
-  constexpr auto begin() const noexcept { return data(); }
-  constexpr auto end() const noexcept { return data() + size_; }
-  constexpr auto begin() noexcept { return data(); }
-  constexpr auto end() noexcept { return data() + size_; }
+  constexpr iterator begin() noexcept { return data(); }
+  constexpr iterator end() noexcept { return data() + size_; }
+  constexpr const_iterator begin() const noexcept { return data(); }
+  constexpr const_iterator end() const noexcept { return data() + size_; }
+  constexpr const_iterator cbegin() const noexcept { return data(); }
+  constexpr const_iterator cend() const noexcept { return data() + size_; }
 
-  constexpr IdxRange<Idx> idx_range() const noexcept {
+  constexpr reverse_iterator rbegin() noexcept {
+    return reverse_iterator(end());
+  }
+  constexpr reverse_iterator rend() noexcept {
+    return reverse_iterator(begin());
+  }
+  constexpr const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
+  constexpr const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
+  constexpr const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+  }
+  constexpr const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+  }
+
+  [[nodiscard]] constexpr IdxRange<Idx> idx_range() const noexcept {
     return IdxRange<Idx>(Idx{0}, static_cast<IdxType>(size_));
   }
 
-  constexpr SooVectorSlice<T, Idx> slice(IdxType offset, IdxType size) {
+  constexpr SooVecSlice<T, Idx> slice(IdxType offset, IdxType size) {
     FPAG_DCHECK_LE(static_cast<usize>(offset + size), size_);
-    return SooVectorSlice<T, Idx>(data() + offset, size);
+    return SooVecSlice<T, Idx>(data() + offset, size);
   }
-  constexpr SooVectorSlice<T, Idx> slice() { return slice(0, size_); }
+  constexpr SooVecSlice<T, Idx> slice() {
+    return slice(0, static_cast<IdxType>(size_));
+  }
 
-  constexpr ConstSooVectorSlice<T, Idx> slice(IdxType offset,
-                                              IdxType size) const {
+  constexpr ConstSooVecSlice<T, Idx> slice(IdxType offset, IdxType size) const {
     FPAG_DCHECK_LE(static_cast<usize>(offset + size), size_);
-    return ConstSooVectorSlice<T, Idx>(data() + offset, size);
+    return ConstSooVecSlice<T, Idx>(data() + offset, size);
   }
-  constexpr ConstSooVectorSlice<T, Idx> slice() const {
-    return slice(0, size_);
+  constexpr ConstSooVecSlice<T, Idx> slice() const {
+    return slice(0, static_cast<IdxType>(size_));
   }
 
  private:
@@ -167,7 +237,7 @@ class SooVector {
     return capacity_ > N;
   }
 
-  constexpr void move_from(SooVector&& other) noexcept {
+  constexpr void move_from(SooVec&& other) noexcept {
     size_ = other.size_;
     capacity_ = other.capacity_;
 
