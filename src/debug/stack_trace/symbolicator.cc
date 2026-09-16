@@ -47,6 +47,12 @@ namespace debug {
 SymbolInfo Symbolicator::resolve_posix(const void* address) const {
   SymbolInfo info;
 
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // Emscripten provides no dladdr; symbol resolution is unsupported.
+  (void)address;
+  return info;
+#endif
+
   Dl_info dl = {};
   if (!::dladdr(address, &dl)) {
     return info;

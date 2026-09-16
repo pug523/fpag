@@ -145,8 +145,6 @@ class Serializer {
     std::memcpy(out_cursor, &level, sizeof(level));
     if constexpr (!fmt::is_compiled_string<Format>::value) {
       out_cursor += base::round_up(sizeof(level), kPayloadAlign);
-      static_assert(sizeof(str::StringInterner::StringId) ==
-                    sizeof(std::string_view));
 
       const std::string_view fmt_string = static_cast<std::string_view>(fmt);
       if constexpr (kUseInterner) {

@@ -41,8 +41,12 @@ class Deserializer {
       std::tuple<typename Codec<std::decay_t<Args>>::DecodedType...>;
 
   static constexpr bool kIsCompiledFmt = fmt::is_compiled_string<Format>::value;
+  // Slot holding either the interned format-string id or the view itself.
+  static constexpr usize kFmtSlotSize =
+      kUseInterner ? sizeof(str::StringInterner::StringId)
+                   : sizeof(std::string_view);
   static constexpr usize kPayloadHeaderSize =
-      kPayloadMinHeaderSize + (kIsCompiledFmt ? 0 : sizeof(std::string_view));
+      kPayloadMinHeaderSize + (kIsCompiledFmt ? 0 : kFmtSlotSize);
 
   inline static DecodedArgs decode_args(const char* data, usize size) {
     const char* data_cursor = data;
@@ -123,7 +127,7 @@ class Deserializer {
         std::memcpy(fmt_buf->data() + old_size, fmt_view.data(),
                     fmt_view.size());
       } else {
-        const char* const args_head = read_head + sizeof(fmt_view);
+        const char* const args_head = read_head + kFmtSlotSize;
         const usize args_size = total_payload_size - kPayloadHeaderSize;
 
         std::apply(

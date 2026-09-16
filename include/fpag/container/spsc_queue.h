@@ -8,6 +8,7 @@
 
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 #include "fpag/mem/cache.h"
 #include "fpag/mem/page_allocator.h"
 
@@ -92,7 +93,12 @@ class SpscQueue {
   static usize default_capacity() {
     return base::next_power_of_two(mem::page_size());
   }
+#if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
   static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
+#else
+  // 32-bit address spaces (e.g. wasm32) cannot shift past their width.
+  static constexpr usize kMaxCapacity = static_cast<usize>(1) << 30;  // 1 GiB
+#endif
 
  private:
   usize capacity_mask() const { return capacity_ - 1; }

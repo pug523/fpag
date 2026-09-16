@@ -8,12 +8,16 @@
 
 namespace str {
 
+// Fixed 8-byte identifier on all platforms (u32 offset + u32 length), so
+// layouts embedding it (e.g. IR nodes) are architecture-independent.
+// Offsets are valid only because StringPool capacity is capped well below
+// 4 GiB (see StringPool).
 struct StringPoolId {
-  usize offset;
-  usize length;
+  u32 offset;
+  u32 length;
 };
 
-constexpr usize kInvalidOffset = 0xFFFFFFFFFFFFFFFF;
+constexpr u32 kInvalidOffset = 0xFFFFFFFFu;
 constexpr StringPoolId kInvalidStringPoolId = {kInvalidOffset, 0};
 constexpr StringPoolId kEmptyStringId = {0, 0};
 

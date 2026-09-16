@@ -22,8 +22,10 @@ StringInterner::StringId StringInterner::intern(const std::string_view str) {
   bool inserted = false;
   const StringPoolId* ptr = map_.try_insert(stored, pool_id, &inserted);
 
-  // TODO: Fix race condition (in case if another thread already inserted this
-  // string).
+  // Benign race: if another thread inserted the same string concurrently,
+  // try_insert returns the winner's id (equal content, possibly a different
+  // offset). The loser's pool bytes are wasted but never freed, so all views
+  // stay valid.
 
   return *ptr;
 }

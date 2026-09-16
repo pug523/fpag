@@ -10,6 +10,8 @@
 
 #if FPAG_BUILD_FLAG(USE_LIBUNWIND)
 #include <libunwind.h>  // IWYU pragma: keep
+#elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
+// Emscripten provides no execinfo.h; stack capture is stubbed out below.
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <execinfo.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -64,6 +66,18 @@ FPAG_NOINLINE usize capture_stack_addresses_libunwind(void** out_frames,
   // NOLINTEND(misc-include-cleaner)
 
   return count;
+}
+
+#elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
+
+FPAG_NOINLINE usize capture_stack_addresses_asmjs(void** out_frames,
+                                                  usize max_depth,
+                                                  usize skip) {
+  // Emscripten provides no backtrace API; report no frames.
+  (void)out_frames;
+  (void)max_depth;
+  (void)skip;
+  return 0;
 }
 
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
@@ -154,6 +168,8 @@ FPAG_NOINLINE usize capture_stack_addresses(void** out_frames,
                                             usize skip) {
 #if FPAG_BUILD_FLAG(USE_LIBUNWIND)
   return capture_stack_addresses_libunwind(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  return capture_stack_addresses_asmjs(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   return capture_stack_addresses_posix(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)

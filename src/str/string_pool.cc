@@ -6,15 +6,18 @@
 
 #include <atomic>
 #include <cstring>
+#include <limits>
 #include <string_view>
 #include <utility>
 
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
 #include "fpag/str/string_pool_id.h"
 
 namespace str {
 
-StringPool::StringPool(StringPool&& other) noexcept {
+StringPool::StringPool(StringPool&& other) noexcept
+    : capacity_(std::exchange(other.capacity_, 0)) {
   arena_ = std::move(other.arena_);
 
   size_.store(other.size_.load(std::memory_order_relaxed),
@@ -32,6 +35,7 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
   }
 
   arena_ = std::move(other.arena_);
+  capacity_ = std::exchange(other.capacity_, 0);
 
   size_.store(other.size_.load(std::memory_order_relaxed),
               std::memory_order_relaxed);
@@ -47,7 +51,7 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
 StringPoolId StringPool::append(const std::string_view str,
                                 std::string_view* out) {
   if (str.empty()) {
-    return {.offset = 0, .length = 0};
+    return kEmptyStringId;
   }
 
   const usize offset = arena_.size();
@@ -61,7 +65,13 @@ StringPoolId StringPool::append(const std::string_view str,
   size_.fetch_add(str.size(), std::memory_order_relaxed);
   string_count_.fetch_add(1, std::memory_order_relaxed);
 
-  return {.offset = offset, .length = str.size()};
+  // Offsets always fit: capacity_ is capped at u32 max at construction and
+  // the arena refuses allocations past it.
+  FPAG_DCHECK(offset <= static_cast<usize>(std::numeric_limits<u32>::max()));
+  FPAG_DCHECK(str.size() <=
+              static_cast<usize>(std::numeric_limits<u32>::max()));
+  return {.offset = static_cast<u32>(offset),
+          .length = static_cast<u32>(str.size())};
 }
 
 }  // namespace str

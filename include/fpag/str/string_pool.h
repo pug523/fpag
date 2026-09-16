@@ -5,19 +5,39 @@
 #pragma once
 
 #include <atomic>
+#include <limits>
 #include <string_view>
 
 #include "fpag/base/numeric.h"
+#include "fpag/debug/check.h"
 #include "fpag/mem/concurrent_arena.h"
+#include "fpag/mem/page_allocator.h"
 #include "fpag/str/string_pool_id.h"
 
 namespace str {
 
-// Thread-safe string pool.
-// Has auto resizing.
+// Thread-safe bump-allocated string pool.
+//
+// Storage is virtual address reservation up front (single PROT_NONE region)
+// with physical pages committed on demand as strings are appended, so a
+// large capacity costs no memory until used. Capacity is fixed at
+// construction; there is no growth beyond it.
 class StringPool {
  public:
-  StringPool() { arena_.reserve(kMaxStringPoolCapacity); }
+  // Default reservation: generous on 64-bit, still addressable everywhere
+  // (offsets must fit in StringPoolId's u32 fields).
+  static constexpr usize kDefaultPoolCapacity = 1ull * 1024 * 1024 * 1024;
+
+  explicit StringPool(usize capacity = kDefaultPoolCapacity) {
+    FPAG_DCHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");
+    FPAG_DCHECK_MSG(
+        capacity <= static_cast<usize>(std::numeric_limits<u32>::max()),
+        "Pool capacity must fit in StringPoolId's u32 offset.");
+    FPAG_DCHECK_MSG(mem::is_page_aligned_size(capacity),
+                    "Pool capacity must be page aligned.");
+    capacity_ = capacity;
+    arena_.reserve(capacity_);
+  }
   ~StringPool() = default;
 
   StringPool(const StringPool&) = delete;
@@ -34,22 +54,25 @@ class StringPool {
             id.length};
   }
 
+  // Releases all strings and re-reserves the same capacity, so the pool
+  // stays usable (e.g. interning a fresh compilation unit).
   void reset() {
     arena_.reset();
+    arena_.reserve(capacity_);
     size_.store(0, std::memory_order_relaxed);
     string_count_.store(0, std::memory_order_relaxed);
   }
 
   // Returns the total size of all strings in the pool.
   usize size() const { return size_; }
-
   // Returns the number of strings in the pool.
   usize string_count() const { return string_count_; }
-
-  static constexpr usize kMaxStringPoolCapacity = 64ull * 1024 * 1024 * 1024;
+  // Returns the reserved capacity in bytes.
+  usize capacity() const { return capacity_; }
 
  private:
   mem::ConcurrentArena arena_;
+  usize capacity_ = 0;
   std::atomic<usize> size_ = 0;
   std::atomic<usize> string_count_ = 0;
 };

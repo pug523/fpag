@@ -11,7 +11,9 @@
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
-#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+// Emscripten provides no module lookup; stubbed out below.
+#elif FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
 #include <dlfcn.h>
 #include <stdio.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -128,7 +130,12 @@ bool lookup_module_for_address_apple(const void* address, ModuleInfo* out) {
 #endif
 
 bool lookup_module_for_address(const void* address, ModuleInfo* out) {
-#if FPAG_BUILD_FLAG(IS_OS_LINUX)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // No module information under Emscripten.
+  (void)address;
+  (void)out;
+  return false;
+#elif FPAG_BUILD_FLAG(IS_OS_LINUX)
   return lookup_module_for_address_linux(address, out);
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   return lookup_module_for_address_win(address, out);
