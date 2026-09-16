@@ -26,7 +26,6 @@
 
 #include "fmt/chrono.h"   // IWYU pragma: keep
 #include "fmt/ostream.h"  // IWYU pragma: keep
-#include "fmt/std.h"      // IWYU pragma: keep
 #include "fpag/base/numeric.h"
 #include "fpag/debug/fatal.h"
 #include "fpag/debug/stack_trace/stack_trace.h"
