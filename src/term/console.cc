@@ -5,7 +5,9 @@
 #include "fpag/build/build_config.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <io.h>
 #include <windows.h>
 #else
