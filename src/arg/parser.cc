@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <span>
 #include <string>
+#include <ranges>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -57,67 +58,73 @@ bool Parser::is_valid_choice(const Arg& arg, std::string_view value) const {
   return false;
 }
 
-bool Parser::long_option(const Command& cmd,
+bool Parser::long_option(const std::vector<const Command*>& scope,
                          std::string_view raw_arg,
                          usize* i,
                          ParseContext& ctx,
                          ParseStatus* status) {
   const std::string_view content = raw_arg.substr(2);  // Strip "--"
 
-  if (cmd.builtin_enabled()) {
-    if (content == kBuiltinHelpArgLong) {
-      *status = ParseStatus::HelpRequested;
-      return true;
-    } else if (content == kBuiltinVersionArgLong) {
-      *status = ParseStatus::VersionRequested;
-      return true;
+  // Innermost level first: a level's own flags win over builtins, then
+  // builtins (if enabled), then outer levels.
+  for (const Command* const level : scope | std::views::reverse) {
+    auto equal_pos = content.find('=');
+    std::string_view key = content.substr(0, equal_pos);
+    if (const Arg* arg = level->find_arg_by_long(key)) {
+      std::string_view value;
+      if (arg->is_flag()) {
+        if (equal_pos != std::string_view::npos) {
+          add_error(ErrorCode::FlagTakesNoValue, fmt::format("--{}", key));
+          return false;
+        }
+        value = "1";
+      } else {
+        if (equal_pos != std::string_view::npos) {
+          value = content.substr(equal_pos + 1);
+        } else {
+          if (*i + 1 >= ctx.args.size || ctx.args[*i + 1].empty()) {
+            add_error(ErrorCode::MissingValueForOption,
+                      fmt::format("--{}", key));
+            return false;
+          }
+          value = ctx.args[++*i];
+        }
+      }
+
+      if (!is_valid_choice(*arg, value)) {
+        add_error(ErrorCode::InvalidChoice, std::string(arg->name()),
+                  std::string(value));
+        return false;
+      }
+      ctx.matches->add(arg->name(), value);
+      return false;
+    }
+
+    if (level->builtin_enabled()) {
+      if (content == kBuiltinHelpArgLong) {
+        *status = ParseStatus::HelpRequested;
+        help_command_ = level;
+        return true;
+      } else if (content == kBuiltinVersionArgLong) {
+        *status = ParseStatus::VersionRequested;
+        return true;
+      }
     }
   }
 
   auto equal_pos = content.find('=');
   std::string_view key = content.substr(0, equal_pos);
-  const Arg* arg = cmd.find_arg_by_long(key);
-
-  if (!arg) {
-    if (ctx.partial_mode) {
-      if (ctx.unparsed) {
-        ctx.unparsed->push_back(raw_arg);
-      }
-      return false;
+  if (ctx.partial_mode) {
+    if (ctx.unparsed) {
+      ctx.unparsed->push_back(raw_arg);
     }
-    add_error(ErrorCode::UnknownLongOption, std::string(key));
     return false;
   }
-
-  std::string_view value;
-  if (arg->is_flag()) {
-    if (equal_pos != std::string_view::npos) {
-      add_error(ErrorCode::FlagTakesNoValue, fmt::format("--{}", key));
-      return false;
-    }
-    value = "1";
-  } else {
-    if (equal_pos != std::string_view::npos) {
-      value = content.substr(equal_pos + 1);
-    } else {
-      if (*i + 1 >= ctx.args.size || ctx.args[*i + 1].empty()) {
-        add_error(ErrorCode::MissingValueForOption, fmt::format("--{}", key));
-        return false;
-      }
-      value = ctx.args[++*i];
-    }
-  }
-
-  if (!is_valid_choice(*arg, value)) {
-    add_error(ErrorCode::InvalidChoice, std::string(arg->name()),
-              std::string(value));
-    return false;
-  }
-  ctx.matches->add(arg->name(), value);
+  add_error(ErrorCode::UnknownLongOption, std::string(key));
   return false;
 }
 
-bool Parser::short_options(const Command& cmd,
+bool Parser::short_options(const std::vector<const Command*>& scope,
                            std::string_view raw_arg,
                            usize* i,
                            ParseContext& ctx,
@@ -126,19 +133,28 @@ bool Parser::short_options(const Command& cmd,
 
   for (usize c_idx = 0; c_idx < current.size(); ++c_idx) {
     const char c = current[c_idx];
-    const Arg* arg = cmd.find_arg_by_short(c);
 
-    if (!arg) {
-      if (cmd.builtin_enabled()) {
+    // Innermost level first: a level's own flags win over builtins, then
+    // builtins (if enabled), then outer levels.
+    const Arg* arg = nullptr;
+    for (const Command* level : scope | std::views::reverse) {
+      arg = level->find_arg_by_short(c);
+      if (arg != nullptr) {
+        break;
+      }
+      if (level->builtin_enabled()) {
         if (c == kBuiltinHelpArgShort) {
           *status = ParseStatus::HelpRequested;
+          help_command_ = level;
           return true;
         } else if (c == kBuiltinVersionArgShort) {
           *status = ParseStatus::VersionRequested;
           return true;
         }
       }
+    }
 
+    if (arg == nullptr) {
       if (ctx.partial_mode) {
         if (ctx.unparsed) {
           // Keep raw argument if unrecognized
@@ -330,7 +346,13 @@ ParseStatus Parser::parse_impl(ParseContext& ctx) {
   }
 
   errors_.clear();
+  help_command_ = nullptr;
   bool stop_parsing_flags = false;
+
+  // Command scope, outermost first. Descending into a subcommand appends to
+  // it; flag lookup and required-argument validation follow the selection.
+  std::vector<const Command*> scope;
+  scope.push_back(&root_cmd_);
 
   for (usize i = 1; i < ctx.args.size; ++i) {
     const std::string_view current = ctx.args[i];
@@ -361,9 +383,14 @@ ParseStatus Parser::parse_impl(ParseContext& ctx) {
     bool should_stop = false;
 
     if (current.starts_with("--")) {
-      should_stop = long_option(root_cmd_, current, &i, ctx, &status);
+      should_stop = long_option(scope, current, &i, ctx, &status);
     } else if (current.starts_with("-") && current.size() > 1) {
-      should_stop = short_options(root_cmd_, current, &i, ctx, &status);
+      should_stop = short_options(scope, current, &i, ctx, &status);
+    } else if (const Command* sub =
+                   scope.back()->find_subcommand(current)) {
+      scope.push_back(sub);
+      ctx.matches->select_subcommand(sub->name());
+      continue;
     } else {
       if (ctx.partial_mode) {
         if (ctx.unparsed) {
@@ -380,15 +407,17 @@ ParseStatus Parser::parse_impl(ParseContext& ctx) {
     }
   }
 
-  // Validate required arguments for root_cmd
-  for (const auto& arg : root_cmd_.args()) {
-    if (arg.is_required() && !ctx.matches->has(arg.name())) {
-      std::string arg_name =
-          !arg.long_name().empty()
-              ? fmt::format("--{}", arg.long_name())
-              : fmt::format("-{}", arg.short_name().value_or('?'));
+  // Validate required arguments for every command on the selected path.
+  for (const Command* const cmd : scope) {
+    for (const auto& arg : cmd->args()) {
+      if (arg.is_required() && !ctx.matches->has(arg.name())) {
+        std::string arg_name =
+            !arg.long_name().empty()
+                ? fmt::format("--{}", arg.long_name())
+                : fmt::format("-{}", arg.short_name().value_or('?'));
 
-      add_error(ErrorCode::MissingRequiredArgument, std::move(arg_name));
+        add_error(ErrorCode::MissingRequiredArgument, std::move(arg_name));
+      }
     }
   }
 

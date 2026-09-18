@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -85,11 +86,29 @@ class Matches {
     return positionals_;
   }
 
+  // Records descent into a subcommand during parsing, outermost first.
+  // Views borrow the argument storage (same lifetime rule as positionals).
+  inline void select_subcommand(std::string_view name) {
+    command_path_.push_back(name);
+  }
+
+  // Selected subcommand path, outermost first. Empty when no subcommand
+  // was selected.
+  inline std::span<const std::string_view> command_path() const {
+    return command_path_;
+  }
+
+  // Innermost selected subcommand, or empty when none was selected.
+  inline std::string_view selected_command() const {
+    return command_path_.empty() ? std::string_view{} : command_path_.back();
+  }
+
  private:
   // Using vector for fast contiguous memory access
   // (faster than map for small N)
   std::vector<std::pair<std::string_view, std::string_view>> values_;
   std::vector<std::string_view> positionals_;
+  std::vector<std::string_view> command_path_;
 };
 
 }  // namespace arg

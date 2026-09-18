@@ -93,7 +93,11 @@ class Parser {
       F&& f = {},
       term::ColorStyle color_style =
           term::console_color_style(term::Stream::Stdout)) const {
-    return std::move(f)(root_cmd_, color_style);
+    // After a parse, help renders for the command level where --help/-h
+    // matched (a subcommand when selected); otherwise the root command.
+    const Command& command =
+        help_command_ != nullptr ? *help_command_ : root_cmd_;
+    return std::move(f)(command, color_style);
   }
 
   template <VersionFormatter F = DefaultVersionFormatter>
@@ -134,13 +138,17 @@ class Parser {
                  std::string&& context_arg = "",
                  std::string&& value_arg = "");
 
-  bool long_option(const Command& cmd,
+  // Flag lookup walks the scope innermost-first: a subcommand's own flags
+  // win, then outer levels (so root-level globals work after a subcommand).
+  // Builtin --help/-h and --version/-v are handled at the innermost level
+  // with builtins enabled; help renders for that level.
+  bool long_option(const std::vector<const Command*>& scope,
                    std::string_view raw_arg,
                    usize* i,
                    ParseContext& ctx,
                    ParseStatus* status);
 
-  bool short_options(const Command& cmd,
+  bool short_options(const std::vector<const Command*>& scope,
                      std::string_view raw_arg,
                      usize* i,
                      ParseContext& ctx,
@@ -150,6 +158,9 @@ class Parser {
 
   Command root_cmd_;
   std::vector<ParseError> errors_;
+  // Command level where --help/-h last matched (for help_message()).
+  // Reset on every parse_impl run; null means the root command.
+  const Command* help_command_ = nullptr;
 };
 
 }  // namespace arg

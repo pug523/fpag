@@ -588,4 +588,129 @@ TEST_CASE("Parser try_parse interface", "[arg][parser]") {
   }
 }
 
+TEST_CASE("Parser subcommand dispatch", "[arg][parser]") {
+  auto make_parser = [] {
+    return Parser(CommandBuilder("app", "1.0.0")
+                      .add_arg(ArgBuilder("verbose")
+                                   .long_name("verbose")
+                                   .short_name('V')
+                                   .is_flag(true)
+                                   .build())
+                      .add_subcommand(CommandBuilder("build")
+                                          .about("Build the project")
+                                          .add_arg(ArgBuilder("release")
+                                                       .long_name("release")
+                                                       .is_flag(true)
+                                                       .build())
+                                          .build())
+                      .add_subcommand(CommandBuilder("run")
+                                          .about("Run the project")
+                                          .add_arg(ArgBuilder("target")
+                                                       .long_name("target")
+                                                       .required()
+                                                       .build())
+                                          .build())
+                      .build());
+  };
+
+  SECTION("Descent records the selected subcommand") {
+    Parser parser = make_parser();
+    Matches matches;
+    const std::string_view args[] = {"app", "build", "--release"};
+    REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+    REQUIRE(matches.command_path().size() == 1);
+    CHECK(matches.command_path()[0] == "build");
+    CHECK(matches.selected_command() == "build");
+    CHECK(matches.has("release"));
+  }
+
+  SECTION("Root flags work before and after the subcommand") {
+    {
+      Parser parser = make_parser();
+      Matches matches;
+      const std::string_view args[] = {"app", "--verbose", "build"};
+      REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+      CHECK(matches.selected_command() == "build");
+      CHECK(matches.has("verbose"));
+    }
+    {
+      Parser parser = make_parser();
+      Matches matches;
+      const std::string_view args[] = {"app", "build", "--verbose"};
+      REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+      CHECK(matches.selected_command() == "build");
+      CHECK(matches.has("verbose"));
+    }
+  }
+
+  SECTION("Subcommand flags are unknown at root level") {
+    Parser parser = make_parser();
+    Matches matches;
+    const std::string_view args[] = {"app", "--release"};
+    CHECK(parser.parse(args, &matches) == ParseStatus::Error);
+    REQUIRE(!parser.errors().empty());
+    CHECK(parser.errors()[0].code == ErrorCode::UnknownLongOption);
+    CHECK(matches.command_path().empty());
+  }
+
+  SECTION("Positionals after a subcommand stay positional") {
+    Parser parser = make_parser();
+    Matches matches;
+    const std::string_view args[] = {"app", "build", "foo.txt"};
+    REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+    CHECK(matches.selected_command() == "build");
+    REQUIRE(matches.positionals().size() == 1);
+    CHECK(matches.positionals()[0] == "foo.txt");
+  }
+
+  SECTION("Help after a subcommand renders that subcommand") {
+    Parser parser = make_parser();
+    const std::string_view args[] = {"app", "build", "--help"};
+    auto result = parser.try_parse(args);
+    REQUIRE(result.is_help());
+    CHECK(std::move(result).unwrap_help().find("Build the project") !=
+          std::string::npos);
+  }
+
+  SECTION("Required args are validated on the selected subcommand") {
+    Parser parser = make_parser();
+    Matches matches;
+    const std::string_view args[] = {"app", "run"};
+    CHECK(parser.parse(args, &matches) == ParseStatus::Error);
+    REQUIRE(!parser.errors().empty());
+    CHECK(parser.errors()[0].code == ErrorCode::MissingRequiredArgument);
+
+    Parser ok_parser = make_parser();
+    Matches ok_matches;
+    const std::string_view ok_args[] = {"app", "run", "--target", "x"};
+    REQUIRE(ok_parser.parse(ok_args, &ok_matches) == ParseStatus::Success);
+    CHECK(ok_matches.selected_command() == "run");
+  }
+
+  SECTION("Nested subcommands descend level by level") {
+    Parser parser =
+        Parser(CommandBuilder("app", "1.0.0")
+                   .add_subcommand(
+                       CommandBuilder("remote")
+                           .add_subcommand(CommandBuilder("add").build())
+                           .build())
+                   .build());
+    Matches matches;
+    const std::string_view args[] = {"app", "remote", "add"};
+    REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+    REQUIRE(matches.command_path().size() == 2);
+    CHECK(matches.command_path()[0] == "remote");
+    CHECK(matches.selected_command() == "add");
+  }
+
+  SECTION("No subcommand leaves the path empty") {
+    Parser parser = make_parser();
+    Matches matches;
+    const std::string_view args[] = {"app", "--verbose"};
+    REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);
+    CHECK(matches.command_path().empty());
+    CHECK(matches.selected_command().empty());
+  }
+}
+
 }  // namespace arg
