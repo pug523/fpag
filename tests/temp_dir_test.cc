@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
@@ -60,7 +61,7 @@ TEST_CASE("TempDir supports moves", "[io][temp_dir]") {
   REQUIRE(moved.is_valid());
   REQUIRE(moved.write_file("a.txt", "x"));
 
-  TempDir dir(std::move(moved));
+  const TempDir dir(std::move(moved));
   CHECK(dir.is_valid());
   CHECK(read_file(dir.join("a.txt")) == "x");
 }

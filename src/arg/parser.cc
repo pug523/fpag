@@ -113,7 +113,7 @@ bool Parser::long_option(const std::vector<const Command*>& scope,
   }
 
   auto equal_pos = content.find('=');
-  std::string_view key = content.substr(0, equal_pos);
+  const std::string_view key = content.substr(0, equal_pos);
   if (ctx.partial_mode) {
     if (ctx.unparsed) {
       ctx.unparsed->push_back(raw_arg);
