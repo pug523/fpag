@@ -9,6 +9,7 @@
 #include <string_view>
 
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 #include "fpag/debug/check.h"
 #include "fpag/mem/concurrent_arena.h"
 #include "fpag/mem/page_allocator.h"
@@ -25,8 +26,14 @@ namespace str {
 class StringPool {
  public:
   // Default reservation: generous on 64-bit, still addressable everywhere
-  // (offsets must fit in StringPoolId's u32 fields).
+  // (offsets must fit in StringPoolId's u32 fields). Small on 32-bit
+  // address spaces (e.g. wasm32): every StringInterner reserves this up
+  // front, so it must stay well under linear-memory caps.
+#if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
   static constexpr usize kDefaultPoolCapacity = 1ull * 1024 * 1024 * 1024;
+#else
+  static constexpr usize kDefaultPoolCapacity = 64ull * 1024 * 1024;
+#endif
 
   explicit StringPool(usize capacity = kDefaultPoolCapacity) {
     FPAG_DCHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");

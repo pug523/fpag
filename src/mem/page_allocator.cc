@@ -46,7 +46,13 @@ bool commit_pages(void* ptr, usize size) {
   FPAG_DCHECK(ptr);
   FPAG_CHECK(is_page_aligned_ptr(ptr));
   FPAG_CHECK(is_page_aligned_size(size));
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // WebAssembly linear memory is always readable and writable;
+  // mprotect has no meaning here (the syscall is unsupported).
+  (void)ptr;
+  (void)size;
+  return true;
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
   return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != nullptr;
 #else
   return mprotect(ptr, size, PROT_READ | PROT_WRITE) == 0;
@@ -57,7 +63,11 @@ void decommit_pages(void* ptr, usize size) {
   FPAG_DCHECK(ptr);
   FPAG_CHECK(is_page_aligned_ptr(ptr));
   FPAG_CHECK(is_page_aligned_size(size));
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // No page-state syscalls under WebAssembly; keep the reservation.
+  (void)ptr;
+  (void)size;
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
   VirtualFree(ptr, size, MEM_DECOMMIT);
 #else
   madvise(ptr, size, MADV_DONTNEED);
@@ -227,18 +237,22 @@ void free_pages(void* ptr, usize size) {
 }
 
 usize page_size() {
-#if FPAG_BUILD_FLAG(IS_OS_POSIX)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // WebAssembly's fixed page size; avoids sysconf under minimal runtimes.
+  return 65536;
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   static const usize page_size = static_cast<usize>(::sysconf(_SC_PAGESIZE));
+  return page_size;
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   static const usize page_size = []() {
     SYSTEM_INFO sys_info;
     ::GetSystemInfo(&sys_info);
     return static_cast<usize>(sys_info.dwPageSize);
   }();
-#else
-  static const usize page_size = 4096;
-#endif
   return page_size;
+#else
+  return 4096;
+#endif
 }
 
 usize huge_page_size() {
@@ -253,7 +267,9 @@ usize huge_page_size() {
 }
 
 usize mmap_alignment() {
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  return 65536;
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
   static const usize alignment = []() {
     SYSTEM_INFO sys_info;
     ::GetSystemInfo(&sys_info);
