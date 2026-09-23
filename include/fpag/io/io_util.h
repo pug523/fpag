@@ -6,6 +6,7 @@
 
 #include <cerrno>
 #include <cstddef>
+#include <span>
 #include <string>
 
 #include "fpag/base/numeric.h"
@@ -24,6 +25,8 @@ namespace io {
 bool is_file(const std::string& file_name);
 bool is_dir(const std::string& dir_name);
 
+i32 open(const std::string& path, i32 flags, i32 mode);
+i32 open(const std::string& path, i32 flags);
 i32 open(const std::string& path);
 void close(i32 fd);
 
@@ -34,6 +37,11 @@ bool remove_file(const std::string& path);
 bool remove_directory(const std::string& path);
 
 bool rename_file(const std::string& old_path, const std::string& new_path);
+
+isize file_size(const std::string& path);
+std::string read_file(const std::string& path);
+
+bool write_file(const std::span<const u8> data, const std::string& output_path);
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 constexpr i32 kStdoutFd = 1;
