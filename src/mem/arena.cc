@@ -20,10 +20,15 @@ Arena::Arena(Arena&& other) noexcept
       committed_size_(std::exchange(other.committed_size_, 0)) {}
 
 Arena& Arena::operator=(Arena&& other) noexcept {
-  ptr_ = std::exchange(other.ptr_, nullptr);
-  capacity_ = std::exchange(other.capacity_, 0);
-  size_ = std::exchange(other.size_, 0);
-  committed_size_ = std::exchange(other.committed_size_, 0);
+  if (this != &other) {
+    if (ptr_) {
+      reset();
+    }
+    ptr_ = std::exchange(other.ptr_, nullptr);
+    capacity_ = std::exchange(other.capacity_, 0);
+    size_ = std::exchange(other.size_, 0);
+    committed_size_ = std::exchange(other.committed_size_, 0);
+  }
   return *this;
 }
 
@@ -52,6 +57,11 @@ void* Arena::alloc(usize size, usize align) {
   FPAG_DCHECK(ptr_);
 
   const usize current_offset = base::round_up(size_, align);
+  // Prevent wrap-around before comparing with capacity.
+  if (size > capacity_ - current_offset) {
+    FPAG_DCHECK_MSG(false, "Arena capacity exceeded (overflow).");
+    return nullptr;
+  }
   const usize next_offset = current_offset + size;
   FPAG_DCHECK_LE_MSG(next_offset, capacity_, "Arena capacity exceeded.");
 

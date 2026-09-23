@@ -38,6 +38,7 @@ class Arena {
   [[nodiscard]] void* alloc(usize size,
                             usize align = alignof(std::max_align_t));
 
+  // Internal: used only by alloc(). Not intended for external callers.
   void commit_until(usize end_offset);
 
   // Doesn't call destructor.
