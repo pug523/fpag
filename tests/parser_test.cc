@@ -689,13 +689,12 @@ TEST_CASE("Parser subcommand dispatch", "[arg][parser]") {
   }
 
   SECTION("Nested subcommands descend level by level") {
-    Parser parser =
-        Parser(CommandBuilder("app", "1.0.0")
-                   .add_subcommand(
-                       CommandBuilder("remote")
-                           .add_subcommand(CommandBuilder("add").build())
-                           .build())
-                   .build());
+    Parser parser = Parser(
+        CommandBuilder("app", "1.0.0")
+            .add_subcommand(CommandBuilder("remote")
+                                .add_subcommand(CommandBuilder("add").build())
+                                .build())
+            .build());
     Matches matches;
     const std::string_view args[] = {"app", "remote", "add"};
     REQUIRE(parser.parse(args, &matches) == ParseStatus::Success);

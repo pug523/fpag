@@ -41,8 +41,7 @@ TEST_CASE("TempDir creates and cleans scratch trees", "[io][temp_dir]") {
   CHECK(dir.write_file("sub/a.txt", "hello"));
   CHECK(dir.write_file("top.txt", ""));
 
-  CHECK(dir.join("sub/a.txt") ==
-        std::string(dir.path()) + "/sub/a.txt");
+  CHECK(dir.join("sub/a.txt") == std::string(dir.path()) + "/sub/a.txt");
   CHECK(read_file(dir.join("sub/a.txt")) == "hello");
   CHECK(read_file(dir.join("top.txt")).empty());
 

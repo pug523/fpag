@@ -5,9 +5,9 @@
 #include "fpag/arg/parser.h"
 
 #include <cstddef>
+#include <ranges>
 #include <span>
 #include <string>
-#include <ranges>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -386,8 +386,7 @@ ParseStatus Parser::parse_impl(ParseContext& ctx) {
       should_stop = long_option(scope, current, &i, ctx, &status);
     } else if (current.starts_with("-") && current.size() > 1) {
       should_stop = short_options(scope, current, &i, ctx, &status);
-    } else if (const Command* sub =
-                   scope.back()->find_subcommand(current)) {
+    } else if (const Command* sub = scope.back()->find_subcommand(current)) {
       scope.push_back(sub);
       ctx.matches->select_subcommand(sub->name());
       continue;

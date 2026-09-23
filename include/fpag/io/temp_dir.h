@@ -8,8 +8,6 @@
 #include <string_view>
 #include <vector>
 
-#include "fpag/base/numeric.h"
-
 namespace io {
 
 // RAII scratch directory for tests, built on C/POSIX/Win32 APIs.
