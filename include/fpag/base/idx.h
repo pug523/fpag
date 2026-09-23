@@ -29,6 +29,8 @@ struct Idx {
   constexpr explicit Idx(IdxType id) : idx(id) {}
   constexpr auto operator<=>(const Idx&) const = default;
 
+  static constexpr Idx invalid() { return Idx(kInvalidIdx); }
+
   // Preincrement
   constexpr Idx& operator++() {
     ++idx;
