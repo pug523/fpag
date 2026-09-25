@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <random>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -47,6 +48,27 @@ TempDir::TempDir(std::string_view name) {
   remove_all(path_);
   make_dirs(path_);
 }
+
+TempDir TempDir::create_unique(std::string_view prefix) {
+  static constexpr char kChars[] =
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "0123456789";
+
+  thread_local std::mt19937 rng(std::random_device{}());
+  std::uniform_int_distribution<usize> dist(0, sizeof(kChars) - 2);
+
+  std::string name(prefix);
+  constexpr usize kRandomLength = 16;
+  name.reserve(name.size() + kRandomLength);
+
+  for (usize i = 0; i < kRandomLength; ++i) {
+    name.push_back(kChars[dist(rng)]);
+  }
+
+  return TempDir(name);
+}
+
 
 TempDir::~TempDir() {
   remove();

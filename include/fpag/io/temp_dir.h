@@ -20,6 +20,10 @@ namespace io {
 class TempDir {
  public:
   explicit TempDir(std::string_view name);
+
+  // Given a prefix, creates a TempDir with a uniquely generated random suffix.
+  static TempDir create_unique(std::string_view prefix = "tmp_");
+
   ~TempDir();
 
   TempDir(const TempDir&) = delete;
