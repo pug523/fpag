@@ -68,22 +68,22 @@ class ParseResult {
   }
 
   T&& unwrap() && {
-    FPAG_DCHECK(is_ok());
+    FPAG_CHECK(is_ok());
     return std::move(storage_).template get<T>();
   }
 
   std::vector<ParseError>&& unwrap_err() && {
-    FPAG_DCHECK(is_err());
+    FPAG_CHECK(is_err());
     return std::move(storage_).template get<std::vector<ParseError>>();
   }
 
   std::string&& unwrap_help() && {
-    FPAG_DCHECK(is_help());
+    FPAG_CHECK(is_help());
     return std::move(storage_).template get<HelpText>().value;
   }
 
   std::string&& unwrap_version() && {
-    FPAG_DCHECK(is_version());
+    FPAG_CHECK(is_version());
     return std::move(storage_).template get<VersionText>().value;
   }
 

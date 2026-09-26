@@ -18,17 +18,20 @@
 #include <string>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/arg/parse_result.h"
 #include "fpag/base/numeric.h"
+#include "fpag/base/result.h"
 
 namespace debug {
 
 namespace {
 
-// Runs a failing check in a forked child with the child's stderr captured into
-// a pipe, and returns the child's wait status. The child never calls
+// Runs @p operation in a forked child with the child's stderr captured into a
+// pipe, and returns the child's wait status. The child never calls
 // init_debug_logger(), which is the case being covered: a check that fails
 // before the debug logger has a sink.
-i32 run_failing_check(std::string* reported) {
+template <typename Operation>
+i32 run_in_child(Operation&& operation, std::string* reported) {
   std::array<i32, 2> fds{};
   REQUIRE(::pipe(fds.data()) == 0);
 
@@ -48,8 +51,8 @@ i32 run_failing_check(std::string* reported) {
     ::close(fds[0]);
     ::dup2(fds[1], STDERR_FILENO);
     ::close(fds[1]);
-    FPAG_CHECK_MSG(false, "check_test probe");
-    ::_exit(0);  // Not reached: the check above does not return.
+    operation();
+    ::_exit(0);  // Not reached when the operation dies on a check.
   }
 
   ::close(fds[1]);
@@ -64,6 +67,11 @@ i32 run_failing_check(std::string* reported) {
   i32 status = 0;
   REQUIRE(::waitpid(child, &status, 0) == child);
   return status;
+}
+
+i32 run_failing_check(std::string* reported) {
+  return run_in_child([] { FPAG_CHECK_MSG(false, "check_test probe"); },
+                      reported);
 }
 
 }  // namespace
@@ -83,6 +91,49 @@ TEST_CASE("A failed check reports without a debug logger sink",
   const bool died_from_stack_overflow =
       WIFSIGNALED(status) && (WTERMSIG(status) == SIGSEGV);
   CHECK_FALSE(died_from_stack_overflow);
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+  REQUIRE(WIFSIGNALED(status));
+  CHECK(WTERMSIG(status) == SIGILL);
+#endif
+}
+
+TEST_CASE("Unwrapping the wrong Result tag reports in every build",
+          "[base][result]") {
+  std::string reported;
+  const i32 status = run_in_child(
+      [] {
+        base::Result<i32, i32> result = base::make_err(7);
+        std::move(result).unwrap();
+      },
+      &reported);
+
+  INFO(reported);
+  // A release build used to read the other payload without a word.
+  CHECK(reported.find("'is_ok()'") != std::string::npos);
+  // Returning at all would mean the unwrap gave back the other payload.
+  const bool returned_normally = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  CHECK_FALSE(returned_normally);
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+  REQUIRE(WIFSIGNALED(status));
+  CHECK(WTERMSIG(status) == SIGILL);
+#endif
+}
+
+TEST_CASE("Unwrapping the wrong ParseResult tag reports in every build",
+          "[arg][parse_result]") {
+  std::string reported;
+  const i32 status = run_in_child(
+      [] {
+        arg::ParseResult<i32> result = arg::ParseResult<i32>::make_ok(1);
+        std::move(result).unwrap_err();
+      },
+      &reported);
+
+  INFO(reported);
+  CHECK(reported.find("'is_err()'") != std::string::npos);
+  // Returning at all would mean the unwrap gave back the other payload.
+  const bool returned_normally = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  CHECK_FALSE(returned_normally);
 #if FPAG_BUILD_FLAG(IS_DEBUG)
   REQUIRE(WIFSIGNALED(status));
   CHECK(WTERMSIG(status) == SIGILL);

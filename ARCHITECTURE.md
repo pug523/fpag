@@ -104,7 +104,7 @@ cannot reach back.**
 - `build` depends on nothing. It is the root, and it is a vendored copy of
   Chromium's `build/build_config.h` rather than something written for fpag.
 - `base` depends on `build` and `debug`. The `debug` edge is real: `Result`
-  uses `FPAG_DCHECK`, and a check is a diagnostic.
+  uses `FPAG_CHECK` to guard its unwraps, and a check is a diagnostic.
 - `arg` sits on top of `base`, `debug` and `term`, and reaches into no logging.
   Parsing a command line is not a logging concern.
 - `io` is reachable from `debug` and from the file sinks, and from nowhere

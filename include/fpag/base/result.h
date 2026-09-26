@@ -70,15 +70,16 @@ class Result {
   bool is_ok() const noexcept { return union_.template is<Ok<T>>(); }
   bool is_err() const noexcept { return union_.template is<Err<E>>(); }
 
-  // Unwraps
+  // Unwraps. The tag check is fatal in every build: the other payload of the
+  // union is not there to be read.
   T unwrap() && noexcept {
-    FPAG_DCHECK(is_ok());
+    FPAG_CHECK(is_ok());
     return std::move(union_).template get<Ok<T>>().value;
   }
 
   // Unwraps error
   E unwrap_err() && noexcept {
-    FPAG_DCHECK(is_err());
+    FPAG_CHECK(is_err());
     return std::move(union_).template get<Err<E>>().error;
   }
 
@@ -92,12 +93,12 @@ class Result {
 
   // Non-destructive inspection
   const T& value() const& noexcept {
-    FPAG_DCHECK(is_ok());
+    FPAG_CHECK(is_ok());
     return union_.template get<Ok<T>>().value;
   }
 
   T& value() & noexcept {
-    FPAG_DCHECK(is_ok());
+    FPAG_CHECK(is_ok());
     return union_.template get<Ok<T>>().value;
   }
 
@@ -172,11 +173,11 @@ class Result<void, E> {
   bool is_err() const noexcept { return union_.template is<Err<E>>(); }
 
   // Unwraps (returns void)
-  void unwrap() && noexcept { FPAG_DCHECK(is_ok()); }
+  void unwrap() && noexcept { FPAG_CHECK(is_ok()); }
 
   // Unwraps error
   E unwrap_err() && noexcept {
-    FPAG_DCHECK(is_err());
+    FPAG_CHECK(is_err());
     return std::move(union_).template get<Err<E>>().error;
   }
 
