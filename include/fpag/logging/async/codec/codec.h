@@ -8,6 +8,8 @@
 
 namespace logging {
 
+// What a specialization has to provide: DecodedType, encode(), decode(),
+// is_fixed_size(), and body_size() or encoded_size() for the body's size.
 template <typename T, typename Enable = void>
 struct Codec;
 

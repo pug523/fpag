@@ -88,32 +88,18 @@ class Serializer {
                   kTotalPayloadSize);
       queue->commit(kTotalPayloadSize);
     } else {
-      constexpr usize kDynamicSizeArgsBufSize = 4096;
-      char args_buf[kDynamicSizeArgsBufSize];
       usize args_body_size = 0;
-
-      char* arg_out_cursor = args_buf;
       // clang-format off
       // NOLINTBEGIN(whitespace/braces,whitespace/line_length)
       ([&] {
         using Codec = Codec<std::decay_t<decltype(args)>>;
         if constexpr (Codec::is_fixed_size()) {
-          // A fixed size argument crosses without a size slot, because the
-          // deserializer derives its size from the type. Writing one here put
-          // every later argument at the wrong offset.
-          Codec::encode(arg_out_cursor, args);
           args_body_size += Codec::body_size();
-          arg_out_cursor += Codec::body_size();
         } else {
-          const usize written =
-              Codec::encode(arg_out_cursor + sizeof(written), args);
-          std::memcpy(arg_out_cursor, &written, sizeof(written));
-
-          args_body_size += sizeof(written) + written;
-          arg_out_cursor += sizeof(written) + written;
+          // A variable length argument crosses with a size slot in front of
+          // its body.
+          args_body_size += sizeof(usize) + Codec::encoded_size(args);
         }
-
-        FPAG_DCHECK_LE(args_body_size, kDynamicSizeArgsBufSize);
       }(), ...);
       // NOLINTEND(whitespace/braces,whitespace/line_length)
       // clang-format on
@@ -127,12 +113,34 @@ class Serializer {
         return;
       }
 
-      write_header(static_cast<char*>(out_ptr), total_payload_size,
-                   kDeserializeFunc, level, fmt, interner);
-      std::memcpy(
-          static_cast<char*>(out_ptr) + Deserializer::kPayloadHeaderSize,
-          args_buf, args_body_size);
+      char* const payload_head = static_cast<char*>(out_ptr);
+      write_header(payload_head, total_payload_size, kDeserializeFunc, level,
+                   fmt, interner);
 
+      char* arg_out_cursor = payload_head + Deserializer::kPayloadHeaderSize;
+      // clang-format off
+      // NOLINTBEGIN(whitespace/braces,whitespace/line_length)
+      ([&] {
+        using Codec = Codec<std::decay_t<decltype(args)>>;
+        if constexpr (Codec::is_fixed_size()) {
+          // A fixed size argument has no size slot: the deserializer derives
+          // its size from the type.
+          Codec::encode(arg_out_cursor, args);
+          arg_out_cursor += Codec::body_size();
+        } else {
+          const usize written =
+              Codec::encode(arg_out_cursor + sizeof(written), args);
+          std::memcpy(arg_out_cursor, &written, sizeof(written));
+          arg_out_cursor += sizeof(written) + written;
+        }
+      }(), ...);
+      // NOLINTEND(whitespace/braces,whitespace/line_length)
+      // clang-format on
+
+      // The encode pass must write exactly what the size pass reserved: more
+      // would overrun the slot, less would leave a hole in the record.
+      FPAG_DCHECK_EQ(static_cast<usize>(arg_out_cursor - payload_head),
+                     total_payload_size);
       queue->commit(total_payload_size);
     }
   }

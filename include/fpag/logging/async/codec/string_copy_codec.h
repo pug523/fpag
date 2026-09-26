@@ -23,6 +23,10 @@ struct Codec<std::string_view> {
     return arg_size;
   }
 
+  inline static usize encoded_size(const std::string_view in) {
+    return in.size();
+  }
+
   inline static std::string_view decode(const char* data, usize size) {
     return std::string_view{data, size};
   }
@@ -36,6 +40,10 @@ struct Codec<std::string> {
 
   inline static usize encode(char* const out, const std::string& in) {
     return Codec<std::string_view>::encode(out, std::string_view{in});
+  }
+
+  static usize encoded_size(const std::string& in) {
+    return Codec<std::string_view>::encoded_size(std::string_view{in});
   }
 
   static std::string_view decode(const char* data, usize size) {
@@ -53,6 +61,10 @@ struct Codec<const char*> {
 
   inline static usize encode(char* const out, const char* const in) {
     return Codec<std::string_view>::encode(out, std::string_view{in});
+  }
+
+  static usize encoded_size(const char* const in) {
+    return Codec<std::string_view>::encoded_size(std::string_view{in});
   }
 
   static std::string_view decode(const char* data, usize size) {

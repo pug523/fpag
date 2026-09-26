@@ -10,6 +10,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
+#include "fmt/ranges.h"
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
 #include "fpag/logging/log_level.h"
@@ -163,13 +164,37 @@ TEST_CASE("AsyncLogger frames mixed fixed and dynamic arguments",
   logger.info("fixed then view: {} {}", count, text);
   logger.info("view then fixed: {} {}", text, count);
   logger.info("view fixed view: {} {} {}", text, count, text);
+  logger.info("view vector fixed: {} {} {}", text, std::vector<i32>{1, 2},
+              count);
 
   logger.stop_backend_worker();
 
-  REQUIRE(messages.size() == 3);
+  REQUIRE(messages.size() == 4);
   CHECK(messages[0] == "fixed then view: 42 text");
   CHECK(messages[1] == "view then fixed: text 42");
   CHECK(messages[2] == "view fixed view: text 42 text");
+  CHECK(messages[3] == "view vector fixed: text [1, 2] 42");
+}
+
+TEST_CASE("AsyncLogger carries an argument larger than 4 KiB",
+          "[logging][async]") {
+  std::vector<std::string> messages;
+  AsyncLogger<CapturingSink, LogLevel::Trace> logger;
+  logger.init(CapturingSink{&messages}, /*interner_map_capacity=*/16 * 1024,
+              /*queue_capacity=*/1 << 16);
+  logger.start_backend_worker();
+
+  constexpr usize kBigSize = 8 * 1024;
+  const std::string big(kBigSize, 'x');
+
+  // The payload is longer than the format buffer, and it only fits in the queue
+  // because the caller sized the queue for it.
+  logger.info("big: {}", big);
+
+  logger.stop_backend_worker();
+
+  REQUIRE(messages.size() == 1);
+  CHECK(messages[0] == "big: " + big);
 }
 
 }  // namespace logging

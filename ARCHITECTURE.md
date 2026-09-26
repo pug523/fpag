@@ -150,9 +150,6 @@ other sinks, or own a resource outright. See `include/fpag/logging/sink/sink.h`.
 - Arenas reserve address space up front and commit pages as they are handed
   out. A 1 GiB `StringPool` costs nothing until it is filled.
 
-The single exception is `Serializer`'s slowest branch, which stages variable
-length arguments in a 4 KiB stack buffer before copying them into the ring.
-
 ### Lock-free where it is on a hot path
 
 - `container::SpscQueue` separates the producer's and the consumer's counters
@@ -204,9 +201,8 @@ Three deliberate choices here:
 - **The async producer never touches the sink.** That is why the sink
   initialization fix costs the async path nothing at all.
 
-Two known rough edges, both documented in the code: `Serializer` only
-`DCHECK`s the total size of its 4 KiB staging buffer, and neither file sink
-carries a source location because `LogEntry` has no field for one yet.
+One known rough edge: neither file sink carries a source location because
+`LogEntry` has no field for one yet.
 
 ## Memory and lifetime
 
