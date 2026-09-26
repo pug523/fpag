@@ -29,6 +29,7 @@ set(FPAG_SOURCES
     src/debug/exit_handler.cc
     src/debug/fatal.cc
     src/debug/logger.cc
+    src/debug/process_info.cc
     src/debug/signal_handler.cc
     src/debug/terminate_handler.cc
     src/debug/profiler/profiler.cc
