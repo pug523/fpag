@@ -51,9 +51,13 @@ class MemoryMappedStreamWriter {
       return true;
     }
 
+    // Growing has to make progress: doubling a capacity of zero stays zero, so
+    // the requirement itself is the floor of the new capacity. A writer that
+    // was never opened fails at the resize below.
+    const usize needed = write_offset_ + required_bytes;
     usize new_capacity = capacity_ * 2;
-    while (write_offset_ + required_bytes > new_capacity) {
-      new_capacity *= 2;
+    if (new_capacity < needed) {
+      new_capacity = needed;
     }
 
     mmap_.close();

@@ -115,4 +115,15 @@ TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
   CHECK(file_content == kDirectData);
 }
 
+TEST_CASE("MemoryMappedStreamWriter refuses to write before open",
+          "[base][mmap_stream_writer]") {
+  MemoryMappedStreamWriter writer;
+
+  // The capacity is zero until open() maps a file, and growing it still has to
+  // make progress instead of doubling zero.
+  CHECK_FALSE(writer.write(kSmallText.data(), kSmallText.size()));
+  CHECK(writer.prepare_write_buffer(kSmallText.size()) == nullptr);
+  CHECK(writer.bytes_written() == 0);
+}
+
 }  // namespace io
