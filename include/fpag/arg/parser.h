@@ -54,11 +54,11 @@ class Parser {
                             Matches* matches,
                             std::vector<std::string_view>* unparsed);
 
+  /// The result borrows the command tree (argument and subcommand names), so
+  /// the parser has to outlive it. There is deliberately no rvalue overload:
+  /// a temporary parser would take the tree the result points into with it.
   ParseResult<Matches> try_parse(i32 argc, const char* const* argv) &;
   ParseResult<Matches> try_parse(std::span<const std::string_view> args) &;
-
-  ParseResult<Matches> try_parse(i32 argc, const char* const* argv) &&;
-  ParseResult<Matches> try_parse(std::span<const std::string_view> args) &&;
 
   /// Fixed-size array overloads
   template <usize N>

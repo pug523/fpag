@@ -304,41 +304,6 @@ ParseResult<Matches> Parser::try_parse(
   }
 }
 
-ParseResult<Matches> Parser::try_parse(i32 argc, const char* const* argv) && {
-  Matches matches;
-  const ParseStatus status = parse(argc, argv, &matches);
-
-  switch (status) {
-    case ParseStatus::Success:
-      return ParseResult<Matches>::make_ok(std::move(matches));
-    case ParseStatus::Error:
-      return ParseResult<Matches>::make_err(std::move(*this).errors());
-    case ParseStatus::HelpRequested:
-      return ParseResult<Matches>::make_help(std::move(*this).help_message());
-    case ParseStatus::VersionRequested:
-      return ParseResult<Matches>::make_version(std::move(root_cmd_).version());
-    default: return ParseResult<Matches>::make_err(std::move(*this).errors());
-  }
-}
-
-ParseResult<Matches> Parser::try_parse(
-    std::span<const std::string_view> args) && {
-  Matches matches;
-  const ParseStatus status = parse(args, &matches);
-
-  switch (status) {
-    case ParseStatus::Success:
-      return ParseResult<Matches>::make_ok(std::move(matches));
-    case ParseStatus::Error:
-      return ParseResult<Matches>::make_err(std::move(*this).errors());
-    case ParseStatus::HelpRequested:
-      return ParseResult<Matches>::make_help(std::move(*this).help_message());
-    case ParseStatus::VersionRequested:
-      return ParseResult<Matches>::make_version(std::move(root_cmd_).version());
-    default: return ParseResult<Matches>::make_err(std::move(*this).errors());
-  }
-}
-
 ParseStatus Parser::parse_impl(ParseContext& ctx) {
   if (!ctx.matches) {
     add_error(ErrorCode::NullMatchesPointer);

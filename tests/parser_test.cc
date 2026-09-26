@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -486,7 +487,7 @@ TEST_CASE("Parser reports errors for unknown and missing options",
 }
 
 TEST_CASE("Parser try_parse interface", "[arg][parser]") {
-  SECTION("Success case returning parsed Matches (Lvalue & Rvalue)") {
+  SECTION("Success case returning parsed Matches") {
     Parser parser(
         CommandBuilder("app", "1.0.0")
             .add_arg(
@@ -497,41 +498,15 @@ TEST_CASE("Parser try_parse interface", "[arg][parser]") {
     // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "-p", "9090"};
 
-    // Lvalue std::span overload
     auto res_span = parser.try_parse(span_args);
     REQUIRE(res_span.is_ok());
     CHECK(std::move(res_span).unwrap().get<std::string_view>("port").unwrap() ==
           "8080");
 
-    // Lvalue argc/argv overload
     auto res_argv = parser.try_parse(3, argv);
     REQUIRE(res_argv.is_ok());
     CHECK(std::move(res_argv).unwrap().get<std::string_view>("port").unwrap() ==
           "9090");
-
-    // Rvalue std::span overload
-    Parser rvalue_parser1(
-        CommandBuilder("app", "1.0.0")
-            .add_arg(ArgBuilder("port").short_name('p').build())
-            .build());
-    auto res_rvalue1 = std::move(rvalue_parser1).try_parse(span_args);
-    REQUIRE(res_rvalue1.is_ok());
-    CHECK(std::move(res_rvalue1)
-              .unwrap()
-              .get<std::string_view>("port")
-              .unwrap() == "8080");
-
-    // Rvalue argc/argv overload
-    Parser rvalue_parser2(
-        CommandBuilder("app", "1.0.0")
-            .add_arg(ArgBuilder("port").short_name('p').build())
-            .build());
-    auto res_rvalue2 = std::move(rvalue_parser2).try_parse(3, argv);
-    REQUIRE(res_rvalue2.is_ok());
-    CHECK(std::move(res_rvalue2)
-              .unwrap()
-              .get<std::string_view>("port")
-              .unwrap() == "9090");
   }
 
   SECTION("Error status returning vector of ParseError") {
@@ -541,19 +516,11 @@ TEST_CASE("Parser try_parse interface", "[arg][parser]") {
 
     const std::string_view args[] = {"app", "-p"};
 
-    // Lvalue overload
     auto res_lvalue = parser.try_parse(args);
     REQUIRE(res_lvalue.is_err());
     const auto& errors_lvalue = std::move(res_lvalue).unwrap_err();
     REQUIRE_FALSE(errors_lvalue.empty());
     CHECK(errors_lvalue[0].code == ErrorCode::MissingValueForOption);
-
-    // Rvalue overload
-    auto res_rvalue = std::move(parser).try_parse(args);
-    REQUIRE(res_rvalue.is_err());
-    auto errors_rvalue = std::move(res_rvalue).unwrap_err();
-    REQUIRE_FALSE(errors_rvalue.empty());
-    CHECK(errors_rvalue[0].code == ErrorCode::MissingValueForOption);
   }
 
   SECTION("HelpRequested status returning help text") {
@@ -561,15 +528,9 @@ TEST_CASE("Parser try_parse interface", "[arg][parser]") {
 
     const std::string_view args[] = {"app", "--help"};
 
-    // Lvalue overload
     auto res_lvalue = parser.try_parse(args);
     REQUIRE(res_lvalue.is_help());
     CHECK_FALSE(std::move(res_lvalue).unwrap_help().empty());
-
-    // Rvalue overload
-    auto res_rvalue = std::move(parser).try_parse(args);
-    REQUIRE(res_rvalue.is_help());
-    CHECK_FALSE(std::move(res_rvalue).unwrap_help().empty());
   }
 
   SECTION("VersionRequested status returning version string") {
@@ -577,16 +538,43 @@ TEST_CASE("Parser try_parse interface", "[arg][parser]") {
 
     const std::string_view args[] = {"app", "--version"};
 
-    // Lvalue overload
     auto res_lvalue = parser.try_parse(args);
     REQUIRE(res_lvalue.is_version());
     CHECK(std::move(res_lvalue).unwrap_version() == "2.5.0");
-
-    // Rvalue overload
-    auto res_rvalue = std::move(parser).try_parse(args);
-    REQUIRE(res_rvalue.is_version());
-    CHECK(std::move(res_rvalue).unwrap_version() == "2.5.0");
   }
+}
+
+namespace {
+
+// Detects whether try_parse is callable on an rvalue parser.
+template <typename T, typename = void>
+struct HasRvalueTryParse : std::false_type {};
+
+template <typename T>
+struct HasRvalueTryParse<
+    T,
+    std::void_t<decltype(std::declval<T>().try_parse(
+        std::declval<std::span<const std::string_view>>()))>> : std::true_type {
+};
+
+}  // namespace
+
+TEST_CASE("Parser try_parse requires a parser that outlives the result",
+          "[arg][parser]") {
+  // The parsed Matches refers to argument names and to the command path, all
+  // of which live in the command tree. A temporary parser would take the tree
+  // down before the result is read, so only lvalue calls are accepted.
+  static_assert(!HasRvalueTryParse<Parser>::value);
+  static_assert(HasRvalueTryParse<Parser&>::value);
+
+  Parser parser(CommandBuilder("app", "1.0.0")
+                    .add_subcommand(CommandBuilder("run").build())
+                    .build());
+  const std::string_view args[] = {"app", "run"};
+
+  auto result = parser.try_parse(args);
+  REQUIRE(result.is_ok());
+  CHECK(std::move(result).unwrap().selected_command() == "run");
 }
 
 TEST_CASE("Parser subcommand dispatch", "[arg][parser]") {
