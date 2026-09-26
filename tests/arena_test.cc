@@ -10,6 +10,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 #include "fpag/mem/arena_ptr.h"
 #include "fpag/mem/page_allocator.h"
 
@@ -126,5 +127,18 @@ TEST_CASE("Arena edge cases", "[mem][arena]") {
     CHECK(p);
   }
 }
+
+#if !FPAG_BUILD_FLAG(IS_DEBUG)
+TEST_CASE("Arena reports exhaustion instead of constructing at null",
+          "[mem][arena]") {
+  // Only reachable in release: in debug the capacity check is a fatal DCHECK,
+  // by design. What must never happen is the placement new in create<T> being
+  // handed a null pointer.
+  Arena arena;
+  arena.reserve(page_size());
+  REQUIRE(arena.alloc(page_size()) != nullptr);
+  CHECK(arena.create<u64>(u64{1}) == nullptr);
+}
+#endif
 
 }  // namespace mem

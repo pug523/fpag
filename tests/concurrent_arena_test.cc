@@ -13,6 +13,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 #include "fpag/mem/arena_ptr.h"
 #include "fpag/mem/page_allocator.h"
 
@@ -166,5 +167,16 @@ TEST_CASE("ConcurrentArena is usable from several threads", "[mem][arena]") {
     }
   }
 }
+
+#if !FPAG_BUILD_FLAG(IS_DEBUG)
+TEST_CASE("ConcurrentArena reports exhaustion instead of constructing at null",
+          "[mem][arena]") {
+  // See the matching Arena test: only reachable in release.
+  ConcurrentArena arena;
+  arena.reserve(page_size());
+  REQUIRE(arena.alloc(page_size()) != nullptr);
+  CHECK(arena.create<u64>(u64{1}) == nullptr);
+}
+#endif
 
 }  // namespace mem

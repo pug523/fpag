@@ -43,12 +43,14 @@ class Arena {
 
   // Doesn't call destructor.
   // Use this for trivial copyable types.
+  // Returns nullptr, without constructing anything, if the arena is full.
   template <typename T, typename... Args>
   [[nodiscard]] inline T* create(Args&&... args) {
     void* mem = alloc(sizeof(T), alignof(T));
-    T* const obj = new (mem) T(std::forward<Args>(args)...);
-    FPAG_DCHECK(obj);
-    return obj;
+    if (mem == nullptr) [[unlikely]] {
+      return nullptr;
+    }
+    return new (mem) T(std::forward<Args>(args)...);
   }
 
   // Calls destructor automatically.

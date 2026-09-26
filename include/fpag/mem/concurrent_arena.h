@@ -39,12 +39,14 @@ class ConcurrentArena {
   [[nodiscard]] void* alloc(usize size,
                             usize align = alignof(std::max_align_t));
 
+  // Returns nullptr, without constructing anything, if the arena is full.
   template <typename T, typename... Args>
   [[nodiscard]] inline T* create(Args&&... args) {
     void* mem = alloc(sizeof(T), alignof(T));
-    T* const obj = new (mem) T(std::forward<Args>(args)...);
-    FPAG_DCHECK(obj);
-    return obj;
+    if (mem == nullptr) [[unlikely]] {
+      return nullptr;
+    }
+    return new (mem) T(std::forward<Args>(args)...);
   }
 
   template <typename T, typename... Args>
