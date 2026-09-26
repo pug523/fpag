@@ -1,0 +1,170 @@
+// Copyright 2026 pugur
+// This source code is licensed under the Apache License, Version 2.0
+// which can be found in the LICENSE file.
+
+#include "fpag/mem/concurrent_arena.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "catch2/catch_test_macros.hpp"
+#include "fpag/base/math_util.h"
+#include "fpag/base/numeric.h"
+#include "fpag/mem/arena_ptr.h"
+#include "fpag/mem/page_allocator.h"
+
+namespace mem {
+
+TEST_CASE("ConcurrentArena basic allocation and alignment", "[mem][arena]") {
+  ConcurrentArena arena;
+
+  SECTION("Initial state is zeroed") {
+    CHECK(arena.capacity() == 0);
+    CHECK(arena.size() == 0);
+    CHECK(arena.committed_size() == 0);
+  }
+
+  SECTION("Reserve") {
+    arena.reserve(page_size());
+    CHECK(arena.capacity() == page_size());
+    CHECK(arena.size() == 0);
+    CHECK(arena.committed_size() == 0);
+  }
+
+  SECTION("Pages are committed lazily, a page at a time") {
+    arena.reserve(page_size() * 4);
+    void* const first = arena.alloc(1);
+    REQUIRE(first != nullptr);
+    CHECK(arena.committed_size() == page_size());
+
+    void* const second = arena.alloc(page_size());
+    REQUIRE(second != nullptr);
+    CHECK(arena.committed_size() == page_size() * 2);
+  }
+
+  SECTION("Allocations are aligned and distinct") {
+    arena.reserve(page_size());
+
+    void* const ptr1 = arena.alloc(1);
+    void* const ptr2 = arena.alloc(1);
+    REQUIRE(ptr1 != nullptr);
+    REQUIRE(ptr2 != nullptr);
+    CHECK(ptr1 != ptr2);
+    CHECK(reinterpret_cast<uintptr_t>(ptr1) % alignof(std::max_align_t) == 0);
+    CHECK(reinterpret_cast<uintptr_t>(ptr2) % alignof(std::max_align_t) == 0);
+
+    void* const aligned = arena.alloc(10, 64);
+    REQUIRE(aligned != nullptr);
+    CHECK(reinterpret_cast<uintptr_t>(aligned) % 64 == 0);
+  }
+}
+
+TEST_CASE("ConcurrentArena object creation", "[mem][arena]") {
+  ConcurrentArena arena;
+  arena.reserve(page_size());
+
+  SECTION("create<T> for i32") {
+    i32* const value = arena.create<i32>(10);
+    REQUIRE(value != nullptr);
+    CHECK(*value == 10);
+  }
+
+  SECTION("create_managed<T> for non-trivial types") {
+    static bool destroyed = false;
+    struct NonTrivial {
+      NonTrivial() { destroyed = false; }
+      ~NonTrivial() { destroyed = true; }
+    };
+
+    {
+      const ArenaUniquePtr<NonTrivial> ptr = arena.create_managed<NonTrivial>();
+      CHECK(!destroyed);
+    }
+    CHECK(destroyed);
+  }
+}
+
+TEST_CASE("ConcurrentArena move semantics", "[mem][arena]") {
+  SECTION("Move constructor") {
+    ConcurrentArena source;
+    source.reserve(page_size());
+    REQUIRE(source.alloc(1024) != nullptr);
+    const usize size_before = source.size();
+
+    ConcurrentArena moved(std::move(source));
+    CHECK(moved.size() == size_before);
+    CHECK(moved.capacity() == page_size());
+  }
+
+  SECTION("Move assignment releases the destination") {
+    ConcurrentArena source;
+    source.reserve(page_size());
+    REQUIRE(source.alloc(1024) != nullptr);
+    const usize size_before = source.size();
+
+    ConcurrentArena destination;
+    destination.reserve(page_size() * 2);
+    destination = std::move(source);
+
+    CHECK(destination.size() == size_before);
+    CHECK(destination.capacity() == page_size());
+  }
+}
+
+TEST_CASE("ConcurrentArena is usable from several threads", "[mem][arena]") {
+  // Every thread writes its own pattern into the block it just received. A
+  // block that is advertised as committed but was not actually made writable
+  // yet is written to here, and the write faults.
+  constexpr usize kThreads = 8;
+  constexpr usize kAllocationsPerThread = 512;
+  constexpr usize kBlockSize = 64;
+  constexpr usize kTotalBlocks = kThreads * kAllocationsPerThread;
+
+  ConcurrentArena arena;
+  arena.reserve(base::round_up(kTotalBlocks * kBlockSize + page_size() * 16,
+                               page_size()));
+
+  std::vector<u8*> blocks(kTotalBlocks, nullptr);
+
+  const auto worker = [&arena, &blocks](usize thread_index) {
+    const u8 pattern = static_cast<u8>(thread_index + 1);
+    for (usize i = 0; i < kAllocationsPerThread; ++i) {
+      u8* const block = static_cast<u8*>(arena.alloc(kBlockSize, 1));
+      REQUIRE(block != nullptr);
+      for (usize j = 0; j < kBlockSize; ++j) {
+        block[j] = pattern;
+      }
+      blocks[thread_index * kAllocationsPerThread + i] = block;
+    }
+  };
+
+  std::vector<std::thread> threads;
+  threads.reserve(kThreads);
+  for (usize t = 0; t < kThreads; ++t) {
+    threads.emplace_back(worker, t);
+  }
+  for (std::thread& thread : threads) {
+    thread.join();
+  }
+
+  const auto block_matches = [](const u8* block, u8 expected) {
+    for (usize i = 0; i < kBlockSize; ++i) {
+      if (block[i] != expected) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  for (usize t = 0; t < kThreads; ++t) {
+    const u8 pattern = static_cast<u8>(t + 1);
+    for (usize i = 0; i < kAllocationsPerThread; ++i) {
+      CHECK(block_matches(blocks[t * kAllocationsPerThread + i], pattern));
+    }
+  }
+}
+
+}  // namespace mem

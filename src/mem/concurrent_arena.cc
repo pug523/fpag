@@ -90,6 +90,14 @@ void* ConcurrentArena::alloc(usize size, usize align) {
   }
 
   // Commit if necessary.
+  //
+  // The pages become writable before the watermark that advertises them is
+  // published. Publishing first would let a thread whose allocation lands
+  // inside the advertised range return a pointer into a region that is still
+  // PROT_NONE, because the mprotect of the publishing thread had not run yet.
+  // Committing first costs a repeated, idempotent mprotect when two threads
+  // race, and makes `new_size <= committed` a guarantee that the pages are
+  // already committed.
   while (true) {
     usize committed = committed_size_.load(std::memory_order_acquire);
 
@@ -102,19 +110,17 @@ void* ConcurrentArena::alloc(usize size, usize align) {
       new_committed = capacity_;
     }
 
+    const usize diff = new_committed - committed;
+    if (!commit_pages(ptr_ + committed, diff)) [[unlikely]] {
+      FPAG_DCHECK_MSG(false, "Failed to commit pages for arena.");
+      return nullptr;
+    }
+
     if (committed_size_.compare_exchange_weak(committed, new_committed,
                                               std::memory_order_acq_rel,
                                               std::memory_order_acquire)) {
-      const usize diff = new_committed - committed;
-      char* commit_ptr = ptr_ + committed;
-
-      if (!commit_pages(commit_ptr, diff)) [[unlikely]] {
-        FPAG_DCHECK_MSG(false, "Failed to commit pages for arena.");
-        return nullptr;
-      }
       break;
     }
-    // Retry
   }
 
   return ptr_ + old_size;
