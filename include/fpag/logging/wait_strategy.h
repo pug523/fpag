@@ -17,13 +17,18 @@
 namespace logging {
 
 struct BusySpin {
-  u32 spin_count = 0;
+  // The worker thread calls wait_for_next() when the ring is empty and the
+  // producer thread calls wait_for_flush() from flush(), so both of them touch
+  // this counter. It is a backoff heuristic, not a synchronization variable,
+  // so relaxed ordering is enough, but a plain u32 would be a data race.
+  std::atomic<u32> spin_count{0};
 
   constexpr void notify() noexcept {}
 
   void wait() noexcept {
-    if (spin_count < 64) {
-    } else if (spin_count < 1024) {
+    const u32 count = spin_count.fetch_add(1, std::memory_order_relaxed);
+    if (count < 64) {
+    } else if (count < 1024) {
 #if FPAG_BUILD_FLAG(IS_ARCH_X86_FAMILY) && FPAG_BUILD_FLAG(IS_COMPILER_GCC)
       __builtin_ia32_pause();
 #else
@@ -32,7 +37,6 @@ struct BusySpin {
     } else {
       std::this_thread::sleep_for(std::chrono::nanoseconds(128));
     }
-    ++spin_count;
   }
 
   void wait_for_next(const container::SpscQueue& /* queue */,
@@ -45,7 +49,7 @@ struct BusySpin {
     wait();
   }
 
-  constexpr void reset() noexcept { spin_count = 0; }
+  void reset() noexcept { spin_count.store(0, std::memory_order_relaxed); }
 };
 
 struct Blocking {
