@@ -59,4 +59,26 @@ TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
   }
 }
 
+TEST_CASE("Aliased pages map the region twice", "[base][memory]") {
+  const usize size = page_size();
+
+  u8* const base = static_cast<u8*>(allocate_aliased_pages(size));
+  REQUIRE(base != nullptr);
+
+  // The second half has to alias the first. That alias is what lets a record
+  // that crosses the end of a ring be handled as one contiguous run.
+  for (usize i = 0; i < size; ++i) {
+    base[i] = static_cast<u8>(i % 251);
+  }
+  for (usize i = 0; i < size; ++i) {
+    CHECK(base[size + i] == static_cast<u8>(i % 251));
+  }
+
+  // Writing through the alias has to be visible in the first half too.
+  base[size + 3] = 0xEE;
+  CHECK(base[3] == 0xEE);
+
+  free_aliased_pages(base, size);
+}
+
 }  // namespace mem

@@ -116,7 +116,7 @@ void* allocate_aliased_pages(usize size) {
       CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0,
                         static_cast<DWORD>(size), nullptr);
   if (!file_mapping) {
-    return allocate_pages(size);
+    return nullptr;
   }
 
   // Try to find a contiguous region large enough for 2x mapping.
@@ -154,25 +154,25 @@ void* allocate_aliased_pages(usize size) {
     break;
   }
   CloseHandle(file_mapping);
-  return base ? base : allocate_pages(size);
+  return base;
 
 #elif FPAG_BUILD_FLAG(IS_OS_LINUX)
   const i32 fd = memfd_create("aliased_pages", 0);
   if (fd == -1) {
-    return allocate_pages(size);
+    return nullptr;
   }
   // The definition header for `off_t` varies depending on the environment.
   // NOLINTNEXTLINE(misc-include-cleaner)
   if (ftruncate(fd, static_cast<off_t>(size)) == -1) {
     close(fd);
-    return allocate_pages(size);
+    return nullptr;
   }
   // Reserve 2x virtual space.
   void* const base =
       mmap(nullptr, size * 2, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (base == MAP_FAILED) {
     close(fd);
-    return allocate_pages(size);
+    return nullptr;
   }
   // Map the same physical pages twice, consecutively.
   const void* const view1 =
@@ -183,7 +183,7 @@ void* allocate_aliased_pages(usize size) {
   close(fd);
   if (view1 == MAP_FAILED || view2 == MAP_FAILED) {
     munmap(base, size * 2);
-    return allocate_pages(size);
+    return nullptr;
   }
   return base;
 
@@ -194,7 +194,7 @@ void* allocate_aliased_pages(usize size) {
 
   const i32 fd = shm_open(shm_name, O_RDWR | O_CREAT | O_EXCL, 0600);
   if (fd == -1) {
-    return allocate_pages(size);
+    return nullptr;
   }
   // Unlink immediately so it's only accessible via fd and cleaned up on close.
   shm_unlink(shm_name);
@@ -202,13 +202,13 @@ void* allocate_aliased_pages(usize size) {
   // NOLINTNEXTLINE(misc-include-cleaner)
   if (ftruncate(fd, static_cast<off_t>(size)) == -1) {
     close(fd);
-    return allocate_pages(size);
+    return nullptr;
   }
   void* const base =
       mmap(nullptr, size * 2, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (base == MAP_FAILED) {
     close(fd);
-    return allocate_pages(size);
+    return nullptr;
   }
   void* const view1 =
       mmap(base, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
@@ -218,9 +218,12 @@ void* allocate_aliased_pages(usize size) {
   close(fd);
   if (view1 == MAP_FAILED || view2 == MAP_FAILED) {
     munmap(base, size * 2);
-    return allocate_pages(size);
+    return nullptr;
   }
   return base;
+#else
+  // No circular mapping primitive on this platform.
+  return nullptr;
 #endif
 }
 
@@ -233,6 +236,19 @@ void free_pages(void* ptr, usize size) {
   VirtualFree(ptr, 0, MEM_RELEASE);
 #else
   munmap(ptr, size);
+#endif
+}
+
+void free_aliased_pages(void* ptr, usize size) {
+  FPAG_DCHECK(ptr);
+  FPAG_CHECK(is_page_aligned_ptr(ptr));
+  FPAG_CHECK(is_page_aligned_size(size));
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+  (void)size;
+  VirtualFree(ptr, 0, MEM_RELEASE);
+#else
+  // allocate_aliased_pages() reserved 2 * size.
+  munmap(ptr, size * 2);
 #endif
 }
 

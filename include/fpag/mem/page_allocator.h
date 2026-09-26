@@ -28,13 +28,21 @@ void decommit_pages(void* ptr, usize size);
 /// huge pages.
 [[nodiscard]] void* allocate_huge_pages(usize size);
 
-/// Allocates circular mapped pages for the given size for easy wrap around
-/// indexing.
+/// Allocates a circular mapping of `size` bytes: `2 * size` bytes of address
+/// space are reserved, and the second `size` bytes alias the first, so any
+/// index in `[0, 2 * size)` addresses the ring without a branch.
+/// Returns nullptr, and never a plain allocation, when the aliasing cannot be
+/// set up: a caller that assumes contiguity across the wrap would otherwise
+/// write out of bounds.
 [[nodiscard]] void* allocate_aliased_pages(usize size);
 
 /// Frees a contiguous block of virtual memory.
 /// `size` is not used on Windows, but is required on POSIX systems.
 void free_pages(void* ptr, usize size);
+
+/// Frees a block returned by allocate_aliased_pages(), of the same `size` that
+/// was passed to it.
+void free_aliased_pages(void* ptr, usize size);
 
 usize page_size();
 
