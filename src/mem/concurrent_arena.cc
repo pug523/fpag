@@ -24,16 +24,22 @@ ConcurrentArena::ConcurrentArena(ConcurrentArena&& other) noexcept
 }
 
 ConcurrentArena& ConcurrentArena::operator=(ConcurrentArena&& other) noexcept {
-  ptr_ = std::exchange(other.ptr_, nullptr);
-  capacity_ = std::exchange(other.capacity_, 0);
+  if (this != &other) [[likely]] {
+    if (ptr_) {
+      reset();
+    }
 
-  size_.store(other.size_.load(std::memory_order_relaxed),
-              std::memory_order_relaxed);
-  committed_size_.store(other.committed_size_.load(std::memory_order_relaxed),
-                        std::memory_order_relaxed);
+    ptr_ = std::exchange(other.ptr_, nullptr);
+    capacity_ = std::exchange(other.capacity_, 0);
 
-  other.size_.store(0, std::memory_order_relaxed);
-  other.committed_size_.store(0, std::memory_order_relaxed);
+    size_.store(other.size_.load(std::memory_order_relaxed),
+                std::memory_order_relaxed);
+    committed_size_.store(other.committed_size_.load(std::memory_order_relaxed),
+                          std::memory_order_relaxed);
+
+    other.size_.store(0, std::memory_order_relaxed);
+    other.committed_size_.store(0, std::memory_order_relaxed);
+  }
 
   return *this;
 }
