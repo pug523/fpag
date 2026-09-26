@@ -69,7 +69,6 @@ TempDir TempDir::create_unique(std::string_view prefix) {
   return TempDir(name);
 }
 
-
 TempDir::~TempDir() {
   remove();
 }
