@@ -98,11 +98,9 @@ TEST_CASE("Converter<i32> rejects invalid inputs", "[arg][converter]") {
   }
 
   SECTION("Trailing characters") {
-    // std::from_chars parses valid prefix; check if behavior matches
-    // requirement
     auto res = Converter<i32>::from_string("123abc");
-    REQUIRE(res.is_ok());
-    CHECK(std::move(res).unwrap() == 123);
+    REQUIRE(res.is_err());
+    CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
   }
 
   SECTION("Overflow") {
@@ -128,9 +126,17 @@ TEST_CASE("Converter<f64> parses valid floating-point numbers",
 }
 
 TEST_CASE("Converter<f64> rejects invalid float inputs", "[arg][converter]") {
-  auto res = Converter<f64>::from_string("invalid_f64");
-  REQUIRE(res.is_err());
-  CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
+  SECTION("Non-numeric characters") {
+    auto res = Converter<f64>::from_string("invalid_f64");
+    REQUIRE(res.is_err());
+    CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
+  }
+
+  SECTION("Trailing characters") {
+    auto res = Converter<f64>::from_string("1.5abc");
+    REQUIRE(res.is_err());
+    CHECK(std::move(res).unwrap_err() == GetError::InvalidArgument);
+  }
 }
 
 }  // namespace arg

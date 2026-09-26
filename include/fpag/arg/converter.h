@@ -79,8 +79,11 @@ template <typename N>
 struct Converter<N> {
   static base::Result<N, GetError> from_string(std::string_view v) {
     N val{};
-    auto [ptr, ec] = std::from_chars(v.data(), v.data() + v.size(), val);
-    if (ec != std::errc()) {
+    const char* const end = v.data() + v.size();
+    auto [ptr, ec] = std::from_chars(v.data(), end, val);
+    // from_chars stops at the first character it cannot use, so a value that
+    // is only a prefix of the input ("12abc") has to be rejected here.
+    if (ec != std::errc() || ptr != end) {
       return base::make_err(GetError::InvalidArgument);
     }
     return base::make_ok(val);
