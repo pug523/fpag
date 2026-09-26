@@ -10,15 +10,6 @@
 #include <string>
 
 #include "fpag/base/numeric.h"
-#include "fpag/build/build_config.h"
-
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-#include <io.h>
-#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-#include <unistd.h>
-#else
-#error "Unsupported platform"
-#endif
 
 namespace io {
 
@@ -43,20 +34,11 @@ std::string read_file(const std::string& path);
 
 bool write_file(const std::span<const u8> data, const std::string& output_path);
 
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
+// File descriptors are 1 and 2 on every platform fpag supports, so this does
+// not need a platform branch and the header does not need a platform include.
 constexpr i32 kStdoutFd = 1;
 constexpr i32 kStderrFd = 2;
-#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-constexpr i32 kStdoutFd = STDOUT_FILENO;
-constexpr i32 kStderrFd = STDERR_FILENO;
-#endif
 
-inline void write(i32 fd, const char* data, usize size) {
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-  ::_write(fd, data, static_cast<u32>(size));
-#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-  [[maybe_unused]] const isize _ = ::write(fd, data, size);
-#endif
-}
+void write(i32 fd, const char* data, usize size);
 
 }  // namespace io

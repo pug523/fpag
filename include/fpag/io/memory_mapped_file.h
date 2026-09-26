@@ -10,10 +10,6 @@
 #include "fpag/build/build_config.h"
 #include "fpag/io/file_handle.h"
 
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-#include <windows.h>
-#endif
-
 namespace io {
 
 enum class AdviceHint : u8 {
@@ -64,7 +60,8 @@ class MemoryMappedFile {
   usize size_ = 0;
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  HANDLE mapping_handle_ = nullptr;
+  // HANDLE. See FileHandle::NativeHandle.
+  void* mapping_handle_ = nullptr;
 #endif
 };
 

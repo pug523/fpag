@@ -67,6 +67,14 @@ class ScopedFd {
 
 }  // namespace
 
+void write(i32 fd, const char* data, usize size) {
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+  ::_write(fd, data, static_cast<u32>(size));
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+  [[maybe_unused]] const isize written = ::write(fd, data, size);
+#endif
+}
+
 bool is_file(const std::string& file_name) {
   const char* ptr = file_name.c_str();
 #if FPAG_BUILD_FLAG(IS_OS_WIN)

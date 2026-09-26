@@ -9,10 +9,6 @@
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-#include <windows.h>
-#endif
-
 namespace io {
 
 enum class FileAccess : u8 {
@@ -23,8 +19,12 @@ enum class FileAccess : u8 {
 class FileHandle {
  public:
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  using NativeHandle = HANDLE;
-  static inline const NativeHandle kInvalidHandle = INVALID_HANDLE_VALUE;
+  // HANDLE and INVALID_HANDLE_VALUE, spelled out. HANDLE is void*, so a
+  // consumer sees the same type it would from <windows.h>, without the
+  // SDK macro surface arriving through this header.
+  using NativeHandle = void*;
+  static inline const NativeHandle kInvalidHandle =
+      reinterpret_cast<NativeHandle>(static_cast<isize>(-1));
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   using NativeHandle = i32;
   static inline const NativeHandle kInvalidHandle = -1;
