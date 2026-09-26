@@ -164,6 +164,79 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
   CHECK_FALSE(mismatch.load());
 }
 
+TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
+          "[SpscQueueTest]") {
+  SpscQueue queue;
+  queue.init(4096);
+
+  // Leave seven bytes free, then ask for a seven byte record aligned to eight.
+  // The payload fits, the seven bytes of padding in front of it do not.
+  std::vector<u8> fill(4089);
+  for (usize i = 0; i < fill.size(); ++i) {
+    fill[i] = static_cast<u8>(i % 251);
+  }
+  REQUIRE(queue.enqueue(fill.data(), fill.size()) ==
+          SpscQueue::EnqueueStatus::Ok);
+
+  const u8 small[7] = {};
+  void* ptr = nullptr;
+  CHECK(queue.reserve(sizeof(small), &ptr, 8) ==
+        SpscQueue::EnqueueStatus::Dropped);
+  CHECK(queue.enqueue(small, sizeof(small), 8) ==
+        SpscQueue::EnqueueStatus::Dropped);
+
+  // Admitting the record would have advanced the producer past the consumer,
+  // so the bytes that are already in the ring must still read back intact.
+  std::vector<u8> out(fill.size());
+  REQUIRE(queue.dequeue(out.data(), out.size()) ==
+          SpscQueue::DequeueStatus::Ok);
+  CHECK(out == fill);
+}
+
+TEST_CASE("SpscQueue dequeue accounts for alignment padding",
+          "[SpscQueueTest]") {
+  SpscQueue queue;
+  queue.init(4096);
+
+  // Leave the consumer one byte into the ring, so a record aligned to eight
+  // needs seven bytes of padding.
+  const u8 first = 0x5A;
+  REQUIRE(queue.enqueue(&first, 1) == SpscQueue::EnqueueStatus::Ok);
+  u8 first_out = 0;
+  REQUIRE(queue.dequeue(&first_out, 1) == SpscQueue::DequeueStatus::Ok);
+  CHECK(first_out == first);
+
+  // Fifteen bytes are readable, but an aligned fifteen byte record needs 22.
+  const u8 filler[15] = {};
+  REQUIRE(queue.enqueue(filler, sizeof(filler)) ==
+          SpscQueue::EnqueueStatus::Ok);
+
+  u8 out[15] = {};
+  CHECK(queue.dequeue(out, sizeof(out), 8) == SpscQueue::DequeueStatus::Empty);
+}
+
+TEST_CASE("SpscQueue aligns records to the requested boundary",
+          "[SpscQueueTest]") {
+  SpscQueue queue;
+  queue.init();
+
+  const u8 first = 1;
+  const u8 second = 2;
+  REQUIRE(queue.enqueue(&first, 1) == SpscQueue::EnqueueStatus::Ok);
+  REQUIRE(queue.enqueue(&second, 1, 8) == SpscQueue::EnqueueStatus::Ok);
+
+  u8 first_out = 0;
+  REQUIRE(queue.dequeue(&first_out, 1) == SpscQueue::DequeueStatus::Ok);
+  CHECK(first_out == first);
+
+  const char* const peeked = queue.peek(1, 8);
+  CHECK(reinterpret_cast<uintptr_t>(peeked) % 8 == 0);
+  CHECK(*peeked == static_cast<char>(second));
+  queue.discard(1, 8);
+
+  CHECK(queue.empty());
+}
+
 }  // namespace
 
 }  // namespace container

@@ -100,7 +100,11 @@ SpscQueue::DequeueStatus SpscQueue::dequeue(void* dest,
                                             usize align) {
   FPAG_DCHECK_LE(size, capacity_);
 
-  if (size_consumer() < size) {
+  // The record is only fully available once its alignment padding is too.
+  const usize aligned_head = base::round_up(head_cache_, align);
+  const usize total_needed = size + (aligned_head - head_cache_);
+
+  if (size_consumer() < total_needed) {
     return DequeueStatus::Empty;
   }
 
@@ -121,14 +125,17 @@ SpscQueue::EnqueueStatus SpscQueue::reserve(usize size,
   const usize padding = aligned_tail - current_tail;
   const usize total_needed = size + padding;
 
-  if (available_producer() < size) [[unlikely]] {
+  // The alignment padding consumes ring space just as the payload does, so it
+  // is `total_needed`, not `size`, that has to fit. Admitting a record whose
+  // padding does not fit lets the producer advance past the consumer, and the
+  // next write then lands on a record that has not been read yet.
+  if (available_producer() < total_needed) [[unlikely]] {
     if (mode_ == Mode::Drop) {
       ++dropped_count_;
       return EnqueueStatus::Dropped;
-    } else {
-      ++blocked_count_;
-      wait_for_space_producer(total_needed);
     }
+    ++blocked_count_;
+    wait_for_space_producer(total_needed);
   }
 
   // Advance only `tail_cache_` to `aligned_tail`, not for `tail_`.
