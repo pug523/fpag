@@ -8,6 +8,9 @@ CMakeUserPresets.json
 .venv/
 compile_commands.json
 
+# Time trace the test binary writes into the current directory
+test_time_trace.json
+
 # Prerequisites
 *.d
 
