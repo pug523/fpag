@@ -54,13 +54,20 @@ StringPoolId StringPool::append(const std::string_view str,
     return kEmptyStringId;
   }
 
-  const usize offset = arena_.size();
   void* const ptr = arena_.alloc(str.size(), 1);
+  FPAG_CHECK_MSG(ptr != nullptr, "StringPool is out of capacity.");
+
   std::memcpy(ptr, str.data(), str.size());
 
   if (out) {
     *out = std::string_view(static_cast<char*>(ptr), str.size());
   }
+
+  // The offset has to come from the pointer the arena handed out: reading the
+  // arena's size before allocating races with the other appenders, and the id
+  // would then name whichever string took that slot.
+  const usize offset =
+      static_cast<usize>(static_cast<const char*>(ptr) - arena_.base_ptr());
 
   size_.fetch_add(str.size(), std::memory_order_relaxed);
   string_count_.fetch_add(1, std::memory_order_relaxed);
