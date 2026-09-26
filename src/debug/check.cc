@@ -24,6 +24,13 @@ void check_fail_impl(const char* expr,
                      const char* func,
                      std::string_view msg) {
   DebugLogger& logger = debug_logger;
+  if (!logger.has_sink()) [[unlikely]] {
+    // A check can fail before the program hands the debug logger its sink.
+    // Logging the failure here would re-enter this function through the
+    // logger's own precondition check and overflow the stack, so the report
+    // goes straight to stderr.
+    raw_check_fail_impl(expr, file, line, func, msg);
+  }
   if (msg.empty()) {
     logger.fatal(FMT_COMPILE("Check failed!\nExpected: '{}'\n  at {}:{} ({})"),
                  expr, file, line, func);
@@ -46,6 +53,10 @@ void check_op_fail_impl(const char* expected,
                         const char* func,
                         std::string_view msg) {
   DebugLogger& logger = debug_logger;
+  if (!logger.has_sink()) [[unlikely]] {
+    // The raw report carries the expression and the message, not the operands.
+    raw_check_fail_impl(expected, file, line, func, msg);
+  }
   if (msg.empty()) {
     logger.fatal(
         FMT_COMPILE(

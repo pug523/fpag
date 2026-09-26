@@ -117,6 +117,7 @@ function(fpag_add_tests)
     tests/arena_test.cc
     tests/async_logger_test.cc
     tests/capture_stack_addresses_test.cc
+    tests/check_test.cc
     tests/command_test.cc
     tests/concurrent_arena_test.cc
     tests/converter_test.cc

@@ -118,5 +118,13 @@ TEST_CASE("SyncLogger works correctly", "[logging][sync]") {
   // }
 }
 
+TEST_CASE("SyncLogger reports whether it has a sink", "[logging][sync]") {
+  SyncLogger<NullSink, LogLevel::Off> logger;
+  CHECK_FALSE(logger.has_sink());
+
+  logger.init(NullSink{});
+  CHECK(logger.has_sink());
+}
+
 }  // namespace logging
 

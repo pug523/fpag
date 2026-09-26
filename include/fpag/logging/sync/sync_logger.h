@@ -42,6 +42,9 @@ class SyncLogger {
 
   constexpr void init(S&& sink) { sink_.emplace(std::move(sink)); }
 
+  // init() is the only thing that gives a logger a sink.
+  constexpr bool has_sink() const { return sink_.has_value(); }
+
   constexpr void flush() {
     if (sink_) [[likely]] {
       sink_->flush();
@@ -96,8 +99,10 @@ class SyncLogger {
 
     // Logging before init() is a programming error, not a recoverable
     // condition: there is no sink to write to. Drop the record instead of
-    // touching an uninitialized sink.
-    FPAG_DCHECK_MSG(sink_, "SyncLogger is used before init()");
+    // touching an uninitialized sink. The check is raw because the debug logger
+    // reports a failed check through this same function, so reporting it
+    // through the logger would re-enter this call and overflow the stack.
+    FPAG_RAW_DCHECK_MSG(sink_, "SyncLogger is used before init()");
     if (!sink_) [[unlikely]] {
       return;
     }
