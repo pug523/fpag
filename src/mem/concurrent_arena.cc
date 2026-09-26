@@ -73,12 +73,12 @@ void* ConcurrentArena::alloc(usize size, usize align) {
   while (true) {
     old_size = size_.load(std::memory_order_relaxed);
     const usize aligned = base::round_up(old_size, align);
-    new_size = aligned + size;
-
-    if (new_size > capacity_) [[unlikely]] {
+    // Prevent wrap-around before comparing with capacity.
+    if (aligned > capacity_ || size > capacity_ - aligned) [[unlikely]] {
       FPAG_DCHECK_MSG(false, "Arena capacity exceeded.");
       return nullptr;
     }
+    new_size = aligned + size;
 
     if (size_.compare_exchange_weak(old_size, new_size,
                                     std::memory_order_acq_rel,
