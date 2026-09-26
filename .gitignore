@@ -1,7 +1,8 @@
 /build/
 /install/
 /out/
-.xmake/
+/cmake-build-*/
+CMakeUserPresets.json
 .vscode/
 .cache/
 .venv/

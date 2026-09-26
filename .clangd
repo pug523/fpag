@@ -1,5 +1,8 @@
 Diagnostics:
   UnusedIncludes: None
   MissingIncludes: None
+# cmake writes compile_commands.json into the build directory, and the presets
+# all use build/<preset>. The tidy preset is the one to configure before
+# expecting the checks below to mean anything.
 CompileFlags:
-  Remove: [-cfg=*, -exec_root=*, -inputs=*]
+  CompilationDatabase: build/dev

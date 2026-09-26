@@ -1,0 +1,32 @@
+# Copyright 2026 pugur
+# This source code is licensed under the Apache License, Version 2.0
+# which can be found in the LICENSE file.
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# A dependency that fpag had to build itself is part of the fpagTargets export
+# set and needs nothing here. One that was found on the build machine is an
+# IMPORTED target instead, and has to be resolved before fpagTargets is read.
+if(@FPAG_NEEDS_FMT@)
+  find_dependency(fmt @FPAG_FMT_VERSION@)
+endif()
+if(@FPAG_NEEDS_XXHASH@)
+  find_dependency(xxhash @FPAG_XXHASH_VERSION@)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/fpagTargets.cmake")
+
+check_required_components(fpag)
+
+if(NOT TARGET fpag::fpag AND NOT FPAG_FIND_QUIETLY)
+  set(
+    fpag_FOUND
+    FALSE
+    PARENT_SCOPE)
+  set(
+    fpag_NOT_FOUND_MESSAGE
+    "fpag provides no target, this usually means the install is incomplete"
+    PARENT_SCOPE)
+endif()

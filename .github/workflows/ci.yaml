@@ -10,11 +10,18 @@ on:
       - benchmarks/**
       - third_party/**
       - scripts/**
+      - cmake/**
+      - CMakeLists.txt
+      - CMakePresets.json
       - .github/workflows/ci.yaml
-      - xmake.lua
+      - .clang-format
       - .clang-tidy
+      - .clangd
+      - .editorconfig
       - CPPLINT.cfg
+      - pyproject.toml
       - uv.lock
+      - typos.toml
   pull_request:
     branches: [main]
     paths: *ci_paths
@@ -24,90 +31,263 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  CC: clang
+  CXX: clang++
+  # Read by fpag/term to decide how much color the terminal understands.
+  COLORTERM: 256color
+
 jobs:
   build:
-    name: Build and test (${{ matrix.plat }}-${{ matrix.arch }}-${{ matrix.build_type }})
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        build_type: [debug, release]
-        cc: [clang]
-        cxx: [clang++]
-        llvm_version: [22.1.8]
-        os:
-          - ubuntu-24.04
-          - macos-26
-          - windows-2025-vs2026
         include:
-          - os: ubuntu-24.04
-            plat: linux
-            arch: x86_64
+          - name: linux-x86_64-debug (sanitizers)
+            os: ubuntu-24.04
+            build_type: Debug
             stdlib: libc++
-          - os: macos-26
-            plat: macosx
-            arch: arm64
+            sanitizers: "ON"
+            libunwind: "ON"
+          - name: linux-x86_64-release
+            os: ubuntu-24.04
+            build_type: Release
             stdlib: libc++
-          - os: windows-2025-vs2026
-            plat: windows
-            arch: x64
-            stdlib: msvc
-    env:
-      CC: ${{ matrix.cc }}
-      CXX: ${{ matrix.cxx }}
-      COLORTERM: 256color
-      XMAKE_COLORTERM: 256color
-      XMAKE_ROOT: y
+            libunwind: "ON"
+          - name: macos-arm64-debug
+            os: macos-26
+            build_type: Debug
+            stdlib: libc++
+          - name: macos-arm64-release
+            os: macos-26
+            build_type: Release
+            stdlib: libc++
+          - name: windows-x64-debug
+            os: windows-2025-vs2026
+            build_type: Debug
+            stdlib: ""
+          - name: windows-x64-release
+            os: windows-2025-vs2026
+            build_type: Release
+            stdlib: ""
+          - name: linux-x86_64-coverage
+            os: ubuntu-24.04
+            build_type: Debug
+            stdlib: libc++
+            coverage: "ON"
+            upload_coverage: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          submodules: recursive
           fetch-depth: 1
 
       - name: Setup build environment
-        uses: pug523/actions/cxx-xmake-setup@c23e9f05fc8de1f90cfd94356434724205a75e82
+        uses: pug523/actions/cxx-base-setup@5f03ab8dd394823acdad6cbfdf141849938b8a7b
         with:
           os: ${{ runner.os }}
-          plat: ${{ matrix.plat }}
-          arch: ${{ matrix.arch }}
-          build_type: ${{ matrix.build_type }}
-          llvm_version: ${{ matrix.llvm_version }}
+          llvm_version: 22.1.8
+
+      - name: Report toolchain versions
+        shell: bash
+        run: |
+          cmake --version
+          ninja --version
+          clang++ --version
+
+      - name: Install libunwind
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y libunwind-dev
+
+      # FetchContent has to download fmt, xxhash and Catch2, which is the one
+      # part of the build that is not reproducible from the checkout alone.
+      - name: Restore dependency cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: ${{ github.workspace }}/build/_deps
+          key: deps-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('cmake/FpagDependencies.cmake') }}
+          restore-keys: deps-${{ runner.os }}-
 
       - name: Configure
         shell: bash
-        run: |
-          xmake config -y \
-            -m ${{ matrix.build_type }} \
-            --tests=y \
-            --benchmarks=y \
-            --toolchain=clang \
-            --stdlib="${{ matrix.stdlib }}" \
-            --sanitizers=y \
-            --libunwind=y \
-            -p "${{ matrix.plat }}" \
-            -a "${{ matrix.arch }}"
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+          -DFPAG_BUILD_TESTS=ON
+          -DFPAG_BUILD_BENCHMARKS=ON
+          -DFPAG_CXX_STDLIB=${{ matrix.stdlib }}
+          -DFPAG_ENABLE_SANITIZERS=${{ matrix.sanitizers || 'OFF' }}
+          -DFPAG_ENABLE_COVERAGE=${{ matrix.coverage || 'OFF' }}
+          -DFPAG_ENABLE_LIBUNWIND=${{ matrix.libunwind || 'OFF' }}
 
       - name: Build
         shell: bash
-        run: |
-          xmake build -w
+        run: cmake --build build --parallel
 
-      - name: Build tests and run
+      - name: Test
         shell: bash
-        run: xmake run tests
+        run: ctest --test-dir build --output-on-failure --no-tests=error
+
+      - name: Report coverage
+        if: matrix.upload_coverage
+        shell: bash
+        run: cmake --build build --target coverage
+
+      - name: Upload coverage report
+        if: matrix.upload_coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: coverage-report
+          path: build/coverage/html/index.html
+          retention-days: 7
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ matrix.plat }}-${{ matrix.arch }}
-          path: build/${{ matrix.plat }}/${{ matrix.arch }}/**
+          name: ${{ matrix.name }}
+          path: |
+            build/libfpag.a
+            build/fpag_tests
+            build/fpag_benchmarks
+          if-no-files-found: error
 
-      - name: Analyze statically
-        if: runner.os == 'Linux' && matrix.build_type == 'debug'
+  static-analysis:
+    name: static analysis (clang-tidy, clang-format, cpplint)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+
+      - name: Setup build environment
+        uses: pug523/actions/cxx-base-setup@5f03ab8dd394823acdad6cbfdf141849938b8a7b
+        with:
+          os: ${{ runner.os }}
+          llvm_version: 22.1.8
+
+      # clang-tidy runs as a compiler launcher, so it sees exactly the command
+      # lines the compiler will use rather than a reconstructed approximation,
+      # and it is set per target so that the fetched dependencies are not linted
+      # against fpag's rules.
+      - name: Configure
+        shell: bash
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+          -DFPAG_BUILD_TESTS=ON
+          -DFPAG_BUILD_BENCHMARKS=ON
+          -DFPAG_CXX_STDLIB=libc++
+          -DFPAG_ENABLE_CLANG_TIDY=ON
+
+      - name: Run clang-tidy
+        shell: bash
+        run: cmake --build build --parallel
+
+      - name: Check formatting and cpplint
+        shell: bash
+        run: cmake --build build --target lint
+
+  install:
+    name: install and consume
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+
+      - name: Setup build environment
+        uses: pug523/actions/cxx-base-setup@5f03ab8dd394823acdad6cbfdf141849938b8a7b
+        with:
+          os: ${{ runner.os }}
+          llvm_version: 22.1.8
+
+      - name: Install libunwind
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y libunwind-dev
+
+      - name: Configure
+        shell: bash
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX=install
+          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+          -DFPAG_BUILD_TESTS=OFF
+          -DFPAG_CXX_STDLIB=libc++
+          -DFPAG_ENABLE_LIBUNWIND=ON
+
+      - name: Build and install
         shell: bash
         run: |
-          xmake check api
-          xmake check clang
-          xmake lint
+          cmake --build build --parallel
+          cmake --install build
 
+      # The exported package has to resolve on its own, without the build tree
+      # and without the FetchContent sources, or a consumer cannot use it.
+      - name: Compile a consumer against the installed package
+        shell: bash
+        run: |
+          mkdir -p consumer
+          cat > consumer/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.28)
+          project(fpag_consumer LANGUAGES CXX)
+          find_package(fpag 0.1 REQUIRED)
+          add_executable(consumer main.cc)
+          target_link_libraries(consumer PRIVATE fpag::fpag)
+          EOF
+          cat > consumer/main.cc <<'EOF'
+          #include <cstdio>
+
+          #include "fpag/arg/parser.h"
+          #include "fpag/base/result.h"
+          #include "fpag/hash/xxh3_hasher.h"
+          #include "fpag/logging/sink/composite_sink.h"
+          #include "fpag/logging/sink/null_sink.h"
+          #include "fpag/logging/sink/stdout_sink.h"
+          #include "fpag/logging/sync/sync_logger.h"
+          #include "fpag/mem/arena.h"
+
+          struct ParseFailure {
+            const char* what;
+          };
+
+          int main() {
+            hash::Xxh3Hasher64 hasher;
+
+            mem::Arena arena;
+            arena.reserve(4096);
+            void* block = arena.alloc(64);
+
+            using Composite = logging::CompositeSink<logging::NullSink,
+                                                     logging::StdoutSink>;
+            logging::SyncLogger<Composite, logging::kDefaultLogLevel> logger;
+            logger.init(Composite{logging::NullSink{}, logging::StdoutSink{}});
+            logger.info("installed fpag works, hash {}", hasher("x"));
+            logger.flush();
+
+            const base::Result<i32, ParseFailure> ok = base::make_ok(42);
+            const base::Result<i32, ParseFailure> bad =
+                base::make_err(ParseFailure{"nope"});
+
+            std::printf("arena=%p ok=%d err=%d\n", block, ok.value(),
+                        bad.is_err() ? 1 : 0);
+            return 0;
+          }
+          EOF
+          cmake -S consumer -B consumer/build -G Ninja \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS=-stdlib=libc++ \
+            -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
+          cmake --build consumer/build
+          ./consumer/build/consumer

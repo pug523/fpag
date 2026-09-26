@@ -60,7 +60,11 @@ Checks: >
   readability-redundant-member-init,
   readability-redundant-smartptr-get
 HeaderFilterRegex: '^.*[\\/](src|tests)[\\/].*$'
-ExcludeHeaderFilterRegex: '^.*[\\/](third_party|.xmake)[\\/].*$'
+# ExcludeHeaderFilterRegex wins over HeaderFilterRegex, and it has to name every
+# directory a dependency can be reached through. A fetched dependency lands under
+# <build>/_deps/<name>-src/src, which the positive filter above matches, so
+# excluding only third_party is not enough any more.
+ExcludeHeaderFilterRegex: '[\\/](third_party|_deps|build|out|\\.xmake)[\\/]'
 SystemHeaders:    false
 WarningsAsErrors: '*'
 ExtraArgsBefore:
