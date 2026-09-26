@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <thread>
 #include <utility>
@@ -26,6 +27,8 @@
 
 namespace logging {
 
+// Consumes records off the SPSC queue on a dedicated thread and writes them to
+// the sink, which only ever exists after init() has run, hence the optional.
 template <Sink S, WaitStrategy Wait>
 class BackendWorker {
  public:
@@ -52,7 +55,7 @@ class BackendWorker {
                        InternalStatus::NotInitialized,
                        "BackendWorker is not idling");
 
-    sink_ = std::move(sink);
+    sink_.emplace(std::move(sink));
     interner_ = interner;
     queue_.init(queue_capacity, mode);
 
@@ -70,12 +73,14 @@ class BackendWorker {
                            std::memory_order_release);
     interner_ = nullptr;
     queue_.reset();
+    sink_.reset();
   }
 
   void start() {
     FPAG_DCHECK_EQ_MSG(internal_status_.load(std::memory_order_acquire),
                        InternalStatus::Initialized,
                        "BackendWorker is not initialized or already running");
+    FPAG_DCHECK(sink_);
     internal_status_.store(InternalStatus::Running, std::memory_order_release);
     thread_ = std::make_unique<std::thread>(&BackendWorker::worker_loop, this);
   }
@@ -125,7 +130,7 @@ class BackendWorker {
   // NOLINTNEXTLINE(build/include_what_you_use)
   void swap(BackendWorker&& other) noexcept {
     std::swap(queue_, other.queue_);
-    std::swap(sink_, other.sink_);
+    swap_sink(sink_, other.sink_);
     std::swap(thread_, other.thread_);
     internal_status_.store(
         other.internal_status_.load(std::memory_order_acquire));
@@ -145,7 +150,38 @@ class BackendWorker {
     ForceStopping,
   };
 
+  // A Sink only has to be move constructible, so the two sinks are exchanged by
+  // move construction. std::swap, and std::optional::swap with it, would
+  // additionally require S to be move assignable, which the Sink contract does
+  // not ask for.
+  static void swap_sink(std::optional<S>& lhs, std::optional<S>& rhs) noexcept {
+    if (!lhs) {
+      if (rhs) {
+        lhs.emplace(std::move(*rhs));
+        rhs.reset();
+      }
+      return;
+    }
+    if (!rhs) {
+      rhs.emplace(std::move(*lhs));
+      lhs.reset();
+      return;
+    }
+    std::optional<S> taken(std::move(*lhs));
+    lhs.emplace(std::move(*rhs));
+    rhs.emplace(std::move(*taken));
+  }
+
   void worker_loop() {
+    // start() only accepts the worker in the Initialized state, and init() is
+    // the only way to reach it, so the sink is engaged for the whole loop. The
+    // check keeps that from being a release build precondition, and it happens
+    // once rather than per record.
+    if (!sink_) [[unlikely]] {
+      return;
+    }
+    S& sink = *sink_;
+
     u32 count_from_last_processed = 0;
     while (true) {
       const InternalStatus status =
@@ -154,10 +190,10 @@ class BackendWorker {
         break;
       }
 
-      const bool processed = process_batch();
+      const bool processed = process_batch(sink);
 
       if (flush_requested_.load(std::memory_order_acquire)) [[unlikely]] {
-        sink_.flush();
+        sink.flush();
         flush_requested_.store(false, std::memory_order_release);
         wait_.notify();
       }
@@ -175,7 +211,7 @@ class BackendWorker {
     }
   }
 
-  bool process_batch() {
+  bool process_batch(S& sink) {
     const usize queue_size = queue_.size_consumer();
     if (queue_size == 0) {
       return false;
@@ -210,7 +246,7 @@ class BackendWorker {
       current_head = aligned_head + payload_size;
 
       const std::string_view msg{format_buf.data(), format_buf.size()};
-      sink_.log(LogEntry{
+      sink.log(LogEntry{
           .level = level,
           .message = msg,
           .timestamp_ns = timestamp_ns,
@@ -240,7 +276,7 @@ class BackendWorker {
   }
 
   container::SpscQueue queue_;
-  S sink_;
+  std::optional<S> sink_;
   Wait wait_;
   std::unique_ptr<std::thread> thread_ = nullptr;
   const str::StringInterner* interner_ = nullptr;

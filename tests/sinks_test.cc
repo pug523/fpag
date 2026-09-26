@@ -4,6 +4,8 @@
 
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/format.h"
@@ -12,10 +14,15 @@
 #include "fpag/io/file_handle.h"
 #include "fpag/io/memory_mapped_file.h"
 #include "fpag/io/temp_file.h"
+#include "fpag/logging/async/async_logger.h"
 #include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
+#include "fpag/logging/sink/composite_sink.h"
 #include "fpag/logging/sink/file_sink.h"
 #include "fpag/logging/sink/json_lines_sink.h"
+#include "fpag/logging/sink/null_sink.h"
+#include "fpag/logging/sink/sink.h"
+#include "fpag/logging/sync/sync_logger.h"
 
 namespace logging {
 
@@ -72,6 +79,83 @@ TEST_CASE("JsonLinesSink output validation",
   CHECK(content.find("\"msg\":\"Failed to connect to cluster\"") !=
         std::string::npos);
   CHECK(content.find(formatted_ts) != std::string::npos);
+}
+
+namespace {
+
+// Records what it was handed, so fan-out can be checked without touching the
+// filesystem. Not default constructible either, which is exactly the point.
+class CountingSink {
+ public:
+  explicit CountingSink(usize* logged, usize* flushed)
+      : logged_(logged), flushed_(flushed) {}
+
+  CountingSink(CountingSink&&) noexcept = default;
+  CountingSink& operator=(CountingSink&&) = delete;
+
+  void log(const LogEntry&) { ++*logged_; }
+  void flush() { ++*flushed_; }
+
+ private:
+  usize* logged_;
+  usize* flushed_;
+};
+
+static_assert(Sink<CountingSink>);
+static_assert(!std::is_default_constructible_v<CountingSink>);
+static_assert(!std::is_move_assignable_v<CountingSink>);
+
+}  // namespace
+
+TEST_CASE("CompositeSink fans out to every sink",
+          "[logging][sink][composite_sink]") {
+  usize first_logged = 0;
+  usize first_flushed = 0;
+  usize second_logged = 0;
+  usize second_flushed = 0;
+
+  CompositeSink<CountingSink, CountingSink> sink{
+      CountingSink{&first_logged, &first_flushed},
+      CountingSink{&second_logged, &second_flushed}};
+
+  const LogEntry entry{.level = LogLevel::Warn,
+                       .message = "composite fan out",
+                       .timestamp_ns = debug::current_timestamp_ns()};
+  sink.log(entry);
+  sink.flush();
+
+  CHECK(first_logged == 1);
+  CHECK(second_logged == 1);
+  CHECK(first_flushed == 1);
+  CHECK(second_flushed == 1);
+}
+
+// A sink is handed to a logger through init(), so it never has to be default
+// constructible. CompositeSink is the case that proves it: it only has a
+// constructor taking the sinks it aggregates.
+TEST_CASE("Loggers accept a non-default-constructible sink",
+          "[logging][sink][composite_sink]") {
+  using Composite = CompositeSink<NullSink, NullSink>;
+  static_assert(!std::is_default_constructible_v<Composite>);
+
+  SECTION("sync logger") {
+    SyncLogger<Composite, kDefaultLogLevel> logger;
+    logger.init(Composite{NullSink{}, NullSink{}});
+    logger.info("composite {}", 168);
+    logger.flush();
+
+    auto moved = std::move(logger);
+    moved.flush();
+  }
+
+  SECTION("async logger") {
+    AsyncLogger<Composite, LogLevel::Trace> logger;
+    logger.init(Composite{NullSink{}, NullSink{}});
+    logger.start_backend_worker();
+    logger.info("composite {}", 168);
+    logger.flush();
+    logger.stop_backend_worker();
+  }
 }
 
 }  // namespace logging

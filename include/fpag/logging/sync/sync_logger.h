@@ -6,12 +6,14 @@
 
 #include <cstring>
 #include <iterator>
+#include <optional>
 #include <string_view>
 #include <utility>
 
 #include "fmt/base.h"
 #include "fmt/compile.h"
 #include "fmt/format.h"
+#include "fpag/debug/check.h"
 #include "fpag/debug/time_util.h"
 #include "fpag/logging/format_buffer.h"
 #include "fpag/logging/log_entry.h"
@@ -20,6 +22,12 @@
 
 namespace logging {
 
+// Formats each record on the calling thread and hands it straight to the sink.
+//
+// The sink type S is a template parameter, so log() resolves to a direct call
+// on the concrete sink and is inlined; there is no virtual dispatch anywhere.
+// S is held in an optional because init() is the only thing that ever gives it
+// a value, and because a sink is not required to be default constructible.
 template <Sink S, LogLevel kMinLevel>
 class SyncLogger {
  public:
@@ -32,9 +40,13 @@ class SyncLogger {
   constexpr SyncLogger(SyncLogger&&) noexcept = default;
   constexpr SyncLogger& operator=(SyncLogger&&) noexcept = default;
 
-  constexpr void init(S&& sink) { sink_ = std::move(sink); }
+  constexpr void init(S&& sink) { sink_.emplace(std::move(sink)); }
 
-  constexpr void flush() { sink_.flush(); }
+  constexpr void flush() {
+    if (sink_) [[likely]] {
+      sink_->flush();
+    }
+  }
 
   template <typename Format, typename... Args>
   void trace(Format fmt, Args&&... args) {
@@ -82,6 +94,14 @@ class SyncLogger {
       return;
     }
 
+    // Logging before init() is a programming error, not a recoverable
+    // condition: there is no sink to write to. Drop the record instead of
+    // touching an uninitialized sink.
+    FPAG_DCHECK_MSG(sink_, "SyncLogger is used before init()");
+    if (!sink_) [[unlikely]] {
+      return;
+    }
+
     format_buffer format_buf;
     if constexpr (fmt::is_compiled_string<Format>::value) {
       fmt::format_to(std::back_inserter(format_buf), Format{},
@@ -97,14 +117,14 @@ class SyncLogger {
     }
     const std::string_view msg{format_buf.data(), format_buf.size()};
 
-    sink_.log(LogEntry{
+    sink_->log(LogEntry{
         .level = level,
         .message = msg,
         .timestamp_ns = debug::current_timestamp_ns(),
     });
   }
 
-  S sink_;
+  std::optional<S> sink_;
 };
 
 }  // namespace logging
