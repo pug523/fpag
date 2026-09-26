@@ -66,21 +66,42 @@ class SimpleConcurrentHashMap {
     return *this;
   }
 
+  // Releases the storage the map already holds and allocates one of
+  // `capacity` entries, so a second reserve() does not leak the first. A
+  // capacity of zero releases the storage and leaves the map without any,
+  // which is what the construct-then-init path needs.
   void reserve(u64 capacity) {
-    FPAG_DCHECK_MSG(base::is_power_of_two(capacity),
-                    "capacity must be a power of two");
-    capacity_ = base::round_up(capacity, mem::page_size());
-    void* const raw_mem = mem::allocate_pages(sizeof(Entry) * capacity_);
-    std::memset(raw_mem, 0, sizeof(Entry) * capacity_);
+    reset();
+
+    if (capacity == 0) {
+      return;
+    }
+
+    // A capacity that is not a power of two makes `& mask` wrong, and a
+    // capacity that is too large overflows `sizeof(Entry) * capacity`, so both
+    // would corrupt the map rather than fail.
+    FPAG_CHECK_MSG(base::is_power_of_two(capacity),
+                   "SimpleConcurrentHashMap: capacity must be a power of two");
+    FPAG_CHECK_MSG(capacity <= kMaxCapacity,
+                   "SimpleConcurrentHashMap: capacity is out of range");
+
+    const u64 entries_capacity = base::round_up(capacity, mem::page_size());
+    capacity_.store(entries_capacity, std::memory_order_relaxed);
+    void* const raw_mem = mem::allocate_pages(sizeof(Entry) * entries_capacity);
+    FPAG_CHECK_MSG(raw_mem,
+                   "SimpleConcurrentHashMap: failed to allocate the entries");
+    std::memset(raw_mem, 0, sizeof(Entry) * entries_capacity);
     entries_ = static_cast<Entry*>(raw_mem);
-    FPAG_DCHECK(entries_);
   }
 
   void reset() {
     if (entries_) {
       mem::free_pages(
           entries_, sizeof(Entry) * capacity_.load(std::memory_order_relaxed));
+      entries_ = nullptr;
     }
+    capacity_.store(0, std::memory_order_relaxed);
+    size_.store(0, std::memory_order_relaxed);
   }
 
   void insert(const K& key, const V& value) {
@@ -190,8 +211,17 @@ class SimpleConcurrentHashMap {
   u64 size() const { return size_.load(std::memory_order_relaxed); }
 
  private:
+  struct alignas(std::max_align_t) Entry {
+    std::atomic<u64> hash;
+    K key;
+    V value;
+  };
+
   static constexpr u64 kEmptyHash = 0;
   static constexpr u64 kLockedHash = kU64Max;
+  // The entries go to mem::allocate_pages() as one byte size, so the count has
+  // to keep `sizeof(Entry) * capacity` representable.
+  static constexpr u64 kMaxCapacity = kU64Max / sizeof(Entry);
 
   u64 hash(const K& key) const {
     const u64 h = hasher_(key);
@@ -201,12 +231,6 @@ class SimpleConcurrentHashMap {
       return h;
     }
   }
-
-  struct alignas(std::max_align_t) Entry {
-    std::atomic<u64> hash;
-    K key;
-    V value;
-  };
 
   std::atomic<u64> capacity_ = 0;
   std::atomic<u64> size_ = 0;

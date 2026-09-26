@@ -45,6 +45,37 @@ TEST_CASE("SimpleConcurrentHashMap basic operations",
 
 // TODO: add `try_insert` tests
 
+TEST_CASE("SimpleConcurrentHashMap reset releases the entries",
+          "[base][container][hashmap]") {
+  SimpleConcurrentHashMap<u64, u64> map(1024);
+  map.insert(7, 70);
+  REQUIRE(map.find(7) != nullptr);
+
+  map.reset();
+
+  // Nothing is left to read, and a second reset, or the destructor's own, has
+  // nothing to release.
+  CHECK(map.capacity() == 0);
+  CHECK(map.size() == 0);
+  CHECK(map.find(7) == nullptr);
+  map.reset();
+
+  // The map stays usable, and a later reserve() discards what was in it.
+  map.reserve(1024);
+  map.insert(7, 70);
+  CHECK(map.size() == 1);
+
+  map.reserve(8192);
+  CHECK(map.capacity() == 8192);
+  CHECK(map.size() == 0);
+  CHECK(map.find(7) == nullptr);
+
+  map.insert(9, 90);
+  const u64* v = map.find(9);
+  REQUIRE(v != nullptr);
+  CHECK(*v == 90);
+}
+
 TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
           "[base][container][stress]") {
   const u64 capacity = 1 << 16;
