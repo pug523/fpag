@@ -84,7 +84,7 @@ function(fpag_add_library)
   # the setting travels with the target rather than being set locally.
   target_compile_definitions(
     fpag PUBLIC FMT_USE_CONSTEVAL=1 FMT_USE_CONSTEXPR=1
-    PRIVATE NOMINMAX FPAG_PROJECT_VERSION="${PROJECT_VERSION}")
+    PRIVATE FPAG_PROJECT_VERSION="${PROJECT_VERSION}")
 
   if(FPAG_ENABLE_LIBUNWIND)
     target_compile_definitions(fpag PRIVATE FPAG_USE_LIBUNWIND=1)

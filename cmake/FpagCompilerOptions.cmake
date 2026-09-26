@@ -48,7 +48,16 @@ function(_fpag_add_probeable_options target)
     # to arrive as a definition, before any header, which is why it cannot live
     # inside a source file. MSVC is the wrong test here: it is false for the
     # clang toolchain that CI builds with.
-    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    #
+    # NOMINMAX is here for the same reason and in the same place. The Windows
+    # headers define min and max as function-like macros, and any translation
+    # unit that pulls one of them in before fpag/base/limits.h turns
+    # std::numeric_limits<i8>::min() into a macro invocation with too few
+    # arguments. It has to be defined for the tests and benchmarks too, not just
+    # the library, because they include the same public headers. That is what
+    # this function is for: every target in the project goes through it.
+    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS
+                                                    NOMINMAX)
   endif()
 
   if(MSVC)
