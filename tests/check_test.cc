@@ -87,11 +87,16 @@ TEST_CASE("A failed check reports without a debug logger sink",
   CHECK(reported.find("'false'") != std::string::npos);
   CHECK(reported.find("check_test probe") != std::string::npos);
 
-  // The process stops on the trap instead of dying on that stack overflow.
+  // Returning at all would mean the failing check did not abort.
+  const bool returned_normally = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  CHECK_FALSE(returned_normally);
+  // A debug build stops on the trap instead of dying on a stack overflow. A
+  // release build reaches __builtin_unreachable(), so what happens after the
+  // report is undefined there by design.
+#if FPAG_BUILD_FLAG(IS_DEBUG)
   const bool died_from_stack_overflow =
       WIFSIGNALED(status) && (WTERMSIG(status) == SIGSEGV);
   CHECK_FALSE(died_from_stack_overflow);
-#if FPAG_BUILD_FLAG(IS_DEBUG)
   REQUIRE(WIFSIGNALED(status));
   CHECK(WTERMSIG(status) == SIGILL);
 #endif
