@@ -50,9 +50,10 @@ if(FPAG_CLANG_TIDY)
             "-DFPAG_CLANG_FORMAT=${FPAG_CLANG_FORMAT}"
             "-DFPAG_SOURCE_DIR=${PROJECT_SOURCE_DIR}" -P
             "${PROJECT_SOURCE_DIR}/cmake/run-clang-format.cmake"
-    COMMAND "${FPAG_CLANG_TIDY}" --use-color --fix
-            "--config-file=${PROJECT_SOURCE_DIR}/.clang-tidy" -p
-            "${PROJECT_BINARY_DIR}"
+    COMMAND "${CMAKE_COMMAND}" "-DFPAG_CLANG_TIDY=${FPAG_CLANG_TIDY}"
+            "-DFPAG_SOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DFPAG_BINARY_DIR=${PROJECT_BINARY_DIR}" -P
+            "${PROJECT_SOURCE_DIR}/cmake/run-clang-tidy.cmake"
     COMMENT "tidy"
     VERBATIM)
 else()

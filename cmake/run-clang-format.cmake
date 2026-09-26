@@ -9,7 +9,8 @@
 # into the length limit of the Windows command interpreter.
 #
 # Invoked as:
-#   cmake -DFPAG_MODE=fix|check -DFPAG_CLANG_FORMAT=... -P run-clang-format.cmake
+#   cmake -DFPAG_MODE=fix|check -DFPAG_CLANG_FORMAT=... -DFPAG_SOURCE_DIR=...
+#         -P run-clang-format.cmake
 
 if(NOT FPAG_SOURCE_DIR OR NOT FPAG_CLANG_FORMAT)
   message(FATAL_ERROR "FPAG_SOURCE_DIR and FPAG_CLANG_FORMAT are required")
@@ -21,18 +22,9 @@ else()
   set(mode_options -i)
 endif()
 
-file(
-  GLOB_RECURSE sources
-  "${FPAG_SOURCE_DIR}/src/*.cc"
-  "${FPAG_SOURCE_DIR}/src/*.h"
-  "${FPAG_SOURCE_DIR}/include/*.h"
-  "${FPAG_SOURCE_DIR}/tests/*.cc"
-  "${FPAG_SOURCE_DIR}/tests/*.h"
-  "${FPAG_SOURCE_DIR}/benchmarks/*.cc"
-  "${FPAG_SOURCE_DIR}/benchmarks/*.h")
+include("${CMAKE_CURRENT_LIST_DIR}/FpagSources.cmake")
+fpag_tooling_sources("${FPAG_SOURCE_DIR}" sources)
 
-# third_party/ carries a .clang-format-ignore precisely so that a vendored tree
-# is skipped, which is why the glob above stops at the module directories.
 list(LENGTH sources source_count)
 message(STATUS "clang-format ${FPAG_MODE} over ${source_count} file(s)")
 
