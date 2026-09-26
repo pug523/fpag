@@ -134,7 +134,11 @@ TEST_CASE("ConcurrentArena is usable from several threads", "[mem][arena]") {
     const u8 pattern = static_cast<u8>(thread_index + 1);
     for (usize i = 0; i < kAllocationsPerThread; ++i) {
       u8* const block = static_cast<u8*>(arena.alloc(kBlockSize, 1));
-      REQUIRE(block != nullptr);
+      // No assertion in here: Catch2's assertion machinery is not thread-safe,
+      // and a null block shows up as a null entry checked after the join.
+      if (block == nullptr) {
+        return;
+      }
       for (usize j = 0; j < kBlockSize; ++j) {
         block[j] = pattern;
       }
@@ -163,7 +167,9 @@ TEST_CASE("ConcurrentArena is usable from several threads", "[mem][arena]") {
   for (usize t = 0; t < kThreads; ++t) {
     const u8 pattern = static_cast<u8>(t + 1);
     for (usize i = 0; i < kAllocationsPerThread; ++i) {
-      CHECK(block_matches(blocks[t * kAllocationsPerThread + i], pattern));
+      const u8* const block = blocks[t * kAllocationsPerThread + i];
+      REQUIRE(block != nullptr);
+      CHECK(block_matches(block, pattern));
     }
   }
 }
