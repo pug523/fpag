@@ -97,11 +97,21 @@ class Serializer {
       // NOLINTBEGIN(whitespace/braces,whitespace/line_length)
       ([&] {
         using Codec = Codec<std::decay_t<decltype(args)>>;
-        const usize written = Codec::encode(arg_out_cursor + sizeof(written), args);
-        std::memcpy(arg_out_cursor, &written, sizeof(written));
+        if constexpr (Codec::is_fixed_size()) {
+          // A fixed size argument crosses without a size slot, because the
+          // deserializer derives its size from the type. Writing one here put
+          // every later argument at the wrong offset.
+          Codec::encode(arg_out_cursor, args);
+          args_body_size += Codec::body_size();
+          arg_out_cursor += Codec::body_size();
+        } else {
+          const usize written =
+              Codec::encode(arg_out_cursor + sizeof(written), args);
+          std::memcpy(arg_out_cursor, &written, sizeof(written));
 
-        args_body_size += sizeof(written) + written;
-        arg_out_cursor += sizeof(written) + written;
+          args_body_size += sizeof(written) + written;
+          arg_out_cursor += sizeof(written) + written;
+        }
 
         FPAG_DCHECK_LE(args_body_size, kDynamicSizeArgsBufSize);
       }(), ...);

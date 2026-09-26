@@ -6,6 +6,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
@@ -18,6 +19,31 @@
 // #include "fpag/mem/page_allocator.h"
 
 namespace logging {
+
+namespace {
+
+// Keeps the formatted message so a test can check what the serializer wrote
+// and the deserializer read back. The backend worker appends from its own
+// thread, so a test only reads the messages after joining it.
+class CapturingSink {
+ public:
+  explicit CapturingSink(std::vector<std::string>* messages)
+      : messages_(messages) {}
+
+  CapturingSink(CapturingSink&&) noexcept = default;
+  CapturingSink& operator=(CapturingSink&&) noexcept = default;
+  ~CapturingSink() = default;
+
+  void log(const LogEntry& entry) { messages_->emplace_back(entry.message); }
+  void flush() {}
+
+ private:
+  std::vector<std::string>* messages_ = nullptr;
+};
+
+static_assert(Sink<CapturingSink>);
+
+}  // namespace
 
 TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   // AsyncLogger<StdoutSink, LogLevel::All> logger;
@@ -120,6 +146,30 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
   SECTION("clean up") {
     logger.stop_backend_worker();
   }
+}
+
+TEST_CASE("AsyncLogger frames mixed fixed and dynamic arguments",
+          "[logging][async]") {
+  std::vector<std::string> messages;
+  AsyncLogger<CapturingSink, LogLevel::Trace> logger;
+  logger.init(CapturingSink{&messages});
+  logger.start_backend_worker();
+
+  const i32 count = 42;
+  const std::string_view text = "text";
+
+  // A fixed size argument next to a variable length one is where the two sides
+  // have to agree on whether an argument crosses the queue with a size slot.
+  logger.info("fixed then view: {} {}", count, text);
+  logger.info("view then fixed: {} {}", text, count);
+  logger.info("view fixed view: {} {} {}", text, count, text);
+
+  logger.stop_backend_worker();
+
+  REQUIRE(messages.size() == 3);
+  CHECK(messages[0] == "fixed then view: 42 text");
+  CHECK(messages[1] == "view then fixed: text 42");
+  CHECK(messages[2] == "view fixed view: text 42 text");
 }
 
 }  // namespace logging
