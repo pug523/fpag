@@ -122,9 +122,18 @@ class SooVec {
   template <typename... Args>
   constexpr Idx emplace_back(Args&&... args) {
     if (size_ == capacity_) {
-      reserve(capacity_ == 0 ? N : capacity_ * 2);
+      // An argument may name an element of this vector: build the value before
+      // the elements move and the block they were in is released.
+      T value(std::forward<Args>(args)...);
+
+      // capacity_ is zero only without inline storage, and a reserve of zero
+      // would leave the first element with nowhere to go.
+      reserve(capacity_ == 0 ? 1 : capacity_ * 2);
+
+      std::construct_at(data() + size_, std::move(value));
+    } else {
+      std::construct_at(data() + size_, std::forward<Args>(args)...);
     }
-    std::construct_at(data() + size_, std::forward<Args>(args)...);
     const usize new_idx = size_++;
     return Idx(static_cast<IdxType>(new_idx));
   }

@@ -31,6 +31,26 @@ struct MoveOnlyType {
   MoveOnlyType& operator=(MoveOnlyType&&) noexcept = default;
 };
 
+// Poisons itself on move and on destruction, so a value read after either
+// carries the poison instead of whatever the storage happens to hold.
+struct PoisonedValue {
+  static constexpr i32 kPoison = -1;
+
+  i32 val = 0;
+
+  explicit PoisonedValue(i32 v) : val(v) {}
+
+  PoisonedValue(const PoisonedValue&) = default;
+  PoisonedValue& operator=(const PoisonedValue&) = default;
+
+  PoisonedValue(PoisonedValue&& other) noexcept : val(other.val) {
+    other.val = kPoison;
+  }
+  PoisonedValue& operator=(PoisonedValue&& other) noexcept = default;
+
+  ~PoisonedValue() { val = kPoison; }
+};
+
 }  // namespace
 
 TEST_CASE("SooVec inline vs dynamic storage", "[base][soo_vec]") {
@@ -97,6 +117,44 @@ TEST_CASE("SooVec inline vs dynamic storage", "[base][soo_vec]") {
     CHECK(vec.front() == 10);
     CHECK(vec.back() == 30);
   }
+
+  SECTION("An argument that names an element across reallocation") {
+    SooVec<PoisonedValue, TestIdx, 2> vec;
+    vec.emplace_back(100);
+    vec.emplace_back(200);
+    vec.emplace_back(300);
+    vec.emplace_back(400);
+
+    REQUIRE(vec.capacity() == 4);
+    REQUIRE(vec.size() == 4);
+
+    // Growing moves every element into a new block and releases the block the
+    // argument still names.
+    vec.emplace_back(vec[TestIdx{0}]);
+
+    CHECK(vec.size() == 5);
+    CHECK(vec[TestIdx{0}].val == 100);
+    CHECK(vec[TestIdx{3}].val == 400);
+    CHECK(vec[TestIdx{4}].val == 100);
+  }
+}
+
+TEST_CASE("SooVec without inline storage allocates for the first element",
+          "[base][soo_vec]") {
+  SooVec<i32, TestIdx, 0> vec;
+
+  CHECK(vec.empty());
+  CHECK(vec.capacity() == 0);
+
+  const TestIdx first = vec.emplace_back(1);
+  CHECK(vec.size() == 1);
+  CHECK(vec.capacity() >= 1);
+  CHECK(vec[first] == 1);
+
+  vec.emplace_back(2);
+  CHECK(vec.size() == 2);
+  CHECK(vec[TestIdx{0}] == 1);
+  CHECK(vec[TestIdx{1}] == 2);
 }
 
 TEST_CASE("SooVecSlice operations", "[base][soo_vec_slice]") {
