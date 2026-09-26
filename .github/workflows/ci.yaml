@@ -121,12 +121,17 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_CXX_COMPILER=${{ env.CXX }}
           -DFPAG_BUILD_TESTS=ON
-          -DFPAG_BUILD_BENCHMARKS=ON
           -DFPAG_CXX_STDLIB=${{ matrix.stdlib }}
           -DFPAG_ENABLE_SANITIZERS=${{ matrix.sanitizers || 'OFF' }}
           -DFPAG_ENABLE_COVERAGE=${{ matrix.coverage || 'OFF' }}
           -DFPAG_ENABLE_LIBUNWIND=${{ matrix.libunwind || 'OFF' }}
 
+      # FPAG_BUILD_BENCHMARKS is deliberately off here. benchmarks/async_logger_bench.cc
+      # crashes clang 22.1.8 intermittently at -O3, in the mangler, on the FMT_COMPILE
+      # uses inside the Logger concept in include/fpag/logging/logger.h. It reproduces
+      # on code from before the cmake migration, so it is a compiler bug rather than
+      # something this build introduced, and a coin flip in CI is worse than not
+      # building the benchmarks at all. See the known tensions in ARCHITECTURE.md.
       - name: Build
         shell: bash
         run: cmake --build build --parallel
@@ -155,7 +160,6 @@ jobs:
           path: |
             build/libfpag.a
             build/fpag_tests
-            build/fpag_benchmarks
           if-no-files-found: error
 
   static-analysis:
@@ -184,7 +188,6 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_CXX_COMPILER=${{ env.CXX }}
           -DFPAG_BUILD_TESTS=ON
-          -DFPAG_BUILD_BENCHMARKS=ON
           -DFPAG_CXX_STDLIB=libc++
           -DFPAG_ENABLE_CLANG_TIDY=ON
 

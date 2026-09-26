@@ -215,6 +215,13 @@ measuring a change rather than for gating one:
 ./build/dev/fpag_benchmarks --benchmark_filter=spsc_queue
 ```
 
+CI does not build them, and that is deliberate rather than an oversight:
+`benchmarks/async_logger_bench.cc` crashes Clang 22.1.8 intermittently at
+`-O3`, in the mangler, on the `FMT_COMPILE` uses inside the `Logger` concept.
+It reproduces on code from before the CMake migration, so it is an upstream
+compiler bug. See the known tensions in [ARCHITECTURE.md](ARCHITECTURE.md).
+The `dev` preset builds them, at `-O0`, where it does not trigger.
+
 ## Changes and review
 
 - Keep a change focused. Do not fold a refactor into a behavior change unless

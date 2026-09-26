@@ -297,3 +297,11 @@ as if they were new.
 - The project is young, and the public API still changes. `base::numeric.h`
   exporting into the global namespace is the kind of decision that is much
   cheaper to make now than in a year.
+- `benchmarks/async_logger_bench.cc` crashes Clang 22.1.8 intermittently at
+  `-O3`, inside the Itanium mangler, while mangling the `FMT_COMPILE` uses
+  inside the `Logger` concept. It reproduces on code from before the CMake
+  migration, roughly one run in three, so it is a compiler bug rather than
+  something here. It is the reason CI does not set `FPAG_BUILD_BENCHMARKS`: a
+  coin flip in CI is worse than not compiling the benchmarks there. The
+  benchmarks are still built and run by the `dev` preset, where `-O0` does not
+  trigger it.
