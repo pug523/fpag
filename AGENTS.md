@@ -55,6 +55,11 @@ Read these before changing anything. Do not guess at the design.
   `include_directories()`, never `add_definitions()`: this tree is consumed
   through `add_subdirectory()`, and a global setting leaks into the parent
   project.
+- **Fix a platform problem in the build, not per source file.** The
+  `_CRT_SECURE_NO_WARNINGS` and libunwind problems were both fixed at the build
+  level on purpose. A `#define` inside a `.cc` that fixes a missing compiler
+  flag is in the wrong place, and is silently ineffective if the file includes a
+  header before the define.
 - **Build with the project's toolchain.** Clang, and `cmake --preset dev`. GCC
   is stricter about `-Wconversion` under `-Werror`, so a green GCC build is not
   proof and a red one may not be your fault. Check the flags CI uses before

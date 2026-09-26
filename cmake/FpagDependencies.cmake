@@ -35,14 +35,29 @@ set(FPAG_BENCHMARK_VERSION
 
 # Remembers a dependency this project had to build itself, so that FpagInstall
 # can put it in the export set rather than expecting find_dependency() to
-# resolve it on the consumer side. A global property is used because the
-# recording happens inside a function.
-function(fpag_record_vendored target)
+# resolve it on the consumer side, and can install its headers.
+#
+# Both facts are global properties because the recording happens inside a
+# function. The source directory has to be passed in explicitly:
+# FetchContent_MakeAvailable only sets <name>_SOURCE_DIR in the scope it is
+# called from, and cmake/FpagInstall.cmake runs in the directory scope, where
+# the variable is gone. fmt is a particularly easy one to get wrong, because its
+# own CMakeLists also defines an unrelated FMT_SOURCE_DIR in the cache.
+function(fpag_record_vendored target source_dir)
   set_property(GLOBAL APPEND PROPERTY FPAG_VENDORED_TARGETS ${target})
+  set_property(
+    GLOBAL PROPERTY FPAG_VENDORED_SOURCES_${target} "${source_dir}")
 endfunction()
 
 function(fpag_vendored_targets out_var)
   get_property(result GLOBAL PROPERTY FPAG_VENDORED_TARGETS)
+  set(${out_var}
+      "${result}"
+      PARENT_SCOPE)
+endfunction()
+
+function(fpag_vendored_source target out_var)
+  get_property(result GLOBAL PROPERTY FPAG_VENDORED_SOURCES_${target})
   set(${out_var}
       "${result}"
       PARENT_SCOPE)
@@ -98,7 +113,12 @@ function(fpag_require_fmt)
       CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(fmt)
   fpag_propagate_toolchain(fmt)
-  fpag_record_vendored(fmt)
+  # fmt lists its public headers on the target, and this project installs them
+  # from its own source directory instead, so the listing is cleared to keep
+  # CMake from warning about a missing PUBLIC_HEADER DESTINATION and to keep
+  # the headers from being installed twice.
+  set_target_properties(fmt PROPERTIES PUBLIC_HEADER "")
+  fpag_record_vendored(fmt "${fmt_SOURCE_DIR}")
 
   set(FPAG_FMT_TARGET
       fmt::fmt
@@ -151,10 +171,7 @@ function(fpag_require_xxhash)
     INTERFACE "$<BUILD_INTERFACE:${xxhash_src_SOURCE_DIR}>"
               "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
-  fpag_record_vendored(xxhash)
-  set(FPAG_XXHASH_SOURCE_DIR
-      "${xxhash_src_SOURCE_DIR}"
-      PARENT_SCOPE)
+  fpag_record_vendored(xxhash "${xxhash_src_SOURCE_DIR}")
 
   set(FPAG_XXHASH_TARGET
       xxhash::xxhash
@@ -165,15 +182,18 @@ endfunction()
 # an installed fpag built with FPAG_ENABLE_LIBUNWIND does not have to ship the
 # unwinder along with it.
 #
-# The result is consumed as a list of raw flags rather than as a target, because
-# a target this project created would then have to appear in the fpagTargets
-# export set, while a plain -lunwind works for a consumer that statically links
-# libfpag.a without needing to resolve anything through find_package().
+# The result is a list of absolute paths rather than a target or a -l flag, for
+# two reasons. A target this project created would have to appear in the
+# fpagTargets export set, which a private dependency of a static library cannot
+# be. And a bare -lunwind is not enough: LLVM ships a libunwind of its own as
+# libunwind.so.1, and an LLVM toolchain puts its lib directory ahead of the
+# system one, so -lunwind resolves to LLVM's, which has none of the GNU
+# unwinder entry points that libunwind-<arch> then needs. find_library() does
+# not read LDFLAGS, so it cannot be confused that way.
 #
-# libunwind splits its library in two: the generic half lives in libunwind, and
-# the per architecture half, which owns the unwinder entry points such as
-# _Ux86_64_get_reg, lives in libunwind-<arch>. Neither libunwind.pc nor a plain
-# -lunwind names the second one, so it is spelled out here.
+# libunwind also splits itself in two: the generic half is in libunwind, and
+# the per architecture half, which owns the _U<arch>_* entry points, is in
+# libunwind-<arch>. Neither libunwind.pc nor -lunwind names the second one.
 function(_fpag_libunwind_arch_library out_var)
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     set(arch "x86_64")
@@ -198,8 +218,25 @@ endfunction()
 function(fpag_require_libunwind)
   _fpag_libunwind_arch_library(fpag_libunwind_arch)
 
+  set(libraries "")
+  foreach(component unwind "unwind-${fpag_libunwind_arch}")
+    find_library(
+      fpag_libunwind_${component}
+      NAMES ${component}
+      DOC "Path to lib${component}")
+    if(NOT fpag_libunwind_${component})
+      message(
+        FATAL_ERROR
+          "FPAG_ENABLE_LIBUNWIND is on but lib${component} was not found. Install the libunwind development package, for example `apt install libunwind-dev`.")
+    endif()
+    list(APPEND libraries "${fpag_libunwind_${component}}")
+  endforeach()
+
+  # An installed libfpag.a that was built this way still needs libunwind at the
+  # consumer's link, and these absolute paths travel in the exported interface
+  # without needing a target to exist on the other side.
   set(FPAG_LIBUNWIND_LDFLAGS
-      "-lunwind;-lunwind-${fpag_libunwind_arch}"
+      "${libraries}"
       PARENT_SCOPE)
   set(FPAG_LIBUNWIND_INCLUDE_DIRS
       ""
@@ -212,13 +249,7 @@ function(fpag_require_libunwind)
     set(FPAG_LIBUNWIND_INCLUDE_DIRS
         "${PC_LIBUNWIND_INCLUDE_DIRS}"
         PARENT_SCOPE)
-    return()
   endif()
-
-  message(
-    FATAL_ERROR
-      "FPAG_ENABLE_LIBUNWIND is on but libunwind was not found. Install the libunwind development package, for example `apt install libunwind-dev`."
-  )
 endfunction()
 
 # Catch2, test only. fpag brings its own main() because the process level

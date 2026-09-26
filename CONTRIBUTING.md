@@ -155,6 +155,13 @@ about the standard library it was compiled against, so:
 - A consumer of an installed `libfpag` has to be compiled against the same
   standard library. Nothing records it, so it has to be communicated.
 
+`FPAG_ENABLE_LIBUNWIND` resolves libunwind with `find_library` and links the
+absolute paths, rather than passing `-lunwind`. That is deliberate: LLVM ships
+a libunwind of its own as `libunwind.so.1`, and an LLVM toolchain puts its
+library directory ahead of the system one, so a bare `-lunwind` picks the wrong
+one and the GNU unwinder entry points end up unresolved. `find_library` does
+not read `LDFLAGS`, so it cannot be confused that way.
+
 ## Conventions
 
 - **Standard.** C++20, no exceptions, no RTTI, anywhere. The tests and the

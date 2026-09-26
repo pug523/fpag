@@ -53,17 +53,30 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/fpag"
         PATTERN "*.h")
 
 # A vendored dependency brings its own headers, otherwise find_package against
-# the installed prefix would resolve the library but not its include path.
+# the installed prefix would resolve the library but not its include path. An
+# empty source directory here would silently install nothing at all, so it is
+# checked rather than trusted.
 foreach(dependency IN LISTS FPAG_VENDORED_TARGETS)
+  fpag_vendored_source(${dependency} dependency_source)
+  if(NOT EXISTS "${dependency_source}")
+    message(
+      FATAL_ERROR
+        "${dependency} was built by this project but its source directory is not known, so its headers cannot be installed. Record it with fpag_record_vendored().")
+  endif()
+
   if(dependency STREQUAL "fmt")
-    install(DIRECTORY "${fmt_SOURCE_DIR}/include/"
+    install(DIRECTORY "${dependency_source}/include/"
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
             FILES_MATCHING
             PATTERN "*.h")
   elseif(dependency STREQUAL "xxhash")
-    install(FILES "${FPAG_XXHASH_SOURCE_DIR}/xxh3.h"
-                  "${FPAG_XXHASH_SOURCE_DIR}/xxhash.h"
+    install(FILES "${dependency_source}/xxh3.h"
+                  "${dependency_source}/xxhash.h"
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  else()
+    message(
+      FATAL_ERROR
+        "${dependency} is built by this project and goes into the export set, but cmake/FpagInstall.cmake does not know how to install its headers. Add a branch for it.")
   endif()
 endforeach()
 

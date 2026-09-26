@@ -42,10 +42,21 @@ function(_fpag_add_probeable_options target)
     endif()
   endforeach()
 
+  if(WIN32)
+    # clang-cl and clang++ on Windows both honour the MSVC CRT's deprecation
+    # attributes, and both need this to compile _open, fopen and friends. It has
+    # to arrive as a definition, before any header, which is why it cannot live
+    # inside a source file. MSVC is the wrong test here: it is false for the
+    # clang toolchain that CI builds with.
+    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+  endif()
+
   if(MSVC)
+    # The rest of the flag set is spelled for a GCC or clang driver. cl.exe
+    # wants /W4 and the rest, which is a separate conversation this project is
+    # not having yet, so only the encoding flag is set for it.
     target_compile_options(${target} PRIVATE
                            "$<$<COMPILE_LANGUAGE:CXX>:/utf-8>")
-    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     return()
   endif()
 
@@ -156,22 +167,23 @@ function(fpag_apply_options target)
     _fpag_add_clang_tidy(${target})
   endif()
 
-  if(MSVC)
+  # The rest is ELF and Mach-O specific. On Windows the stack trace path goes
+  # through dbghelp rather than a frame walk, so frame pointers buy nothing and
+  # -rdynamic and --build-id are not even spelled the same way.
+  if(NOT UNIX)
     return()
   endif()
 
   target_compile_options(${target} PRIVATE
                          "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:-fno-omit-frame-pointer;-g1>")
 
-  if(NOT WIN32)
-    # Exports the dynamic symbol table, which the stack unwinder and the
-    # symbolicator both need in order to name anything in a debug build.
-    target_link_options(
-      ${target}
-      PRIVATE "$<$<AND:$<LINK_LANGUAGE:CXX>,$<CONFIG:Debug>>:-rdynamic>")
-  endif()
+  # Exports the dynamic symbol table, which the stack unwinder and the
+  # symbolicator both need in order to name anything in a debug build.
+  target_link_options(
+    ${target}
+    PRIVATE "$<$<AND:$<LINK_LANGUAGE:CXX>,$<CONFIG:Debug>>:-rdynamic>")
 
-  if(UNIX AND NOT APPLE)
+  if(NOT APPLE)
     target_link_options(
       ${target}
       PRIVATE "$<$<AND:$<LINK_LANGUAGE:CXX>,$<CONFIG:Debug>>:-Wl,--build-id>")

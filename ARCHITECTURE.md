@@ -277,6 +277,18 @@ Everything else the build owes the code is in
 warnings as errors, and a public interface that is exactly
 `include/fpag/**` plus `fmt` and `xxhash`.
 
+Two platform details are worth stating here rather than only in the build
+files, because both were found the hard way:
+
+- **`_CRT_SECURE_NO_WARNINGS` belongs to the build, not to a source file.** The
+  MSVC CRT deprecates `_open` and `fopen`, and clang-cl and clang++ on Windows
+  both honour that. The macro has to be defined before any header is read, and
+  the affected code is spread over `io` and `debug`, so a per-file `#define` is
+  both the wrong layer and, in a file that includes a header first, ineffective.
+- **libunwind has to be linked by absolute path.** It ships in two pieces, and
+  it shares its name with the libunwind inside an LLVM toolchain, which sits
+  earlier in the link line. See `cmake/FpagDependencies.cmake`.
+
 ## Known tensions
 
 Recorded rather than hidden, so that a future change does not rediscover them
