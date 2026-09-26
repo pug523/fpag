@@ -16,6 +16,7 @@
 
 #include <array>
 #include <string>
+#include <utility>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/arg/parse_result.h"
