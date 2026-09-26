@@ -15,16 +15,25 @@
       {
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = [
-            pkgs.xmake
+            pkgs.cmake
             pkgs.ninja
             pkgs.pkg-config
+            pkgs.uv
+            pkgs.typos
           ];
 
           buildInputs = [
             llvmPkgs.clang
 
+            # clang-format, clang-tidy, llvm-profdata and llvm-cov
+            llvmPkgs.clang-tools
+            llvmPkgs.llvm
+
             # C++
             pkgs.stdenv.cc.cc.lib
+
+            # Only for FPAG_ENABLE_LIBUNWIND=ON.
+            pkgs.libunwind
           ];
 
           shellHook = ''
@@ -36,4 +45,3 @@
       }
     );
 }
-

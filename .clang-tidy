@@ -64,7 +64,7 @@ HeaderFilterRegex: '^.*[\\/](src|tests)[\\/].*$'
 # directory a dependency can be reached through. A fetched dependency lands under
 # <build>/_deps/<name>-src/src, which the positive filter above matches, so
 # excluding only third_party is not enough any more.
-ExcludeHeaderFilterRegex: '[\\/](third_party|_deps|build|out|\\.xmake)[\\/]'
+ExcludeHeaderFilterRegex: '[\\/](third_party|_deps|build|out)[\\/]'
 SystemHeaders:    false
 WarningsAsErrors: '*'
 ExtraArgsBefore:
