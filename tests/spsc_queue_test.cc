@@ -4,6 +4,10 @@
 
 #include "fpag/container/spsc_queue.h"
 
+#include <atomic>
+#include <thread>
+#include <vector>
+
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 
@@ -110,6 +114,54 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
     CHECK(queue.empty());
     CHECK(char_out == kCharIn);
   }
+}
+
+TEST_CASE("SpscQueue hands a record from one thread to another",
+          "[SpscQueueTest]") {
+  // The consumer has to observe the record's payload, not only the counter:
+  // size_consumer() pairs with the producer's release store, and that pairing
+  // is what orders the consumer's reads after the producer's writes. With a
+  // relaxed load the two race, which TSan reports for this case.
+  constexpr usize kRecords = 4096;
+  constexpr usize kRecordSize = 64;
+
+  SpscQueue queue;
+  queue.init(SpscQueue::default_capacity(), SpscQueue::Mode::Block);
+
+  std::atomic<bool> mismatch{false};
+
+  std::thread consumer([&queue, &mismatch] {
+    std::vector<u8> out(kRecordSize);
+    for (usize record = 0; record < kRecords; ++record) {
+      SpscQueue::DequeueStatus status = SpscQueue::DequeueStatus::Empty;
+      do {
+        status = queue.dequeue(out.data(), out.size());
+        if (status != SpscQueue::DequeueStatus::Ok) {
+          std::this_thread::yield();
+        }
+      } while (status != SpscQueue::DequeueStatus::Ok);
+
+      for (usize i = 0; i < kRecordSize; ++i) {
+        if (out[i] != static_cast<u8>(record + i)) {
+          mismatch.store(true);
+        }
+      }
+    }
+  });
+
+  std::vector<u8> record(kRecordSize);
+  for (usize r = 0; r < kRecords; ++r) {
+    for (usize i = 0; i < kRecordSize; ++i) {
+      record[i] = static_cast<u8>(r + i);
+    }
+
+    const SpscQueue::EnqueueStatus status =
+        queue.enqueue(record.data(), record.size());
+    CHECK(status == SpscQueue::EnqueueStatus::Ok);
+  }
+
+  consumer.join();
+  CHECK_FALSE(mismatch.load());
 }
 
 }  // namespace

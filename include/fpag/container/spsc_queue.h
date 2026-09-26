@@ -62,18 +62,22 @@ class SpscQueue {
   EnqueueStatus enqueue(const void* new_data, usize size, usize align = 1);
 
   usize capacity() const { return capacity_; }
+  // These pair with the other side's release store, and each acquire is what
+  // makes the bytes the store published readable. A relaxed load here would
+  // let the consumer read payload the producer had not yet finished writing,
+  // and let the producer overwrite payload the consumer had not yet read.
   usize size() const {
-    return tail_.load(std::memory_order_relaxed) -
-           head_.load(std::memory_order_relaxed);
+    return tail_.load(std::memory_order_acquire) -
+           head_.load(std::memory_order_acquire);
   }
   bool empty() const { return size() == 0; }
   usize available() const { return capacity_ - size(); }
 
   usize size_consumer() const {
-    return tail_.load(std::memory_order_relaxed) - head_cache_;
+    return tail_.load(std::memory_order_acquire) - head_cache_;
   }
   usize size_producer() const {
-    return tail_cache_ - head_.load(std::memory_order_relaxed);
+    return tail_cache_ - head_.load(std::memory_order_acquire);
   }
 
   const char* head_ptr() const {
