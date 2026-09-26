@@ -105,18 +105,22 @@ class SimpleConcurrentHashMap {
   }
 
   void insert(const K& key, const V& value) {
+    FPAG_CHECK_MSG(entries_,
+                   "SimpleConcurrentHashMap has no storage; call reserve()");
     const u64 h = hash(key);
-    const u64 mask = capacity_ - 1;
+    const u64 capacity = capacity_.load(std::memory_order_relaxed);
+    const u64 mask = capacity - 1;
 
     // Linear probing -> CAS -> increment `size_` if successful.
-    for (u64 i = 0; i < capacity_; ++i) {
+    for (u64 i = 0; i < capacity; ++i) {
       const u64 idx = (h + i) & mask;
       Entry& e = entries_[idx];
 
-      u64 expected = kEmptyHash;
+      const u64 entry_hash = wait_unlocked(e);
 
       // Check if the entry is empty
-      if (e.hash.load(std::memory_order_acquire) == kEmptyHash) {
+      if (entry_hash == kEmptyHash) {
+        u64 expected = kEmptyHash;
         // Try to lock the entry
         if (e.hash.compare_exchange_strong(expected, kLockedHash,
                                            std::memory_order_acq_rel,
@@ -128,28 +132,44 @@ class SimpleConcurrentHashMap {
           size_.fetch_add(1, std::memory_order_relaxed);
           return;
         }
-        // If compare_exchange failed, `expected` now holds the observed
-        // value.
+        // Another thread took the slot while we looked at it. Look at the same
+        // slot again: probing on would insert a second entry for a key that the
+        // winner is in the middle of publishing.
+        --i;
+        continue;
       }
 
       // Check if entry matches the key.
-      if (e.hash.load(std::memory_order_acquire) == h && e.key == key) {
-        // Already exists, update value.
-        e.value = value;
-        return;
+      if (entry_hash == h && e.key == key) {
+        // The key is already here. Take the slot before writing the value, or
+        // the write races with every reader that got a pointer from find().
+        u64 expected = h;
+        if (e.hash.compare_exchange_strong(expected, kLockedHash,
+                                           std::memory_order_acq_rel,
+                                           std::memory_order_relaxed)) {
+          e.value = value;
+          e.hash.store(h, std::memory_order_release);
+          return;
+        }
+        --i;
+        continue;
       }
     }
+
+    // Full; should not happen.
+    FPAG_UNREACHABLE();
   }
 
   const V* find(const K& key) const {
     const u64 h = hash(key);
-    const u64 mask = capacity_ - 1;
+    const u64 capacity = capacity_.load(std::memory_order_relaxed);
+    const u64 mask = capacity - 1;
 
     // Linear probing.
-    for (u64 i = 0; i < capacity_; ++i) {
+    for (u64 i = 0; i < capacity; ++i) {
       const u64 idx = (h + i) & mask;
       const Entry& e = entries_[idx];
-      const u64 entry_hash = e.hash.load(std::memory_order_acquire);
+      const u64 entry_hash = wait_unlocked(e);
       if (entry_hash == h && e.key == key) [[likely]] {
         return &e.value;
       } else if (entry_hash == kEmptyHash) {
@@ -160,19 +180,17 @@ class SimpleConcurrentHashMap {
   }
 
   const V* try_insert(const K& key, const V& value, bool* inserted) {
+    FPAG_CHECK_MSG(entries_,
+                   "SimpleConcurrentHashMap has no storage; call reserve()");
     const u64 h = hash(key);
-    const u64 mask = capacity_.load(std::memory_order_relaxed) - 1;
+    const u64 capacity = capacity_.load(std::memory_order_relaxed);
+    const u64 mask = capacity - 1;
 
-    for (u64 i = 0; i < capacity_.load(std::memory_order_relaxed); ++i) {
+    for (u64 i = 0; i < capacity; ++i) {
       const u64 idx = (h + i) & mask;
       Entry& e = entries_[idx];
 
-      u64 cur = e.hash.load(std::memory_order_acquire);
-
-      // Spin wait until the slot is unlocked.
-      while (cur == kLockedHash) {
-        cur = e.hash.load(std::memory_order_acquire);
-      }
+      const u64 cur = wait_unlocked(e);
 
       if (cur == kEmptyHash) {
         u64 expected = kEmptyHash;
@@ -187,10 +205,9 @@ class SimpleConcurrentHashMap {
           *inserted = true;
           return &e.value;
         }
-        // Failed to lock the slot; retry this slot (do not advance to next).
-        if (expected == kLockedHash) {
-          --i;
-        }
+        // Failed to lock the slot; the winner may have published this very key,
+        // so retry this slot instead of moving past it.
+        --i;
         continue;
       }
 
@@ -222,6 +239,18 @@ class SimpleConcurrentHashMap {
   // The entries go to mem::allocate_pages() as one byte size, so the count has
   // to keep `sizeof(Entry) * capacity` representable.
   static constexpr u64 kMaxCapacity = kU64Max / sizeof(Entry);
+
+  // A slot is empty, locked by one writer, or published. Waits out a writer and
+  // returns the state the slot settled on, so a caller that loses the race for
+  // a slot re-reads that same slot instead of probing past a key that is being
+  // inserted into it.
+  static u64 wait_unlocked(const Entry& e) {
+    u64 entry_hash = e.hash.load(std::memory_order_acquire);
+    while (entry_hash == kLockedHash) {
+      entry_hash = e.hash.load(std::memory_order_acquire);
+    }
+    return entry_hash;
+  }
 
   u64 hash(const K& key) const {
     const u64 h = hasher_(key);
