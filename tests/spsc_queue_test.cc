@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "catch2/catch_test_macros.hpp"
@@ -164,6 +165,38 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
   CHECK_FALSE(mismatch.load());
 }
 
+TEST_CASE("SpscQueue wraps a record across the end of the ring",
+          "[SpscQueueTest]") {
+  SpscQueue queue;
+  queue.init(4096);
+
+  // Walk both ends of the ring to 4000, so the next record has to continue
+  // past the end. The circular mapping is what makes that one contiguous run.
+  std::vector<u8> fill(4000);
+  for (usize i = 0; i < fill.size(); ++i) {
+    fill[i] = static_cast<u8>(i % 251);
+  }
+  REQUIRE(queue.enqueue(fill.data(), fill.size()) ==
+          SpscQueue::EnqueueStatus::Ok);
+
+  std::vector<u8> drained(fill.size());
+  REQUIRE(queue.dequeue(drained.data(), drained.size()) ==
+          SpscQueue::DequeueStatus::Ok);
+  CHECK(drained == fill);
+
+  std::vector<u8> crossing(200);
+  for (usize i = 0; i < crossing.size(); ++i) {
+    crossing[i] = static_cast<u8>(i);
+  }
+  REQUIRE(queue.enqueue(crossing.data(), crossing.size()) ==
+          SpscQueue::EnqueueStatus::Ok);
+
+  std::vector<u8> out(crossing.size());
+  REQUIRE(queue.dequeue(out.data(), out.size()) ==
+          SpscQueue::DequeueStatus::Ok);
+  CHECK(out == crossing);
+}
+
 TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
           "[SpscQueueTest]") {
   SpscQueue queue;
@@ -235,6 +268,40 @@ TEST_CASE("SpscQueue aligns records to the requested boundary",
   queue.discard(1, 8);
 
   CHECK(queue.empty());
+}
+
+TEST_CASE("SpscQueue move assignment takes over the source's state",
+          "[SpscQueueTest]") {
+  // The destination's own ring is released rather than overwritten. That leak
+  // is not visible from here, so what this case pins down is the state
+  // transfer: the records and the counters both belong to the moved queue.
+  SpscQueue source;
+  source.init(4096, SpscQueue::Mode::Drop);
+  const i32 value = 7;
+  REQUIRE(source.enqueue(&value, sizeof(value)) ==
+          SpscQueue::EnqueueStatus::Ok);
+
+  // Fill the rest of the ring, then one more record has to be dropped.
+  std::vector<u8> fill(4096 - sizeof(value));
+  REQUIRE(source.enqueue(fill.data(), fill.size()) ==
+          SpscQueue::EnqueueStatus::Ok);
+  const u8 dropped = 0;
+  CHECK(source.enqueue(&dropped, 1) == SpscQueue::EnqueueStatus::Dropped);
+  REQUIRE(source.dropped_count() == 1);
+
+  SpscQueue destination;
+  destination.init();
+  destination = std::move(source);
+
+  CHECK(destination.capacity() == 4096);
+  CHECK(destination.dropped_count() == 1);
+  i32 out = 0;
+  REQUIRE(destination.dequeue(&out, sizeof(out)) ==
+          SpscQueue::DequeueStatus::Ok);
+  CHECK(out == value);
+
+  CHECK(source.dropped_count() == 0);
+  CHECK(source.capacity() == 0);
 }
 
 }  // namespace

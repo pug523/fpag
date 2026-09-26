@@ -25,6 +25,8 @@ SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
   head_cache_ = other.head_cache_;
   tail_ = other.tail_.load(std::memory_order_relaxed);
   tail_cache_ = other.tail_cache_;
+  dropped_count_ = other.dropped_count_;
+  blocked_count_ = other.blocked_count_;
   other.data_ = nullptr;
   other.capacity_ = 0;
   other.mode_ = Mode::Default;
@@ -32,44 +34,61 @@ SpscQueue::SpscQueue(SpscQueue&& other) noexcept {
   other.head_cache_ = 0;
   other.tail_.store(0, std::memory_order_relaxed);
   other.tail_cache_ = 0;
+  other.dropped_count_ = 0;
+  other.blocked_count_ = 0;
 }
 
 SpscQueue& SpscQueue::operator=(SpscQueue&& other) noexcept {
-  data_ = other.data_;
-  capacity_ = other.capacity_;
-  mode_ = other.mode_;
-  head_ = other.head_.load(std::memory_order_relaxed);
-  head_cache_ = other.head_cache_;
-  tail_ = other.tail_.load(std::memory_order_relaxed);
-  tail_cache_ = other.tail_cache_;
-  other.data_ = nullptr;
-  other.capacity_ = 0;
-  other.mode_ = Mode::Default;
-  other.head_.store(0, std::memory_order_relaxed);
-  other.head_cache_ = 0;
-  other.tail_.store(0, std::memory_order_relaxed);
-  other.tail_cache_ = 0;
+  if (this != &other) [[likely]] {
+    reset();
+
+    data_ = other.data_;
+    capacity_ = other.capacity_;
+    mode_ = other.mode_;
+    head_ = other.head_.load(std::memory_order_relaxed);
+    head_cache_ = other.head_cache_;
+    tail_ = other.tail_.load(std::memory_order_relaxed);
+    tail_cache_ = other.tail_cache_;
+    dropped_count_ = other.dropped_count_;
+    blocked_count_ = other.blocked_count_;
+    other.data_ = nullptr;
+    other.capacity_ = 0;
+    other.mode_ = Mode::Default;
+    other.head_.store(0, std::memory_order_relaxed);
+    other.head_cache_ = 0;
+    other.tail_.store(0, std::memory_order_relaxed);
+    other.tail_cache_ = 0;
+    other.dropped_count_ = 0;
+    other.blocked_count_ = 0;
+  }
 
   return *this;
 }
 
 void SpscQueue::init(usize capacity, Mode mode) {
+  FPAG_DCHECK_MSG(!data_, "SpscQueue is already initialized.");
+
+  // A non power of two capacity makes capacity_mask() wrong and a capacity over
+  // the limit overflows the index arithmetic, and both of those corrupt the
+  // ring rather than fail. The allocation itself cannot fall back to a plain
+  // mapping: the wrap-around aliasing is what makes a record that straddles
+  // the end addressable as one contiguous run.
   capacity_ = capacity;
-  FPAG_DCHECK_MSG(base::is_power_of_two(capacity_),
-                  "SpscQueue: capacity must be a power of two.");
-  FPAG_DCHECK_MSG(capacity_ <= kMaxCapacity,
-                  "SpscQueue: capacity must be <= kMaxCapacity");
+  FPAG_CHECK_MSG(base::is_power_of_two(capacity_),
+                 "SpscQueue: capacity must be a power of two.");
+  FPAG_CHECK_MSG(capacity_ <= kMaxCapacity,
+                 "SpscQueue: capacity must be <= kMaxCapacity");
 
   mode_ = mode;
 
   data_ = static_cast<char*>(mem::allocate_aliased_pages(capacity_));
-  FPAG_DCHECK_MSG(data_, "SpscQueue: failed to allocate memory for queue data");
+  FPAG_CHECK_MSG(data_, "SpscQueue: failed to allocate the queue ring");
   FPAG_DCHECK(reinterpret_cast<uintptr_t>(data_) % 8 == 0);
 }
 
 void SpscQueue::reset() {
   if (data_) {
-    mem::free_pages(data_, capacity_);
+    mem::free_aliased_pages(data_, capacity_);
     data_ = nullptr;
   }
   capacity_ = 0;
