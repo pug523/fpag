@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "fpag/arg/arg.h"
 #include "fpag/arg/command.h"
@@ -29,22 +31,37 @@ struct ArgBinder {
     builder->add_arg(std::move(arg));
   }
 
-  // Extracts the parsed value from Matches into the struct member.
-  inline void extract(Class* obj, const Matches* matches) const {
+  // Extracts the parsed value from Matches into the struct member. Returns
+  // false and fills @p out_error when a matched value cannot be converted to
+  // the member type, so the caller reports it instead of leaving the member
+  // at its default.
+  inline bool extract(Class* obj,
+                      const Matches* matches,
+                      ParseError* out_error) const {
     // SAFETY: This is assumed to be called only by macros, and they have
     // both obj and matches instance so their pointers can not be null.
     if (arg.is_flag()) {
       if constexpr (std::is_same_v<T, bool>) {
         obj->*member = matches->has(arg.name());
       }
-    } else {
-      if (matches->has(arg.name())) {
-        auto res = matches->get<T>(arg.name());
-        if (res.is_ok()) {
-          obj->*member = std::move(res).unwrap();
-        }
-      }
+      return true;
     }
+
+    if (!matches->has(arg.name())) {
+      return true;
+    }
+
+    auto res = matches->get<T>(arg.name());
+    if (!res.is_ok()) {
+      const std::string_view value = matches->get<std::string_view>(arg.name())
+                                         .unwrap_or(std::string_view{});
+      *out_error = ParseError(ErrorCode::InvalidValue, std::string(arg.name()),
+                              std::string(value));
+      return false;
+    }
+
+    obj->*member = std::move(res).unwrap();
+    return true;
   }
 };
 
@@ -59,7 +76,15 @@ ParseResult<Class> parse_macro_impl(i32 argc,
   if (result.is_ok()) {
     Class config{};
     Matches matches = std::move(result).unwrap();
-    (binders.extract(&config, &matches), ...);
+
+    // The fold short-circuits on the first binder whose value cannot be
+    // converted, and that binder fills in the error reported below.
+    ParseError error{ErrorCode::None, ""};
+    const bool converted = (binders.extract(&config, &matches, &error) && ...);
+    if (!converted) {
+      return ParseResult<Class>::make_err(std::vector<ParseError>{error});
+    }
+
     return ParseResult<Class>::make_ok(std::move(config));
   } else if (result.is_err()) {
     return ParseResult<Class>::make_err(std::move(result).unwrap_err());

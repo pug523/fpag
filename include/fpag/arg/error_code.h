@@ -19,6 +19,7 @@ enum class ErrorCode : u8 {
   MissingRequiredArgument,
   DuplicateOption,
   InvalidChoice,
+  InvalidValue,
 };
 
 constexpr const char* ec_to_format_str(ErrorCode error_code) {
@@ -38,6 +39,8 @@ constexpr const char* ec_to_format_str(ErrorCode error_code) {
       return "the argument '{}' was provided more than once";
     case ErrorCode::InvalidChoice:
       return "invalid choice for argument '{}': '{}'";
+    case ErrorCode::InvalidValue:
+      return "invalid value for argument '{}': '{}'";
     default: return "unknown error occurred";
   }
 }

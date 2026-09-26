@@ -6,10 +6,13 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/arg/command.h"
+#include "fpag/arg/error_code.h"
 #include "fpag/arg/matches.h"
+#include "fpag/arg/parse_error.h"
 #include "fpag/arg/parse_status.h"
 #include "fpag/arg/parser.h"
 #include "fpag/base/numeric.h"
@@ -484,21 +487,20 @@ TEST_CASE("Macro ARGS_OPT_FULL tests", "[arg][macro]") {
   }
 }
 
-TEST_CASE("Macro type conversion failure leaves default value intact or fails",
-          "[arg][macro]") {
+TEST_CASE("Macro type conversion failure is reported", "[arg][macro]") {
   SECTION("Invalid type conversion (e.g. string to integer) returns error") {
     // NOLINTNEXTLINE(misc-const-correctness)
     const char* argv[] = {"app", "--port", "invalid_number"};
     const i32 argc = static_cast<i32>(std::size(argv));
 
     auto res = parse_config(argc, argv);
-    // Even if parser matches raw string, extraction will fall back safely
-    CHECK(res.is_ok());
-    const i32 kDefaultPort = Config{}.port;
-    CHECK(std::move(res).unwrap().port == kDefaultPort);
-    // Matches::get<i32> will return base::make_err(GetError::InvalidArgument),
-    // but parse is correct so parse result is ok currently.
-    // If we add propagation of GetError to Parser, change this test case.
+    REQUIRE(res.is_err());
+
+    const std::vector<ParseError> errors = std::move(res).unwrap_err();
+    REQUIRE(errors.size() == 1);
+    CHECK(errors[0].code == ErrorCode::InvalidValue);
+    CHECK(errors[0].context == "port");
+    CHECK(errors[0].value == "invalid_number");
   }
 }
 
