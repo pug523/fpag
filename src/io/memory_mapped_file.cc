@@ -4,6 +4,8 @@
 
 #include "fpag/io/memory_mapped_file.h"
 
+#include <sys/types.h>
+
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_flag.h"
 #include "fpag/io/file_handle.h"
