@@ -65,4 +65,41 @@ TEST_CASE("TempDir supports moves", "[io][temp_dir]") {
   CHECK(read_file(dir.join("a.txt")) == "x");
 }
 
+TEST_CASE("TempDir removes a tree it did not record", "[io][temp_dir]") {
+  // `write_file` creates the directories a nested path needs without
+  // recording them, and a caller may write into the directory by other
+  // means. Removal has to reach both, or the root is left non-empty and
+  // the whole tree is leaked once per use.
+  TempDir dir("fpag_temp_dir_nested_test");
+  REQUIRE(dir.is_valid());
+  REQUIRE(dir.write_file("a/b/c/deep.txt", "deep"));
+
+  const std::string stranger = dir.join("stranger.o");
+  std::FILE* file = std::fopen(stranger.c_str(), "wb");
+  REQUIRE(file != nullptr);
+  CHECK(std::fwrite("o", 1, 1, file) == 1);
+  CHECK(std::fclose(file) == 0);
+
+  const std::string doomed = std::string(dir.path());
+  const std::string doomed_deep = dir.join("a/b/c/deep.txt");
+  dir.remove();
+
+  CHECK(!dir.is_valid());
+  CHECK(dir.path().empty());
+  // Removal is observable: neither the root nor anything under it opens.
+  CHECK(std::fopen(doomed.c_str(), "rb") == nullptr);
+  CHECK(std::fopen(doomed_deep.c_str(), "rb") == nullptr);
+  CHECK(std::fopen(stranger.c_str(), "rb") == nullptr);
+}
+
+TEST_CASE("TempDir removal is idempotent", "[io][temp_dir]") {
+  TempDir dir("fpag_temp_dir_twice_test");
+  REQUIRE(dir.is_valid());
+  dir.remove();
+  // A second removal, and the destructor that follows it, must be no-ops
+  // rather than errors on a path that is already gone.
+  dir.remove();
+  CHECK(!dir.is_valid());
+}
+
 }  // namespace io

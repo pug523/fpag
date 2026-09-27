@@ -95,16 +95,19 @@ void TempDir::remove() {
   if (path_.empty()) {
     return;
   }
-  for (usize i = files_.size(); i > 0; --i) {
-    std::remove(files_[i - 1].c_str());
-  }
-  files_.clear();
-  for (usize i = dirs_.size(); i > 0; --i) {
-    remove_dir(dirs_[i - 1]);
-  }
-  dirs_.clear();
+  // Recursive, because the records cannot cover the tree: `write_file`
+  // creates the directories a nested path needs without recording them,
+  // and a caller may write into the directory by other means. Walking the
+  // records and then removing the root leaves a non-empty directory, the
+  // rmdir fails, and the whole tree is leaked once per use.
+  //
+  // `remove_all` empties the directory but keeps it, so the root goes
+  // separately.
+  remove_all(path_);
   remove_dir(path_);
   path_.clear();
+  files_.clear();
+  dirs_.clear();
 }
 
 std::string TempDir::join(std::string_view child) const {
