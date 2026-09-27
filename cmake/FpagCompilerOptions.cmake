@@ -151,6 +151,27 @@ function(_fpag_add_probeable_options target)
   endif()
 endfunction()
 
+# The Emscripten runtime is a JavaScript program that owns the linear memory
+# and the process exit status, so the settings the code depends on belong on the
+# link step of every executable the project builds: growable memory because the
+# string pool reserves its capacity up front and mmap takes it from the heap, a
+# real filesystem because the tests read and write temp files, and main's return
+# value as the process exit status because that is how ctest sees a failure. A
+# static library has no link step, so the library target is skipped.
+function(_fpag_add_emscripten_options target)
+  if(NOT EMSCRIPTEN)
+    return()
+  endif()
+
+  get_target_property(target_type ${target} TYPE)
+  if(target_type STREQUAL "STATIC_LIBRARY")
+    return()
+  endif()
+
+  target_link_options(
+    ${target} PRIVATE -sALLOW_MEMORY_GROWTH=1 -sEXIT_RUNTIME=1 -sNODERAWFS=1)
+endfunction()
+
 function(_fpag_add_clang_tidy target)
   find_program(FPAG_CLANG_TIDY NAMES clang-tidy)
   if(NOT FPAG_CLANG_TIDY)
@@ -174,6 +195,7 @@ function(fpag_apply_options target)
   cmake_parse_arguments(ARG "COVERAGE" "" "" ${ARGN})
 
   _fpag_add_probeable_options(${target})
+  _fpag_add_emscripten_options(${target})
   if(ARG_COVERAGE)
     # Defined in FpagCoverage.cmake, which owns the profile file naming that has
     # to agree between the compiler flags and the report script.
