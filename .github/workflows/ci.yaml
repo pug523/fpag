@@ -54,6 +54,12 @@ jobs:
             stdlib: libc++
             sanitizers: "ON"
             libunwind: "ON"
+          - name: linux-x86_64-tsan
+            os: ubuntu-24.04
+            build_type: Debug
+            stdlib: libc++
+            thread_sanitizer: "ON"
+            libunwind: "ON"
           - name: linux-x86_64-release
             os: ubuntu-24.04
             build_type: Release
@@ -105,6 +111,13 @@ jobs:
         shell: bash
         run: sudo apt-get update && sudo apt-get install -y libunwind-dev
 
+      # The thread sanitizer maps a fixed shadow region, which collides with
+      # the kernel's full 32 bits of mmap randomization on the runner image.
+      - name: Reduce mmap randomization for the thread sanitizer
+        if: matrix.thread_sanitizer
+        shell: bash
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
       # FetchContent has to download fmt, xxhash and Catch2, which is the one
       # part of the build that is not reproducible from the checkout alone.
       - name: Restore dependency cache
@@ -123,6 +136,7 @@ jobs:
           -DFPAG_BUILD_TESTS=ON
           -DFPAG_CXX_STDLIB=${{ matrix.stdlib }}
           -DFPAG_ENABLE_SANITIZERS=${{ matrix.sanitizers || 'OFF' }}
+          -DFPAG_ENABLE_THREAD_SANITIZER=${{ matrix.thread_sanitizer || 'OFF' }}
           -DFPAG_ENABLE_COVERAGE=${{ matrix.coverage || 'OFF' }}
           -DFPAG_ENABLE_LIBUNWIND=${{ matrix.libunwind || 'OFF' }}
 
