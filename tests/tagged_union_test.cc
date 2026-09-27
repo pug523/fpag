@@ -4,6 +4,7 @@
 
 #include "fpag/base/tagged_union.h"
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -42,9 +43,17 @@ TEST_CASE("TaggedUnion memory layout and static checks",
                  base::round_up(sizeof(u16) + sizeof(u8), alignof(u16)));
   STATIC_REQUIRE(alignof(SmallUnion) == alignof(u16));
 
-  STATIC_REQUIRE(sizeof(MixedUnion) == sizeof(std::string_view) + sizeof(u8) +
-                                           alignof(std::string_view) - 1);
-  STATIC_REQUIRE(alignof(MixedUnion) == alignof(std::string_view));
+  // The storage is the largest alternative plus the tag, rounded to the
+  // largest alignment. Which alternative is largest depends on the data model,
+  // so the expected layout is derived from the alternatives rather than named.
+  static constexpr usize kMixedPayloadSize =
+      std::max({sizeof(i32), sizeof(std::string_view), sizeof(f64)});
+  static constexpr usize kMixedPayloadAlign =
+      std::max({alignof(i32), alignof(std::string_view), alignof(f64)});
+  STATIC_REQUIRE(alignof(MixedUnion) == kMixedPayloadAlign);
+  STATIC_REQUIRE(sizeof(MixedUnion) ==
+                 base::round_up(kMixedPayloadSize + sizeof(CustomTag),
+                                kMixedPayloadAlign));
 
   // Verify type traits propagation.
   STATIC_REQUIRE(std::is_nothrow_move_constructible_v<SmallUnion>);
