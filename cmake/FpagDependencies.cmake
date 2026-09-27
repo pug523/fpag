@@ -295,6 +295,14 @@ function(fpag_require_catch2)
   set(CATCH_DEVELOPMENT_BUILD
       OFF
       CACHE BOOL "" FORCE)
+  # Catch2 asks CMake only for C++14, and CMake then pins the flag to that
+  # standard whenever the compiler's default is lower. Emscripten's default is
+  # C++14, and at that standard Catch2 compiles its std::string_view
+  # instantiations out while fpag's C++20 tests instantiate them, so the link
+  # fails on an undefined StringMaker. C++17 has string_view; the variables are
+  # scoped to this function, so only the fetched dependency sees them.
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
   FetchContent_MakeAvailable(Catch2)
   fpag_propagate_toolchain(Catch2)
 
