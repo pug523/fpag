@@ -12,6 +12,7 @@
 #include <new>
 #include <utility>
 
+#include "fpag/base/attributes.h"
 #include "fpag/base/idx.h"
 #include "fpag/base/idx_range.h"
 #include "fpag/base/numeric.h"
@@ -266,7 +267,7 @@ class SooVec {
     other.capacity_ = N;
   }
 
-  [[no_unique_address]] Allocator alloc_{};
+  FPAG_EMPTY_MEMBER Allocator alloc_{};
   usize size_ = 0;
   usize capacity_ = N;
 

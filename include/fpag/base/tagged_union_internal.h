@@ -20,8 +20,7 @@ struct TypeIndex {
   template <usize... Is>
   static consteval usize find_index(std::index_sequence<Is...>) noexcept {
     usize result = sizeof...(Ts);
-    bool _ =
-        ((std::is_same_v<Target, Ts> ? (result = Is, true) : false) || ...);
+    ((std::is_same_v<Target, Ts> ? (result = Is) : usize{0}), ...);
     return result;
   }
 
