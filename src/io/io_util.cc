@@ -9,6 +9,7 @@
 #include <span>
 #include <string>
 
+#include "fpag/base/limits.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_flag.h"
 
@@ -232,7 +233,14 @@ isize file_size(const std::string& path) {
     return -1;
   }
 #endif
-  return st.st_size;
+  // A 32-bit isize cannot name a file at or above 2 GiB, and a negative size
+  // is not a file: report both the same way as an unreadable file instead of
+  // returning a wrapped size.
+  const i64 size = static_cast<i64>(st.st_size);
+  if (size < 0 || size > kIsizeMax) {
+    return -1;
+  }
+  return static_cast<isize>(size);
 }
 
 std::string read_file(const std::string& path) {
