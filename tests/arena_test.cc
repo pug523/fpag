@@ -118,6 +118,9 @@ TEST_CASE("Arena move semantics", "[mem][arena]") {
   }
 }
 
+// A 32-bit address space cannot hold the capacities this case asks for, and
+// its usize cannot even spell the byte counts.
+#if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
 TEST_CASE("Arena edge cases", "[mem][arena]") {
   Arena arena;
   arena.reserve(64ull * 1024 * 1024 * 1024);  // 64 GiB
@@ -127,6 +130,7 @@ TEST_CASE("Arena edge cases", "[mem][arena]") {
     CHECK(p);
   }
 }
+#endif
 
 #if !FPAG_BUILD_FLAG(IS_DEBUG)
 TEST_CASE("Arena reports exhaustion instead of constructing at null",

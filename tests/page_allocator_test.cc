@@ -6,6 +6,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
+#include "fpag/build/build_config.h"
 
 namespace mem {
 
@@ -62,6 +63,11 @@ TEST_CASE("Page allocation and lifecycle", "[base][memory]") {
 TEST_CASE("Aliased pages map the region twice", "[base][memory]") {
   const usize size = page_size();
 
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // The wasm runtime has no way to map one region twice; the function says so
+  // by returning null instead of a broken mapping.
+  CHECK(allocate_aliased_pages(size) == nullptr);
+#else
   u8* const base = static_cast<u8*>(allocate_aliased_pages(size));
   REQUIRE(base != nullptr);
 
@@ -79,6 +85,7 @@ TEST_CASE("Aliased pages map the region twice", "[base][memory]") {
   CHECK(base[3] == 0xEE);
 
   free_aliased_pages(base, size);
+#endif
 }
 
 }  // namespace mem
