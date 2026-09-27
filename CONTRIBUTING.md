@@ -205,7 +205,7 @@ the same configure, build and test as the commands above.
 - **Ownership.** fpag containers are single-owner, so copy is deleted and move
   is the default. If you find yourself wanting a copy, that is usually the
   signal that the data should be interned, pooled or referenced instead.
-- **Naming.** `PascalCase` for types, `kPascalCase` for constants,
+- **Naming.** `PascalCase` for types, `UPPER_SNAKE_CASE` for constants,
   `snake_case` for everything else. Include guards are `#pragma once`.
 - **Header layout.** One module per directory, and the directory name, the
   namespace and the header name agree. A public header includes what it uses;

@@ -46,7 +46,7 @@ Read these before changing anything. Do not guess at the design.
 
 - **Read before writing.** Match the surrounding code: its naming, its comment
   density, its idiom. This codebase is `snake_case` functions,
-  `PascalCase` types, `kPascalCase` constants, `FPAG_SNAKE_CASE` macros, and
+  `PascalCase` types, `UPPER_SNAKE_CASE` constants, `FPAG_SNAKE_CASE` macros, and
   the integer aliases from `fpag/base/numeric.h` rather than raw `int`/`size_t`.
 - **Match the build system, do not work around it.** New source files go into
   the explicit list in `cmake/FpagTargets.cmake`; a new build knob goes into

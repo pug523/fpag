@@ -126,7 +126,7 @@ the concept at its own definition rather than at the point of use.
 | `arg::ErrorFormatter` / `HelpFormatter` / `VersionFormatter` | Diagnostic rendering | each implementation |
 | `Codec<T>` | How an argument crosses the queue | each specialization |
 
-`LogLevel kMinLevel` is a non-type template parameter, so the threshold test
+`LogLevel MIN_LEVEL` is a non-type template parameter, so the threshold test
 is `consteval` and the guard is `if constexpr`. A `logger.trace(...)` in a
 build whose minimum level is `Info` does not compile down to a branch. It does
 not compile down to anything: the arguments are not evaluated.
@@ -173,7 +173,7 @@ The pipeline, end to end:
 producer thread                          │  consumer thread
 ─────────────────────────────────────────┼──────────────────────────────────
 AsyncLogger::info(fmt, args...)          │
-  if constexpr (level < kMinLevel) skip  │   ← gone at compile time
+  if constexpr (level < MIN_LEVEL) skip  │   ← gone at compile time
   Serializer::serialize_to               │
     SpscQueue::reserve / commit          │
       [size][DeserializeFunction][level] │
@@ -273,8 +273,8 @@ Everything else the build owes the code is in
 warnings as errors, and a public interface that is exactly
 `include/fpag/**` plus `fmt` and `xxhash`.
 
-Two platform details are worth stating here rather than only in the build
-files, because both were found the hard way:
+Five constraints are worth stating here rather than only in the build files,
+because each one is invisible until it breaks:
 
 - **`_CRT_SECURE_NO_WARNINGS` belongs to the build, not to a source file.** The
   MSVC CRT deprecates `_open` and `fopen`, and clang-cl and clang++ on Windows
@@ -284,28 +284,25 @@ files, because both were found the hard way:
 - **libunwind has to be linked by absolute path.** It ships in two pieces, and
   it shares its name with the libunwind inside an LLVM toolchain, which sits
   earlier in the link line. See `cmake/FpagDependencies.cmake`.
-
-A third detail is about the warning set, which has to be the intersection of two
-compilers because CI gates both. A flag one of them lacks is probed rather than
-assumed, since GCC treats an unknown `-W` as an error: `-Woverloaded-virtual`
-arrived in GCC 14. `-Wrestrict` is off for GCC, which reads an inlined
-`std::char_traits::copy` as a memcpy that overlaps by `SIZE_MAX` bytes. Both
-live in `cmake/FpagCompilerOptions.cmake`, which is where a compiler difference
-belongs.
-
-WebAssembly is a port with two holes, and both are runtime features that wasm
-does not have:
-
-- **Aliased pages.** `SpscQueue`, and therefore `AsyncLogger`, are built on a
-  ring buffer that maps the same physical pages twice so that a record which
-  straddles the end is one contiguous run. wasm linear memory cannot be mapped
-  twice, so `mem::allocate_aliased_pages` returns null there and neither type is
-  available on that target.
-- **Threads.** Emscripten pthreads need a JavaScript runtime that can execute
-  wasm workers; bun, which the wasm tests run under, hangs on the first one. The
-  wasm test binary is not linked with `-pthread`, so the cases that need a
-  `std::thread` carry the `[threads]` tag and are skipped there, as are the
-  `[aliased_pages]` ones. The native targets run all of them.
+- **The warning set is the intersection of two compilers**, because CI gates
+  both. A flag one of them lacks is probed rather than assumed, since GCC treats
+  an unknown `-W` as an error: `-Woverloaded-virtual` arrived in GCC 14.
+  `-Wrestrict` is off for GCC, which reads an inlined
+  `std::char_traits::copy` as a memcpy that overlaps by `SIZE_MAX` bytes. Both
+  live in `cmake/FpagCompilerOptions.cmake`.
+- **Constants are `UPPER_SNAKE_CASE`**, which makes the public interface a
+  collision site: `<wingdi.h>` defines `BLACK`, `RED`, `BLUE`, `GREEN`, `CYAN`,
+  `MAGENTA`, `YELLOW`, `WHITE` and `ERROR` as macros, so the colors in
+  `term/style.h` are `FG_RED` and `BG_RED`. A library cannot defend its headers
+  against a consumer's macros, so the names carry that.
+- **wasm has no aliased pages and no usable threads.** `SpscQueue` maps one
+  region's physical pages twice so that a record straddling the ring's end is
+  contiguous, which linear memory cannot do, so `mem::allocate_aliased_pages`
+  returns null and `AsyncLogger`, which is built on it, is unavailable there.
+  Emscripten pthreads also need a JavaScript runtime that can execute wasm
+  workers, and the one the tests run under cannot, so the cases that need either
+  carry the `[aliased_pages]` and `[threads]` tags that the wasm test list
+  skips.
 
 ## Known tensions
 
