@@ -259,6 +259,16 @@ otherwise lose the very message that explains the crash. `DebugLogger` is a
 synchronous, unbuffered `SyncLogger` for exactly this reason: an asynchronous
 logger is worthless in a process that is about to die.
 
+The signal handlers run on a stack of their own. `register_signal_handlers()`
+installs it with `sigaltstack` and asks for it with `SA_ONSTACK`, because a
+stack overflow arrives while the thread stack is the one being overflowed, and a
+handler that starts there has nothing left to run on. What a handler prints is
+**raw addresses and nothing else**: naming a frame needs the loader, the heap
+and a demangler, and every one of those takes a lock or allocates, which a
+handler that interrupted them cannot do. The report says which stack the handler
+got, because that is the difference between a report and no report, and a
+consumer reading one offline can still name every frame with addr2line.
+
 ## Ports and build contract
 
 `build/build_config.h` is a vendored copy of Chromium's, with attribution. It

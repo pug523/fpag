@@ -83,4 +83,14 @@ class StackTrace {
 // Simple helper that prints the current stack trace to the console.
 void print_stack_trace_from_here();
 
+// Writes the current stack as raw addresses, one per line, and resolves
+// nothing. Everything it does is allowed in a signal handler: the frames and
+// the text live in its own frame, the capture reads unwind tables that are
+// already mapped, and the output is a write. Naming a frame needs the loader,
+// the heap and a demangler, none of which a handler that interrupted them can
+// have, so what this leaves behind is the addresses, which are what a debugger
+// or addr2line takes. It also works when the thread stack is exhausted, which
+// is when a crash is most worth reporting.
+void print_raw_stack_from_here() noexcept;
+
 }  // namespace debug

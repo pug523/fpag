@@ -134,6 +134,7 @@ function(fpag_add_tests)
     tests/profile_section_test.cc
     tests/profiler_test.cc
     tests/result_test.cc
+    tests/signal_handler_test.cc
     tests/simple_concurrent_hash_map_test.cc
     tests/sinks_test.cc
     tests/soo_vec_test.cc

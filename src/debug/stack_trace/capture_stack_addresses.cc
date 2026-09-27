@@ -4,6 +4,8 @@
 
 #include "fpag/debug/stack_trace/capture_stack_addresses.h"
 
+#include <cstdint>
+
 #include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
@@ -12,10 +14,15 @@
 #include <libunwind.h>  // IWYU pragma: keep
 #elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
 // Emscripten provides no execinfo.h; stack capture is stubbed out below.
-#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
+#else
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+// libgcc's unwinder, which the signal safe capture needs as much as Android
+// does.
+#include <unwind.h>
+#endif
+#if FPAG_BUILD_FLAG(IS_OS_ANDROID)
 // Android is POSIX as far as build_config.h is concerned, and bionic has no
 // execinfo.h, so the Android branch has to come first or it never runs.
-#include <unwind.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <execinfo.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -27,10 +34,62 @@
 #else
 #error "Unsupported platform for stack trace capture"
 #endif
+#endif
 
 namespace debug {
 
 namespace {
+
+// libgcc's unwinder reads unwind tables that are already in memory: no
+// allocation and no lock, which is what a signal handler needs. Linux uses
+// it only for that, and Android for everything, because bionic has no
+// execinfo.h.
+#if (FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)) && \
+    !FPAG_BUILD_FLAG(USE_LIBUNWIND)
+
+namespace {
+
+struct UnwindState {
+  void** frames;
+  usize max_depth;
+  usize count;
+  usize skip;
+};
+
+FPAG_NOINLINE _Unwind_Reason_Code
+unwind_callback_libgcc(struct _Unwind_Context* ctx, void* arg) {
+  UnwindState* state = static_cast<UnwindState*>(arg);
+
+  uintptr_t ip = _Unwind_GetIP(ctx);
+  if (ip == 0) {
+    return _URC_END_OF_STACK;
+  }
+  if (state->skip > 0) {
+    --state->skip;
+    return _URC_NO_REASON;
+  }
+
+  if (state->count >= state->max_depth) {
+    return _URC_END_OF_STACK;
+  }
+
+  state->frames[state->count++] = reinterpret_cast<void*>(ip);
+  return _URC_NO_REASON;
+}
+
+}  // namespace
+
+// libgcc's unwinder, which reads unwind tables that are already in memory: no
+// allocation and no lock, which is what a signal handler needs.
+FPAG_NOINLINE usize capture_stack_addresses_libgcc(void** out_frames,
+                                                   usize max_depth,
+                                                   usize skip) {
+  UnwindState state{out_frames, max_depth, 0, skip};
+  _Unwind_Backtrace(unwind_callback_libgcc, &state);
+  return state.count;
+}
+
+#endif
 
 #if FPAG_BUILD_FLAG(USE_LIBUNWIND)
 
@@ -119,48 +178,6 @@ FPAG_NOINLINE usize capture_stack_addresses_win(void** out_frames,
   return static_cast<usize>(captured);
 }
 
-#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
-
-namespace {
-
-struct UnwindState {
-  void** frames;
-  usize max_depth;
-  usize count;
-  usize skip;
-};
-
-FPAG_NOINLINE _Unwind_Reason_Code
-unwind_callback_android(struct _Unwind_Context* ctx, void* arg) {
-  UnwindState* state = static_cast<UnwindState*>(arg);
-
-  uintptr_t ip = _Unwind_GetIP(ctx);
-  if (ip == 0) {
-    return _URC_END_OF_STACK;
-  }
-  if (state->skip > 0) {
-    --state->skip;
-    return _URC_NO_REASON;
-  }
-
-  if (state->count >= state->max_depth) {
-    return _URC_END_OF_STACK;
-  }
-
-  state->frames[state->count++] = reinterpret_cast<void*>(ip);
-  return _URC_NO_REASON;
-}
-
-}  // namespace
-
-FPAG_NOINLINE usize capture_stack_addresses_android(void** out_frames,
-                                                    usize max_depth,
-                                                    usize skip) {
-  UnwindState state{out_frames, max_depth, 0, skip};
-  _Unwind_Backtrace(unwind_callback_android, &state);
-  return state.count;
-}
-
 #endif
 
 }  // namespace
@@ -175,11 +192,37 @@ FPAG_NOINLINE usize capture_stack_addresses(void** out_frames,
 #elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
   // Ahead of POSIX for the same reason as the include: Android is POSIX, and
   // this is the branch that can compile there.
-  return capture_stack_addresses_android(out_frames, max_depth, skip);
+  return capture_stack_addresses_libgcc(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   return capture_stack_addresses_posix(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   return capture_stack_addresses_win(out_frames, max_depth, skip);
+#endif
+}
+
+FPAG_NOINLINE usize capture_stack_addresses_signal_safe(void** out_frames,
+                                                        usize max_depth,
+                                                        usize skip) {
+#if FPAG_BUILD_FLAG(USE_LIBUNWIND)
+  // A local cursor walks the frames in place: nothing is resolved and nothing
+  // is allocated.
+  return capture_stack_addresses_libunwind(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  return capture_stack_addresses_asmjs(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+  return capture_stack_addresses_libgcc(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
+  // Reads the calling thread's stack and allocates nothing.
+  return capture_stack_addresses_win(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+  // macOS: backtrace() is in libsystem and resolves nothing on first use, so
+  // there is no lazy dependency to keep away from the handler here.
+  return capture_stack_addresses_posix(out_frames, max_depth, skip);
+#else
+  (void)out_frames;
+  (void)max_depth;
+  (void)skip;
+  return 0;
 #endif
 }
 

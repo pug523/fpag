@@ -4,6 +4,8 @@
 
 #include "fpag/debug/stack_trace/stack_trace.h"
 
+#include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -128,6 +130,70 @@ void print_stack_trace_from_here() {
   trace.init(stack_trace_buf.data(), StackTrace::MAX_TRACE_DEPTH, 4);
   trace.collect_trace();
   trace.print_trace();
+}
+
+namespace {
+
+// A signal handler has no heap, so the trace and its text live in the handler's
+// own frame. Sixty four frames is what a trace is worth once the process is
+// already on its way out, and the whole of it plus the text below has to fit in
+// the signal stack.
+constexpr usize RAW_FRAME_COUNT = 64;
+// Room for a header and every address in hex, more than twice over, so the
+// loop below never has to truncate a trace it could have written whole.
+constexpr usize RAW_BUFFER_BYTES = 4096;
+constexpr char HEX_DIGITS[] = "0123456789abcdef";
+
+usize append_text(char* buffer, usize used, std::string_view text) noexcept {
+  const usize room = RAW_BUFFER_BYTES - used;
+  const usize take = text.size() < room ? text.size() : room;
+  std::memcpy(buffer + used, text.data(), take);
+  return used + take;
+}
+
+// Hex, because an address is not a number to read and the digits are what a
+// debugger and addr2line both take.
+usize append_hex(char* buffer, usize used, uintptr_t value) noexcept {
+  char digits[sizeof(uintptr_t) * 2];
+  usize count = 0;
+  do {
+    digits[count++] = HEX_DIGITS[static_cast<usize>(value & 0xF)];
+    value >>= 4;
+  } while (value != 0);
+
+  used = append_text(buffer, used, "0x");
+  while (count > 0) {
+    const char digit[1] = {digits[--count]};
+    used = append_text(buffer, used, std::string_view(digit, 1));
+  }
+  return used;
+}
+
+}  // namespace
+
+void print_raw_stack_from_here() noexcept {
+  // Two skipped frames: this function and the handler that called it.
+  void* frames[RAW_FRAME_COUNT];
+  const usize count =
+      capture_stack_addresses_signal_safe(frames, RAW_FRAME_COUNT, 2);
+
+  char buffer[RAW_BUFFER_BYTES];
+  usize used = append_text(buffer, 0, "stack (raw, unresolved):\n");
+  for (usize i = 0; i < count; ++i) {
+    used = append_text(buffer, used, "  #");
+    used = append_hex(buffer, used, i);
+    used = append_text(buffer, used, "  ");
+    used = append_hex(buffer, used, reinterpret_cast<uintptr_t>(frames[i]));
+    used = append_text(buffer, used, "\n");
+
+    // One write per trace where it fits, which it does; the flush is what keeps
+    // a deeper one from being silently cut at the end of the buffer.
+    if (used + (2 * sizeof(uintptr_t) * 2 + 8) > RAW_BUFFER_BYTES) {
+      io::write(io::STDERR_FD, buffer, used);
+      used = 0;
+    }
+  }
+  io::write(io::STDERR_FD, buffer, used);
 }
 
 }  // namespace debug
