@@ -32,6 +32,16 @@ function(fpag_probe_flag flag out_var)
 endfunction()
 
 function(_fpag_add_probeable_options target)
+  # From CMake 4.4 on, a target whose standard has modules is scanned for module
+  # dependencies by default, which puts a response file on every compile line and
+  # adds a scan step per file set. fpag declares no modules, and the response
+  # file lands in the compile database, where a standalone clang-tidy run on a
+  # tree that has not been built yet cannot find it. Every target goes through
+  # this function, so the property is set for the tests and benchmarks too.
+  if(NOT CMAKE_VERSION VERSION_LESS 4.4)
+    set_property(TARGET ${target} PROPERTY CXX_SCAN_FOR_MODULES OFF)
+  endif()
+
   # fpag is built without exceptions and without RTTI everywhere, the tests and
   # the benchmarks included, because they are held to the same contract.
   foreach(flag -fno-exceptions -fno-rtti -fstack-protector-strong)
