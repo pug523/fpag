@@ -4,7 +4,6 @@
 
 #include "fpag/arg/command.h"
 
-#include <cstddef>
 #include <string_view>
 
 #include "fmt/core.h"

@@ -21,7 +21,6 @@
 
 #include <chrono>
 #include <csignal>
-#include <cstdlib>
 #include <ctime>
 
 #include "fmt/chrono.h"   // IWYU pragma: keep

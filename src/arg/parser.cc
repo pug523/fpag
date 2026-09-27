@@ -4,7 +4,6 @@
 
 #include "fpag/arg/parser.h"
 
-#include <cstddef>
 #include <ranges>
 #include <span>
 #include <string>

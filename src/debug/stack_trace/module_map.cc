@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"

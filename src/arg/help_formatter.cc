@@ -5,7 +5,6 @@
 #include "fpag/arg/help_formatter.h"
 
 #include <algorithm>
-#include <cstddef>
 #include <iterator>
 #include <string>
 #include <string_view>

@@ -4,7 +4,6 @@
 
 #include "fpag/arg/version_formatter.h"
 
-#include <cstddef>
 #include <string>
 #include <string_view>
 

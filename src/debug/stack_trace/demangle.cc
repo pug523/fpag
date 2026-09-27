@@ -5,7 +5,6 @@
 #include "fpag/debug/stack_trace/demangle.h"
 
 #include <cstdlib>
-#include <cstring>
 #include <string>
 #include <string_view>
 

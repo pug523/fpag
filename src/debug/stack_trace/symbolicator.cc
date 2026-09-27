@@ -5,7 +5,6 @@
 #include "fpag/debug/stack_trace/symbolicator.h"
 
 #include <cstdint>
-#include <cstring>
 #include <utility>
 
 #include "fmt/base.h"

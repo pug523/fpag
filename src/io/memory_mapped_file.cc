@@ -12,7 +12,6 @@
 #include <windows.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <sys/mman.h>
-#include <sys/types.h>
 #endif
 
 namespace io {

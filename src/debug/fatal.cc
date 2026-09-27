@@ -4,7 +4,6 @@
 
 #include "fpag/debug/fatal.h"
 
-#include <cstdlib>
 #include <string_view>
 
 #include "fmt/compile.h"
