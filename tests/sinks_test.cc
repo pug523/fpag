@@ -134,7 +134,7 @@ TEST_CASE("CompositeSink fans out to every sink",
 // constructible. CompositeSink is the case that proves it: it only has a
 // constructor taking the sinks it aggregates.
 TEST_CASE("Loggers accept a non-default-constructible sink",
-          "[logging][sink][composite_sink]") {
+          "[logging][sink][composite_sink][aliased_pages]") {
   using Composite = CompositeSink<NullSink, NullSink>;
   static_assert(!std::is_default_constructible_v<Composite>);
 

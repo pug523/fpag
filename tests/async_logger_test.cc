@@ -46,7 +46,7 @@ static_assert(Sink<CapturingSink>);
 
 }  // namespace
 
-TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
+TEST_CASE("AsyncLogger works correctly", "[logging][async][aliased_pages]") {
   // AsyncLogger<StdoutSink, LogLevel::All> logger;
   // logger.init(StdoutSink(
   //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
@@ -150,7 +150,7 @@ TEST_CASE("AsyncLogger works correctly", "[logging][async]") {
 }
 
 TEST_CASE("AsyncLogger frames mixed fixed and dynamic arguments",
-          "[logging][async]") {
+          "[logging][async][aliased_pages]") {
   std::vector<std::string> messages;
   AsyncLogger<CapturingSink, LogLevel::Trace> logger;
   logger.init(CapturingSink{&messages});
@@ -177,7 +177,7 @@ TEST_CASE("AsyncLogger frames mixed fixed and dynamic arguments",
 }
 
 TEST_CASE("AsyncLogger carries an argument larger than 4 KiB",
-          "[logging][async]") {
+          "[logging][async][aliased_pages]") {
   std::vector<std::string> messages;
   AsyncLogger<CapturingSink, LogLevel::Trace> logger;
   logger.init(CapturingSink{&messages}, /*interner_map_capacity=*/16 * 1024,

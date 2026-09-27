@@ -115,7 +115,8 @@ TEST_CASE("ConcurrentArena move semantics", "[mem][arena]") {
   }
 }
 
-TEST_CASE("ConcurrentArena is usable from several threads", "[mem][arena]") {
+TEST_CASE("ConcurrentArena is usable from several threads",
+          "[mem][arena][threads]") {
   // Every thread writes its own pattern into the block it just received. A
   // block that is advertised as committed but was not actually made writable
   // yet is written to here, and the write faults.

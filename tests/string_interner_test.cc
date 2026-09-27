@@ -70,7 +70,7 @@ TEST_CASE("StringInterner reads every string back after the pool grows",
 }
 
 TEST_CASE("StringInterner gives several threads one id for the same string",
-          "[str][interner]") {
+          "[str][interner][threads]") {
   constexpr usize kWorkerCount = 4;
   constexpr usize kStringCount = 256;
 

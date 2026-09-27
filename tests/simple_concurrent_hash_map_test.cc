@@ -10,7 +10,9 @@
 
 #include "catch2/catch_message.hpp"
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace container {
 
@@ -57,7 +59,7 @@ struct BigValue {
 }  // namespace
 
 TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
-          "[base][container][hashmap]") {
+          "[base][container][hashmap][threads]") {
   constexpr u32 kThreads = 8;
   constexpr u32 kKeys = 8;
   constexpr u32 kRounds = 32;
@@ -104,7 +106,7 @@ TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
 }
 
 TEST_CASE("SimpleConcurrentHashMap try_insert has one winner per key",
-          "[base][container][hashmap]") {
+          "[base][container][hashmap][threads]") {
   constexpr u32 kThreads = 8;
   constexpr u32 kKeys = 32;
   constexpr u32 kRounds = 64;
@@ -163,7 +165,9 @@ TEST_CASE("SimpleConcurrentHashMap reset releases the entries",
   CHECK(map.size() == 1);
 
   map.reserve(8192);
-  CHECK(map.capacity() == 8192);
+  // reserve() rounds the entry count up to a page, and a page is larger than
+  // 8 KiB on some targets.
+  CHECK(map.capacity() == base::round_up(u64{8192}, mem::page_size()));
   CHECK(map.size() == 0);
   CHECK(map.find(7) == nullptr);
 
@@ -174,7 +178,7 @@ TEST_CASE("SimpleConcurrentHashMap reset releases the entries",
 }
 
 TEST_CASE("SimpleConcurrentHashMap thread-safety stress test",
-          "[base][container][stress]") {
+          "[base][container][stress][threads]") {
   const u64 capacity = 1 << 16;
   SimpleConcurrentHashMap<u64, u64> map(capacity);
 

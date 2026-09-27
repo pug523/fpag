@@ -16,7 +16,8 @@ namespace container {
 
 namespace {
 
-TEST_CASE("SpscQueue Constructor and Capacity", "[SpscQueueTest]") {
+TEST_CASE("SpscQueue Constructor and Capacity",
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue_small;
   queue_small.init();
   CHECK(queue_small.capacity() == SpscQueue::default_capacity());
@@ -32,7 +33,8 @@ TEST_CASE("SpscQueue Constructor and Capacity", "[SpscQueueTest]") {
   CHECK(queue_large.available() == SpscQueue::default_capacity() * 1024);
 }
 
-TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
+TEST_CASE("SpscQueue Enqueue Dequeue Single Element",
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
   queue.init();
 
@@ -118,7 +120,7 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element", "[SpscQueueTest]") {
 }
 
 TEST_CASE("SpscQueue hands a record from one thread to another",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][threads][aliased_pages]") {
   // The consumer has to observe the record's payload, not only the counter:
   // size_consumer() pairs with the producer's release store, and that pairing
   // is what orders the consumer's reads after the producer's writes. With a
@@ -166,7 +168,7 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
 }
 
 TEST_CASE("SpscQueue wraps a record across the end of the ring",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
   queue.init(4096);
 
@@ -198,7 +200,7 @@ TEST_CASE("SpscQueue wraps a record across the end of the ring",
 }
 
 TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
   queue.init(4096);
 
@@ -227,7 +229,7 @@ TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
 }
 
 TEST_CASE("SpscQueue dequeue accounts for alignment padding",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
   queue.init(4096);
 
@@ -249,7 +251,7 @@ TEST_CASE("SpscQueue dequeue accounts for alignment padding",
 }
 
 TEST_CASE("SpscQueue aligns records to the requested boundary",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
   queue.init();
 
@@ -271,7 +273,7 @@ TEST_CASE("SpscQueue aligns records to the requested boundary",
 }
 
 TEST_CASE("SpscQueue move assignment takes over the source's state",
-          "[SpscQueueTest]") {
+          "[SpscQueueTest][aliased_pages]") {
   // The destination's own ring is released rather than overwritten. That leak
   // is not visible from here, so what this case pins down is the state
   // transfer: the records and the counters both belong to the moved queue.

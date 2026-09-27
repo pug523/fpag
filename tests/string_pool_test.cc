@@ -67,7 +67,7 @@ TEST_CASE("StringPool hands back an id to the string it appended",
 }
 
 TEST_CASE("StringPool appends from several threads without crossing ids",
-          "[str][string_pool]") {
+          "[str][string_pool][threads]") {
   constexpr usize kWorkerCount = 4;
   constexpr usize kStringsPerWorker = 512;
 
