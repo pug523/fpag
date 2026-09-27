@@ -86,18 +86,24 @@ class SimpleConcurrentHashMap {
                    "SimpleConcurrentHashMap: capacity is out of range");
 
     const u64 entries_capacity = base::round_up(capacity, mem::page_size());
+    const u64 entries_size = sizeof(Entry) * entries_capacity;
+    // Rounding the count up to a page can push the byte size past what usize
+    // holds even when the count itself passed the check above.
+    FPAG_CHECK_MSG(entries_size <= kUsizeMax,
+                   "SimpleConcurrentHashMap: capacity is out of range");
     capacity_.store(entries_capacity, std::memory_order_relaxed);
-    void* const raw_mem = mem::allocate_pages(sizeof(Entry) * entries_capacity);
+    void* const raw_mem = mem::allocate_pages(static_cast<usize>(entries_size));
     FPAG_CHECK_MSG(raw_mem,
                    "SimpleConcurrentHashMap: failed to allocate the entries");
-    std::memset(raw_mem, 0, sizeof(Entry) * entries_capacity);
+    std::memset(raw_mem, 0, static_cast<usize>(entries_size));
     entries_ = static_cast<Entry*>(raw_mem);
   }
 
   void reset() {
     if (entries_) {
-      mem::free_pages(
-          entries_, sizeof(Entry) * capacity_.load(std::memory_order_relaxed));
+      mem::free_pages(entries_, static_cast<usize>(
+                                    sizeof(Entry) *
+                                    capacity_.load(std::memory_order_relaxed)));
       entries_ = nullptr;
     }
     capacity_.store(0, std::memory_order_relaxed);
@@ -237,8 +243,8 @@ class SimpleConcurrentHashMap {
   static constexpr u64 kEmptyHash = 0;
   static constexpr u64 kLockedHash = kU64Max;
   // The entries go to mem::allocate_pages() as one byte size, so the count has
-  // to keep `sizeof(Entry) * capacity` representable.
-  static constexpr u64 kMaxCapacity = kU64Max / sizeof(Entry);
+  // to keep `sizeof(Entry) * capacity` representable in usize.
+  static constexpr u64 kMaxCapacity = kUsizeMax / sizeof(Entry);
 
   // A slot is empty, locked by one writer, or published. Waits out a writer and
   // returns the state the slot settled on, so a caller that loses the race for
