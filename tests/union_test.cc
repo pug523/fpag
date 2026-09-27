@@ -65,12 +65,12 @@ TEST_CASE("Union set and get roundtrip", "[base][union]") {
 }
 
 TEST_CASE("Union constexpr set and get", "[base][union]") {
-  constexpr auto make = [] {
+  constexpr auto MAKE = [] {
     Union<Idx<int, u32>, Idx<float, u32>> u;
     u.set(Idx<int, u32>(3));
     return u.get<Idx<int, u32>>().idx;
   };
-  STATIC_REQUIRE(make() == 3);
+  STATIC_REQUIRE(MAKE() == 3);
 }
 
 }  // namespace base

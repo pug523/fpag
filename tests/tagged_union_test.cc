@@ -46,14 +46,14 @@ TEST_CASE("TaggedUnion memory layout and static checks",
   // The storage is the largest alternative plus the tag, rounded to the
   // largest alignment. Which alternative is largest depends on the data model,
   // so the expected layout is derived from the alternatives rather than named.
-  static constexpr usize kMixedPayloadSize =
+  static constexpr usize MIXED_PAYLOAD_SIZE =
       std::max({sizeof(i32), sizeof(std::string_view), sizeof(f64)});
-  static constexpr usize kMixedPayloadAlign =
+  static constexpr usize MIXED_PAYLOAD_ALIGN =
       std::max({alignof(i32), alignof(std::string_view), alignof(f64)});
-  STATIC_REQUIRE(alignof(MixedUnion) == kMixedPayloadAlign);
+  STATIC_REQUIRE(alignof(MixedUnion) == MIXED_PAYLOAD_ALIGN);
   STATIC_REQUIRE(sizeof(MixedUnion) ==
-                 base::round_up(kMixedPayloadSize + sizeof(CustomTag),
-                                kMixedPayloadAlign));
+                 base::round_up(MIXED_PAYLOAD_SIZE + sizeof(CustomTag),
+                                MIXED_PAYLOAD_ALIGN));
 
   // Verify type traits propagation.
   STATIC_REQUIRE(std::is_nothrow_move_constructible_v<SmallUnion>);

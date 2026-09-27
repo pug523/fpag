@@ -51,7 +51,7 @@ StringPool& StringPool::operator=(StringPool&& other) noexcept {
 StringPoolId StringPool::append(const std::string_view str,
                                 std::string_view* out) {
   if (str.empty()) {
-    return kEmptyStringId;
+    return EMPTY_STRING_ID;
   }
 
   void* const ptr = arena_.alloc(str.size(), 1);

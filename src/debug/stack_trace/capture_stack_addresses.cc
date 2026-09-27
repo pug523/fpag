@@ -85,10 +85,10 @@ FPAG_NOINLINE usize capture_stack_addresses_asmjs(void** out_frames,
 FPAG_NOINLINE usize capture_stack_addresses_posix(void** out_frames,
                                                   usize max_depth,
                                                   usize skip) {
-  constexpr usize kMaxTmp = 512;
-  void* tmp_buf[kMaxTmp];
+  constexpr usize MAX_TMP = 512;
+  void* tmp_buf[MAX_TMP];
   const usize fetch_count =
-      (max_depth + skip) < kMaxTmp ? max_depth + skip : kMaxTmp;
+      (max_depth + skip) < MAX_TMP ? max_depth + skip : MAX_TMP;
 
   const i32 captured = ::backtrace(tmp_buf, static_cast<i32>(fetch_count));
   if (captured <= static_cast<i32>(skip)) {

@@ -68,8 +68,8 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
 #if FPAG_BUILD_FLAG(IS_OS_LINUX)
   // TODO: Remove this section when we implement DWARF parser.
   if (dl.dli_fname && dl.dli_fname[0]) {
-    constexpr usize kBufSize = 512;
-    char command[kBufSize];
+    constexpr usize BUF_SIZE = 512;
+    char command[BUF_SIZE];
 
     uintptr_t offset = reinterpret_cast<uintptr_t>(address);
     if (dl.dli_fname[0] == '/') {
@@ -86,7 +86,7 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
                                                           deleter);
 
       if (pipe) {
-        char buffer[kBufSize];
+        char buffer[BUF_SIZE];
 
         if (fgets(buffer, sizeof(buffer), pipe.get())) {
           std::string output(buffer);

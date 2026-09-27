@@ -27,8 +27,8 @@ TEST_CASE("ColorMode survives a round trip through its name", "[term]") {
 }
 
 TEST_CASE("A style code disappears when color is off", "[term]") {
-  CHECK(std::string_view(style_code(kRed, ColorStyle::Off)).empty());
-  CHECK(std::string_view(style_code(kRed, ColorStyle::Ansi16)) == kRed);
+  CHECK(std::string_view(style_code(FG_RED, ColorStyle::Off)).empty());
+  CHECK(std::string_view(style_code(FG_RED, ColorStyle::Ansi16)) == FG_RED);
 }
 
 }  // namespace term

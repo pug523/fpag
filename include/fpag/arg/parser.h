@@ -108,10 +108,10 @@ class Parser {
     return std::move(f)(root_cmd_.name(), root_cmd_.version(), color_style);
   }
 
-  static constexpr const char* kBuiltinHelpArgLong = "help";
-  static constexpr const char kBuiltinHelpArgShort = 'h';
-  static constexpr const char* kBuiltinVersionArgLong = "version";
-  static constexpr const char kBuiltinVersionArgShort = 'v';
+  static constexpr const char* BUILTIN_HELP_ARG_LONG = "help";
+  static constexpr const char BUILTIN_HELP_ARG_SHORT = 'h';
+  static constexpr const char* BUILTIN_VERSION_ARG_LONG = "version";
+  static constexpr const char BUILTIN_VERSION_ARG_SHORT = 'v';
 
  private:
   struct ArgSequence {

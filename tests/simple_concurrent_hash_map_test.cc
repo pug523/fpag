@@ -60,9 +60,9 @@ struct BigValue {
 
 TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
           "[base][container][hashmap][threads]") {
-  constexpr u32 kThreads = 8;
-  constexpr u32 kKeys = 8;
-  constexpr u32 kRounds = 32;
+  constexpr u32 THREADS = 8;
+  constexpr u32 KEYS = 8;
+  constexpr u32 ROUNDS = 32;
 
   SimpleConcurrentHashMap<u64, BigValue> map(1024);
 
@@ -72,15 +72,15 @@ TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
   // key that is already in the map. An update that does not own the slot races
   // with the other writers, and the 4 KiB copy tears.
   std::vector<std::thread> threads;
-  threads.reserve(kThreads);
-  for (u32 t = 0; t < kThreads; ++t) {
+  threads.reserve(THREADS);
+  for (u32 t = 0; t < THREADS; ++t) {
     threads.emplace_back([&map, t] {
       BigValue value{};
       for (u8& byte : value.bytes) {
         byte = static_cast<u8>(t);
       }
-      for (u32 round = 0; round < kRounds; ++round) {
-        for (u32 k = 0; k < kKeys; ++k) {
+      for (u32 round = 0; round < ROUNDS; ++round) {
+        for (u32 k = 0; k < KEYS; ++k) {
           map.insert(k, value);
         }
       }
@@ -91,11 +91,11 @@ TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
     t.join();
   }
 
-  CHECK(map.size() == kKeys);
-  for (u32 k = 0; k < kKeys; ++k) {
+  CHECK(map.size() == KEYS);
+  for (u32 k = 0; k < KEYS; ++k) {
     const BigValue* v = map.find(k);
     REQUIRE(v != nullptr);
-    CHECK(v->bytes[0] < kThreads);
+    CHECK(v->bytes[0] < THREADS);
     for (usize i = 1; i < sizeof(v->bytes); ++i) {
       if (v->bytes[i] != v->bytes[0]) {
         CHECK(v->bytes[i] == v->bytes[0]);
@@ -107,23 +107,23 @@ TEST_CASE("SimpleConcurrentHashMap keeps one entry per key under contention",
 
 TEST_CASE("SimpleConcurrentHashMap try_insert has one winner per key",
           "[base][container][hashmap][threads]") {
-  constexpr u32 kThreads = 8;
-  constexpr u32 kKeys = 32;
-  constexpr u32 kRounds = 64;
+  constexpr u32 THREADS = 8;
+  constexpr u32 KEYS = 32;
+  constexpr u32 ROUNDS = 64;
 
   SimpleConcurrentHashMap<u64, u64> map(1024);
 
-  std::vector<std::atomic<u32>> insertions(kKeys);
+  std::vector<std::atomic<u32>> insertions(KEYS);
   for (std::atomic<u32>& count : insertions) {
     count.store(0, std::memory_order_relaxed);
   }
 
   std::vector<std::thread> threads;
-  threads.reserve(kThreads);
-  for (u32 t = 0; t < kThreads; ++t) {
+  threads.reserve(THREADS);
+  for (u32 t = 0; t < THREADS; ++t) {
     threads.emplace_back([&map, &insertions, t] {
-      for (u32 round = 0; round < kRounds; ++round) {
-        for (u32 k = 0; k < kKeys; ++k) {
+      for (u32 round = 0; round < ROUNDS; ++round) {
+        for (u32 k = 0; k < KEYS; ++k) {
           bool inserted = false;
           map.try_insert(k, t, &inserted);
           if (inserted) {
@@ -138,8 +138,8 @@ TEST_CASE("SimpleConcurrentHashMap try_insert has one winner per key",
     t.join();
   }
 
-  CHECK(map.size() == kKeys);
-  for (u32 k = 0; k < kKeys; ++k) {
+  CHECK(map.size() == KEYS);
+  for (u32 k = 0; k < KEYS; ++k) {
     CHECK(insertions[k].load(std::memory_order_relaxed) == 1);
   }
 }

@@ -139,7 +139,7 @@ TEST_CASE("Loggers accept a non-default-constructible sink",
   static_assert(!std::is_default_constructible_v<Composite>);
 
   SECTION("sync logger") {
-    SyncLogger<Composite, kDefaultLogLevel> logger;
+    SyncLogger<Composite, DEFAULT_LOG_LEVEL> logger;
     logger.init(Composite{NullSink{}, NullSink{}});
     logger.info("composite {}", 168);
     logger.flush();

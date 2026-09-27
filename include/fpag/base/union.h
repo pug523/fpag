@@ -57,13 +57,13 @@ class Union {
   }
 
  private:
-  static constexpr usize kMaxAlign = std::max({alignof(Ts)...});
-  static constexpr usize kMaxSize = std::max({sizeof(Ts)...});
+  static constexpr usize MAX_ALIGN = std::max({alignof(Ts)...});
+  static constexpr usize MAX_SIZE = std::max({sizeof(Ts)...});
 
   template <typename T>
   using Bytes = std::array<std::byte, sizeof(T)>;
 
-  alignas(kMaxAlign) std::byte storage_[kMaxSize];
+  alignas(MAX_ALIGN) std::byte storage_[MAX_SIZE];
 };
 
 }  // namespace base

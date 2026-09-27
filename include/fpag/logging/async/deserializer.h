@@ -29,24 +29,25 @@ using DeserializeFunction = void (*)(const char* payload_head_ptr,
                                      const str::StringInterner* interner);
 
 // For function pointer alignment
-static constexpr usize kPayloadAlign = 8;
-static constexpr usize kPayloadMinHeaderSize =
+static constexpr usize PAYLOAD_ALIGN = 8;
+static constexpr usize PAYLOAD_MIN_HEADER_SIZE =
     sizeof(usize) + sizeof(DeserializeFunction) +
-    base::round_up(sizeof(LogLevel), kPayloadAlign);
+    base::round_up(sizeof(LogLevel), PAYLOAD_ALIGN);
 
-template <typename Format, bool kUseInterner, typename... Args>
+template <typename Format, bool USE_INTERNER, typename... Args>
 class Deserializer {
  public:
   using DecodedArgs =
       std::tuple<typename Codec<std::decay_t<Args>>::DecodedType...>;
 
-  static constexpr bool kIsCompiledFmt = fmt::is_compiled_string<Format>::value;
+  static constexpr bool IS_COMPILED_FMT =
+      fmt::is_compiled_string<Format>::value;
   // Slot holding either the interned format-string id or the view itself.
-  static constexpr usize kFmtSlotSize =
-      kUseInterner ? sizeof(str::StringInterner::StringId)
+  static constexpr usize FMT_SLOT_SIZE =
+      USE_INTERNER ? sizeof(str::StringInterner::StringId)
                    : sizeof(std::string_view);
-  static constexpr usize kPayloadHeaderSize =
-      kPayloadMinHeaderSize + (kIsCompiledFmt ? 0 : kFmtSlotSize);
+  static constexpr usize PAYLOAD_HEADER_SIZE =
+      PAYLOAD_MIN_HEADER_SIZE + (IS_COMPILED_FMT ? 0 : FMT_SLOT_SIZE);
 
   inline static DecodedArgs decode_args(const char* data, usize size) {
     const char* data_cursor = data;
@@ -63,11 +64,11 @@ class Deserializer {
 
         if constexpr (C::is_fixed_size()) {
           // Has no size slot.
-          constexpr usize kBodySize = C::body_size();
-          FPAG_DCHECK_LE(kBodySize, remaining_size);
-          R arg = C::decode(data_cursor, kBodySize);
-          data_cursor += kBodySize;
-          remaining_size -= kBodySize;
+          constexpr usize BODY_SIZE = C::body_size();
+          FPAG_DCHECK_LE(BODY_SIZE, remaining_size);
+          R arg = C::decode(data_cursor, BODY_SIZE);
+          data_cursor += BODY_SIZE;
+          remaining_size -= BODY_SIZE;
           return arg;
         } else {
           // Has size slot.
@@ -95,13 +96,13 @@ class Deserializer {
                           format_buffer* fmt_buf,
                           const str::StringInterner* interner) {
     // Already read total payload size and deserializer so skip them.
-    const char* const read_head = payload_head_ptr + kPayloadMinHeaderSize;
+    const char* const read_head = payload_head_ptr + PAYLOAD_MIN_HEADER_SIZE;
 
-    if constexpr (kIsCompiledFmt) {
+    if constexpr (IS_COMPILED_FMT) {
       using CompiledFormat = Format;
 
       const char* const args_head = read_head;
-      const usize args_size = total_payload_size - kPayloadHeaderSize;
+      const usize args_size = total_payload_size - PAYLOAD_HEADER_SIZE;
 
       std::apply(
           [&](auto&&... args) {
@@ -111,7 +112,7 @@ class Deserializer {
           decode_args(args_head, args_size));
     } else {
       std::string_view fmt_view;
-      if constexpr (kUseInterner) {
+      if constexpr (USE_INTERNER) {
         using StrId = str::StringInterner::StringId;
         const StrId id = *reinterpret_cast<const StrId*>(read_head);
         fmt_view = interner->get(id);
@@ -127,8 +128,8 @@ class Deserializer {
         std::memcpy(fmt_buf->data() + old_size, fmt_view.data(),
                     fmt_view.size());
       } else {
-        const char* const args_head = read_head + kFmtSlotSize;
-        const usize args_size = total_payload_size - kPayloadHeaderSize;
+        const char* const args_head = read_head + FMT_SLOT_SIZE;
+        const usize args_size = total_payload_size - PAYLOAD_HEADER_SIZE;
 
         std::apply(
             [&](auto&&... args) {

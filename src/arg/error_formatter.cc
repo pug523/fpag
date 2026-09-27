@@ -24,13 +24,13 @@ std::string DefaultErrorFormatter::operator()(
     const std::vector<ParseError>& errors,
     term::ColorStyle style) const {
   std::string result;
-  constexpr usize kEstimatedStrLenPerError = 256;
-  result.reserve(kEstimatedStrLenPerError * errors.size());
+  constexpr usize ESTIMATED_STR_LEN_PER_ERROR = 256;
+  result.reserve(ESTIMATED_STR_LEN_PER_ERROR * errors.size());
   const std::back_insert_iterator<std::string> out = std::back_inserter(result);
 
-  const char* bold = term::style_code(term::kBold, style);
-  const char* bright_red = term::style_code(term::kBrightRed, style);
-  const char* reset = term::style_code(term::kReset, style);
+  const char* bold = term::style_code(term::BOLD, style);
+  const char* bright_red = term::style_code(term::FG_BRIGHT_RED, style);
+  const char* reset = term::style_code(term::RESET, style);
 
   for (const ParseError& err : errors) {
     // "error: " header
@@ -44,7 +44,7 @@ std::string DefaultErrorFormatter::operator()(
   }
 
   // Hint
-  const char* cyan = term::style_code(term::kBrightCyan, style);
+  const char* cyan = term::style_code(term::FG_BRIGHT_CYAN, style);
   fmt::format_to(out, "\nFor more information, try '{}{} --help{}'.\n",
                  command_name, cyan, reset);
   return result;

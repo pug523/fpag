@@ -40,8 +40,8 @@ class JsonLinesSink {
   }
 
   void log(const LogEntry& entry) {
-    constexpr usize kMaxLogJsonSize = 4096;
-    u8* dest = writer_.prepare_write_buffer(kMaxLogJsonSize);
+    constexpr usize MAX_LOG_JSON_SIZE = 4096;
+    u8* dest = writer_.prepare_write_buffer(MAX_LOG_JSON_SIZE);
     if (!dest) [[unlikely]] {
       return;
     }
@@ -52,7 +52,7 @@ class JsonLinesSink {
     // TODO(logging): Include SourceLocation once added to LogEntry:
     // ,\"location\":\"{}:{}\"", entry.location.file, entry.location.line
     const auto result = fmt::format_to_n(
-        reinterpret_cast<char*>(dest), kMaxLogJsonSize,
+        reinterpret_cast<char*>(dest), MAX_LOG_JSON_SIZE,
         FMT_COMPILE("{{\"ts\":{},\"level\":\"{}\",\"msg\":\"{}\"}}\n"),
         entry.timestamp_ns, level_str, entry.message);
 

@@ -69,10 +69,10 @@ void render_option_line(std::back_insert_iterator<std::string> out,
                         std::string_view default_value,
                         bool is_required,
                         term::ColorStyle color_style) {
-  const char* italic = term::style_code(term::kItalic, color_style);
-  const char* reset = term::style_code(term::kReset, color_style);
-  const char* bright_cyan = term::style_code(term::kBrightCyan, color_style);
-  const char* gray = term::style_code(term::kGray, color_style);
+  const char* italic = term::style_code(term::ITALIC, color_style);
+  const char* reset = term::style_code(term::RESET, color_style);
+  const char* bright_cyan = term::style_code(term::FG_BRIGHT_CYAN, color_style);
+  const char* gray = term::style_code(term::FG_GRAY, color_style);
 
   // Option specification with padding
   const usize visible_len = opt_spec.size();
@@ -101,27 +101,27 @@ std::string DefaultHelpFormatter::operator()(
     term::ColorStyle color_style) const {
   std::string result;
 
-  constexpr usize kMargin = 512;
-  constexpr usize kEstimatedStrLenPerArgs = 128;
+  constexpr usize MARGIN = 512;
+  constexpr usize ESTIMATED_STR_LEN_PER_ARGS = 128;
   const usize estimated_size =
-      kMargin + (command.args().size() * kEstimatedStrLenPerArgs);
+      MARGIN + (command.args().size() * ESTIMATED_STR_LEN_PER_ARGS);
   result.reserve(estimated_size);
 
   auto out = std::back_inserter(result);
 
-  constexpr usize kTerminalWidth = 60;
+  constexpr usize TERMINAL_WIDTH = 60;
 
-  const char* bold = term::style_code(term::kBold, color_style);
-  const char* underline = term::style_code(term::kUnderline, color_style);
-  const char* reset = term::style_code(term::kReset, color_style);
-  const char* blue = term::style_code(term::kBlue, color_style);
+  const char* bold = term::style_code(term::BOLD, color_style);
+  const char* underline = term::style_code(term::UNDERLINE, color_style);
+  const char* reset = term::style_code(term::RESET, color_style);
+  const char* blue = term::style_code(term::FG_BLUE, color_style);
   const char* bright_magenta =
-      term::style_code(term::kBrightMagenta, color_style);
+      term::style_code(term::FG_BRIGHT_MAGENTA, color_style);
 
   // Title section
   if (!command.name().empty()) {
-    usize pad = (command.name().size() < kTerminalWidth)
-                    ? (kTerminalWidth - command.name().size()) / 2
+    usize pad = (command.name().size() < TERMINAL_WIDTH)
+                    ? (TERMINAL_WIDTH - command.name().size()) / 2
                     : 0;
     fmt::format_to(out, "{:>{}}{}{}{}{}\n\n", "", pad, bold, underline,
                    command.name(), reset);
@@ -130,21 +130,21 @@ std::string DefaultHelpFormatter::operator()(
   // About section
   if (!command.about().empty()) {
     std::string_view full_about = command.about();
-    usize pad = (full_about.size() < kTerminalWidth)
-                    ? (kTerminalWidth - full_about.size()) / 2
+    usize pad = (full_about.size() < TERMINAL_WIDTH)
+                    ? (TERMINAL_WIDTH - full_about.size()) / 2
                     : 0;
     fmt::format_to(out, "{:>{}}{}{}{}\n\n", "", pad, blue, full_about, reset);
   }
 
   // Usage section
-  constexpr usize kMinDescriptionMargin = 20;
+  constexpr usize MIN_DESCRIPTION_MARGIN = 20;
   if (!command.subcommands().empty()) {
     fmt::format_to(out, "{}{}Usage{}: {}{}{} {}{}[Options]{} {}{}[Command]{}\n",
                    bold, underline, reset, bold, command.name(), reset,
                    bright_magenta, bold, reset, bright_magenta, bold, reset);
     fmt::format_to(out, "\n{}{}Commands{}:\n", bold, underline, reset);
 
-    usize max_command_width = kMinDescriptionMargin;
+    usize max_command_width = MIN_DESCRIPTION_MARGIN;
     for (const Command& sub : command.subcommands()) {
       max_command_width = std::max(max_command_width, sub.name().length());
     }
@@ -162,7 +162,7 @@ std::string DefaultHelpFormatter::operator()(
   fmt::format_to(out, "\n{}{}Options{}:\n", bold, underline, reset);
 
   // Calculate option alignment column width
-  usize max_opt_width = kMinDescriptionMargin;
+  usize max_opt_width = MIN_DESCRIPTION_MARGIN;
   std::vector<std::string> opt_specs;
   opt_specs.reserve(command.args().size());
 

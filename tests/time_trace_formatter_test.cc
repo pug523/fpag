@@ -17,7 +17,7 @@
 namespace debug {
 
 TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
-  const char* kTestFilename = "test_chrome_trace.json";
+  const char* TEST_FILENAME = "test_chrome_trace.json";
 
   SECTION("Writes valid JSON structure with events") {
     std::vector<ProfileEvent> events = {
@@ -43,11 +43,11 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
         }};
 
     const bool success =
-        TimeTraceFormatter::write_to_file(kTestFilename, events);
+        TimeTraceFormatter::write_to_file(TEST_FILENAME, events);
     REQUIRE(success);
 
     // Read back the file content to verify formatting
-    std::ifstream ifs(kTestFilename);
+    std::ifstream ifs(TEST_FILENAME);
     REQUIRE(ifs.is_open());
 
     std::stringstream buffer;
@@ -69,16 +69,16 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
     CHECK(content.find("]}") != std::string::npos);
 
     // Clean up temporary file
-    std::remove(kTestFilename);
+    std::remove(TEST_FILENAME);
   }
 
   SECTION("Handles empty event list gracefully") {
     std::vector<ProfileEvent> empty_events;
     const bool success =
-        TimeTraceFormatter::write_to_file(kTestFilename, empty_events);
+        TimeTraceFormatter::write_to_file(TEST_FILENAME, empty_events);
     REQUIRE(success);
 
-    std::ifstream ifs(kTestFilename);
+    std::ifstream ifs(TEST_FILENAME);
     std::stringstream buffer;
     buffer << ifs.rdbuf();
     const std::string content = buffer.str();
@@ -87,7 +87,7 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
     CHECK(content.find("{\"traceEvents\":[") != std::string::npos);
     CHECK(content.find("]}") != std::string::npos);
 
-    std::remove(kTestFilename);
+    std::remove(TEST_FILENAME);
   }
 }
 

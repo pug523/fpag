@@ -10,12 +10,12 @@
 namespace mem {
 
 #if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
-constexpr usize kCacheLineSize = 64;
+constexpr usize CACHE_LINE_SIZE = 64;
 #elif FPAG_BUILD_FLAG(IS_ARCH_32_BITS)
-constexpr usize kCacheLineSize = 32;
+constexpr usize CACHE_LINE_SIZE = 32;
 #else
 #error "Unsupported cpu architecture"
-// constexpr usize kCacheLineSize = 64;
+// constexpr usize CACHE_LINE_SIZE = 64;
 #endif
 
 }  // namespace mem

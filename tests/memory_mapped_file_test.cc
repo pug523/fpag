@@ -19,7 +19,7 @@ namespace io {
 
 namespace {
 
-constexpr std::string_view kTestContent = "Hello, MemoryMappedFile Test!";
+constexpr std::string_view TEST_CONTENT = "Hello, MemoryMappedFile Test!";
 
 }  // namespace
 
@@ -41,9 +41,9 @@ TEST_CASE("FileHandle basic lifetime and resizing", "[base][file_handle]") {
     REQUIRE(handle.open(temp_file.path(), FileAccess::ReadWrite));
     CHECK(handle.is_valid());
 
-    constexpr usize kTargetSize = 4096;
-    REQUIRE(handle.resize(kTargetSize));
-    CHECK(handle.get_size() == kTargetSize);
+    constexpr usize TARGET_SIZE = 4096;
+    REQUIRE(handle.resize(TARGET_SIZE));
+    CHECK(handle.get_size() == TARGET_SIZE);
   }
 
   SECTION("Move semantics for FileHandle") {
@@ -63,24 +63,24 @@ TEST_CASE("MemoryMappedFile write and read roundtrip",
   const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
-  constexpr usize kFileSize = 1024;
+  constexpr usize FILE_SIZE = 1024;
 
   SECTION("Write content via mmap and verify read via mmap") {
     // Write Phase
     {
       FileHandle file;
       REQUIRE(file.open(temp_file.path(), FileAccess::ReadWrite));
-      REQUIRE(file.resize(kFileSize));
+      REQUIRE(file.resize(FILE_SIZE));
 
       MemoryMappedFile mmap_writer;
-      REQUIRE(mmap_writer.map(file, 0, kFileSize, /*populate_now=*/true));
+      REQUIRE(mmap_writer.map(file, 0, FILE_SIZE, /*populate_now=*/true));
       CHECK(mmap_writer.is_mapped());
-      CHECK(mmap_writer.size() == kFileSize);
+      CHECK(mmap_writer.size() == FILE_SIZE);
 
       mmap_writer.advise(AdviceHint::Sequential);
 
       const std::span<u8> buffer = mmap_writer.as_span();
-      std::memcpy(buffer.data(), kTestContent.data(), kTestContent.size());
+      std::memcpy(buffer.data(), TEST_CONTENT.data(), TEST_CONTENT.size());
 
       CHECK(mmap_writer.flush(/*synchronous=*/true));
     }
@@ -93,14 +93,14 @@ TEST_CASE("MemoryMappedFile write and read roundtrip",
       MemoryMappedFile mmap_reader;
       REQUIRE(mmap_reader.map(file, 0, 0, /*populate_now=*/true));
       CHECK(mmap_reader.is_mapped());
-      CHECK(mmap_reader.size() == kFileSize);
+      CHECK(mmap_reader.size() == FILE_SIZE);
 
       const std::span<const u8> read_buffer = mmap_reader.as_span();
       std::string_view read_text(
           reinterpret_cast<const char*>(read_buffer.data()),
-          kTestContent.size());
+          TEST_CONTENT.size());
 
-      CHECK(read_text == kTestContent);
+      CHECK(read_text == TEST_CONTENT);
     }
   }
 }
@@ -110,14 +110,14 @@ TEST_CASE("MemoryMappedFile move semantics and resource cleanup",
   const TempFile temp_file;
   REQUIRE(temp_file.is_valid());
 
-  constexpr usize kFileSize = 512;
+  constexpr usize FILE_SIZE = 512;
 
   FileHandle file;
   REQUIRE(file.open(temp_file.path(), FileAccess::ReadWrite));
-  REQUIRE(file.resize(kFileSize));
+  REQUIRE(file.resize(FILE_SIZE));
 
   MemoryMappedFile mmap_1;
-  REQUIRE(mmap_1.map(file, 0, kFileSize));
+  REQUIRE(mmap_1.map(file, 0, FILE_SIZE));
   CHECK(mmap_1.is_mapped());
 
   SECTION("Move constructor transfers ownership correctly") {
@@ -129,7 +129,7 @@ TEST_CASE("MemoryMappedFile move semantics and resource cleanup",
 
     CHECK(mmap_2.is_mapped());
     CHECK(mmap_2.data() != nullptr);
-    CHECK(mmap_2.size() == kFileSize);
+    CHECK(mmap_2.size() == FILE_SIZE);
   }
 
   SECTION("Move assignment operator unmaps previous and transfers") {

@@ -36,8 +36,8 @@ bool write_file(const std::span<const u8> data, const std::string& output_path);
 
 // File descriptors are 1 and 2 on every platform fpag supports, so this does
 // not need a platform branch and the header does not need a platform include.
-constexpr i32 kStdoutFd = 1;
-constexpr i32 kStderrFd = 2;
+constexpr i32 STDOUT_FD = 1;
+constexpr i32 STDERR_FD = 2;
 
 void write(i32 fd, const char* data, usize size);
 

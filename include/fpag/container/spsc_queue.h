@@ -98,10 +98,10 @@ class SpscQueue {
     return base::next_power_of_two(mem::page_size());
   }
 #if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
-  static constexpr usize kMaxCapacity = static_cast<usize>(1) << 35;  // 32 GiB
+  static constexpr usize MAX_CAPACITY = static_cast<usize>(1) << 35;  // 32 GiB
 #else
   // 32-bit address spaces (e.g. wasm32) cannot shift past their width.
-  static constexpr usize kMaxCapacity = static_cast<usize>(1) << 30;  // 1 GiB
+  static constexpr usize MAX_CAPACITY = static_cast<usize>(1) << 30;  // 1 GiB
 #endif
 
  private:
@@ -119,12 +119,12 @@ class SpscQueue {
   usize blocked_count_ = 0;
 
   // Consumer
-  alignas(mem::kCacheLineSize) std::atomic<usize> head_ = 0;
-  alignas(mem::kCacheLineSize) usize head_cache_ = 0;
+  alignas(mem::CACHE_LINE_SIZE) std::atomic<usize> head_ = 0;
+  alignas(mem::CACHE_LINE_SIZE) usize head_cache_ = 0;
 
   // Producer
-  alignas(mem::kCacheLineSize) std::atomic<usize> tail_ = 0;
-  alignas(mem::kCacheLineSize) usize tail_cache_ = 0;
+  alignas(mem::CACHE_LINE_SIZE) std::atomic<usize> tail_ = 0;
+  alignas(mem::CACHE_LINE_SIZE) usize tail_cache_ = 0;
 };
 
 }  // namespace container

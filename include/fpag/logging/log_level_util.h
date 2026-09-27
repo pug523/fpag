@@ -63,7 +63,7 @@ inline constexpr std::string_view log_level_to_string_with_padding_upper(
   }
 }
 
-static constexpr std::string_view kPlainPrefixes[] = {
+static constexpr std::string_view PLAIN_PREFIXES[] = {
     "trace: ",  // Trace
     "debug: ",  // Debug
     " info: ",  // Info
@@ -73,7 +73,7 @@ static constexpr std::string_view kPlainPrefixes[] = {
 };
 
 // 16 color
-static constexpr std::string_view kAnsi16Prefixes[] = {
+static constexpr std::string_view ANSI16_PREFIXES[] = {
     "\033[1;90mtrace\033[0m: ",  // Trace: Bright Black (Gray)
     "\033[1;34mdebug\033[0m: ",  // Debug: Blue
     "\033[1;32m info\033[0m: ",  // Info: Green
@@ -83,7 +83,7 @@ static constexpr std::string_view kAnsi16Prefixes[] = {
 };
 
 // 256 color
-static constexpr std::string_view kAnsi256Prefixes[] = {
+static constexpr std::string_view ANSI256_PREFIXES[] = {
     "\033[1;38;5;242mtrace\033[0m: ",  // Trace: Gray
     "\033[1;38;5;39mdebug\033[0m: ",   // Debug: Sky Blue
     "\033[1;38;5;40m info\033[0m: ",   // Info: Green
@@ -93,7 +93,7 @@ static constexpr std::string_view kAnsi256Prefixes[] = {
 };
 
 // True color
-static constexpr std::string_view kAnsiTrueColorPrefixes[] = {
+static constexpr std::string_view ANSI_TRUE_COLOR_PREFIXES[] = {
     "\033[1;38;2;100;100;100mtrace\033[0m: ",  // Trace: Gray
     "\033[1;38;2;040;190;240mdebug\033[0m: ",  // Debug: Sky Blue
     "\033[1;38;2;025;210;025m info\033[0m: ",  // Info: Green
@@ -110,10 +110,10 @@ inline constexpr std::string_view log_prefix(LogLevel level,
   const u8 l = static_cast<u8>(level);
   switch (style) {
     using C = term::ColorStyle;
-    case C::Off: return kPlainPrefixes[l];
-    case C::Ansi16: return kAnsi16Prefixes[l];
-    case C::Ansi256: return kAnsi256Prefixes[l];
-    case C::AnsiTrueColor: return kAnsiTrueColorPrefixes[l];
+    case C::Off: return PLAIN_PREFIXES[l];
+    case C::Ansi16: return ANSI16_PREFIXES[l];
+    case C::Ansi256: return ANSI256_PREFIXES[l];
+    case C::AnsiTrueColor: return ANSI_TRUE_COLOR_PREFIXES[l];
     default: FPAG_UNREACHABLE();
   }
 }

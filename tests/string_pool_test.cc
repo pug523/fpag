@@ -17,14 +17,14 @@ namespace str {
 
 namespace {
 
-constexpr usize kPoolCapacity = 1024ull * 1024;
-constexpr usize kStringSize = 16;
+constexpr usize POOL_CAPACITY = 1024ull * 1024;
+constexpr usize STRING_SIZE = 16;
 
 // Every string is the same length, so an offset that points at a neighbouring
 // string is visible as a content mismatch rather than a length mismatch.
 std::string make_string(usize worker, usize index) {
   std::string text = std::to_string(worker) + ":" + std::to_string(index);
-  text.resize(kStringSize, '#');
+  text.resize(STRING_SIZE, '#');
   return text;
 }
 
@@ -48,7 +48,7 @@ usize append_and_check(StringPool* pool, usize worker, usize count) {
 
 TEST_CASE("StringPool hands back an id to the string it appended",
           "[str][string_pool]") {
-  StringPool pool(kPoolCapacity);
+  StringPool pool(POOL_CAPACITY);
 
   const std::string_view text = "interned";
   std::string_view view;
@@ -61,36 +61,36 @@ TEST_CASE("StringPool hands back an id to the string it appended",
 
   // An empty string has no bytes to name.
   const StringPoolId empty_id = pool.append("");
-  CHECK(empty_id.offset == kEmptyStringId.offset);
-  CHECK(empty_id.length == kEmptyStringId.length);
+  CHECK(empty_id.offset == EMPTY_STRING_ID.offset);
+  CHECK(empty_id.length == EMPTY_STRING_ID.length);
   CHECK(pool.size() == text.size());
   CHECK(pool.string_count() == 1);
 }
 
 TEST_CASE("StringPool appends from several threads without crossing ids",
           "[str][string_pool][threads]") {
-  constexpr usize kWorkerCount = 4;
-  constexpr usize kStringsPerWorker = 512;
+  constexpr usize WORKER_COUNT = 4;
+  constexpr usize STRINGS_PER_WORKER = 512;
 
-  StringPool pool(kPoolCapacity);
+  StringPool pool(POOL_CAPACITY);
 
   std::vector<std::thread> workers;
-  std::vector<usize> mismatches(kWorkerCount, 0);
-  workers.reserve(kWorkerCount);
-  for (usize worker = 0; worker < kWorkerCount; ++worker) {
+  std::vector<usize> mismatches(WORKER_COUNT, 0);
+  workers.reserve(WORKER_COUNT);
+  for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
     workers.emplace_back([&pool, &mismatches, worker] {
-      mismatches[worker] = append_and_check(&pool, worker, kStringsPerWorker);
+      mismatches[worker] = append_and_check(&pool, worker, STRINGS_PER_WORKER);
     });
   }
   for (std::thread& worker : workers) {
     worker.join();
   }
 
-  for (usize worker = 0; worker < kWorkerCount; ++worker) {
+  for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
     CHECK(mismatches[worker] == 0);
   }
-  CHECK(pool.string_count() == kWorkerCount * kStringsPerWorker);
-  CHECK(pool.size() == kWorkerCount * kStringsPerWorker * kStringSize);
+  CHECK(pool.string_count() == WORKER_COUNT * STRINGS_PER_WORKER);
+  CHECK(pool.size() == WORKER_COUNT * STRINGS_PER_WORKER * STRING_SIZE);
 }
 
 }  // namespace str

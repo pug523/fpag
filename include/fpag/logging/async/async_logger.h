@@ -19,8 +19,8 @@
 namespace logging {
 
 template <Sink S,
-          LogLevel kMinLevel,
-          bool kUseInterner = true,
+          LogLevel MIN_LEVEL,
+          bool USE_INTERNER = true,
           WaitStrategy W = BusySpin>
 class AsyncLogger {
  public:
@@ -91,7 +91,7 @@ class AsyncLogger {
 
  private:
   static consteval bool should_log(LogLevel level) {
-    return level >= kMinLevel;
+    return level >= MIN_LEVEL;
   }
 
   template <LogLevel level, typename Format, typename... Args>
@@ -99,7 +99,7 @@ class AsyncLogger {
     if constexpr (!should_log(level)) {
       return;
     }
-    Serializer<Format, kUseInterner, Args&&...>::serialize_to(
+    Serializer<Format, USE_INTERNER, Args&&...>::serialize_to(
         level, &interner_, worker_.queue(), format,
         std::forward<Args>(args)...);
   }

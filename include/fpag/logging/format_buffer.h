@@ -9,8 +9,8 @@
 
 namespace logging {
 
-constexpr usize kFormatBufferSize = 4096;  // 4 KiB buffer
+constexpr usize FORMAT_BUFFER_SIZE = 4096;  // 4 KiB buffer
 
-using format_buffer = fmt::basic_memory_buffer<char, kFormatBufferSize>;
+using format_buffer = fmt::basic_memory_buffer<char, FORMAT_BUFFER_SIZE>;
 
 }  // namespace logging

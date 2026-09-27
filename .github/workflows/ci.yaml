@@ -364,7 +364,7 @@ jobs:
 
             using Composite = logging::CompositeSink<logging::NullSink,
                                                      logging::StdoutSink>;
-            logging::SyncLogger<Composite, logging::kDefaultLogLevel> logger;
+            logging::SyncLogger<Composite, logging::DEFAULT_LOG_LEVEL> logger;
             logger.init(Composite{logging::NullSink{}, logging::StdoutSink{}});
             logger.info("installed fpag works, hash {}", hasher("x"));
             logger.flush();

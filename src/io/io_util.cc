@@ -112,20 +112,20 @@ i32 open(const std::string& path, i32 flags, i32 mode) {
 
 i32 open(const std::string& path, i32 flags) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  constexpr i32 kDefaultMode = _S_IREAD | _S_IWRITE;
+  constexpr i32 DEFAULT_MODE = _S_IREAD | _S_IWRITE;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-  constexpr i32 kDefaultMode = 0644;
+  constexpr i32 DEFAULT_MODE = 0644;
 #endif
-  return open(path, flags, kDefaultMode);
+  return open(path, flags, DEFAULT_MODE);
 }
 
 i32 open(const std::string& path) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  constexpr i32 kDefaultFlags = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
+  constexpr i32 DEFAULT_FLAGS = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-  constexpr i32 kDefaultFlags = O_WRONLY | O_CREAT | O_TRUNC;
+  constexpr i32 DEFAULT_FLAGS = O_WRONLY | O_CREAT | O_TRUNC;
 #endif
-  return open(path, kDefaultFlags);
+  return open(path, DEFAULT_FLAGS);
 }
 
 void close(i32 fd) {
@@ -237,7 +237,7 @@ isize file_size(const std::string& path) {
   // is not a file: report both the same way as an unreadable file instead of
   // returning a wrapped size.
   const i64 size = static_cast<i64>(st.st_size);
-  if (size < 0 || size > kIsizeMax) {
+  if (size < 0 || size > ISIZE_MAX) {
     return -1;
   }
   return static_cast<isize>(size);
@@ -289,14 +289,14 @@ bool write_file(const std::span<const u8> data,
   }
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  constexpr i32 kFlags = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
-  constexpr i32 kMode = _S_IREAD | _S_IWRITE;
+  constexpr i32 FLAGS = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
+  constexpr i32 MODE = _S_IREAD | _S_IWRITE;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-  constexpr i32 kFlags = O_WRONLY | O_CREAT | O_TRUNC;
-  constexpr i32 kMode = 0644;
+  constexpr i32 FLAGS = O_WRONLY | O_CREAT | O_TRUNC;
+  constexpr i32 MODE = 0644;
 #endif
 
-  const ScopedFd fd(open(output_path, kFlags, kMode));
+  const ScopedFd fd(open(output_path, FLAGS, MODE));
   if (!fd.is_valid()) {
     return false;
   }

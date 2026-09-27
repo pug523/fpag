@@ -23,11 +23,11 @@ class FileHandle {
   // consumer sees the same type it would from <windows.h>, without the
   // SDK macro surface arriving through this header.
   using NativeHandle = void*;
-  static inline const NativeHandle kInvalidHandle =
+  static inline const NativeHandle INVALID_HANDLE =
       reinterpret_cast<NativeHandle>(static_cast<isize>(-1));
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   using NativeHandle = i32;
-  static inline const NativeHandle kInvalidHandle = -1;
+  static inline const NativeHandle INVALID_HANDLE = -1;
 #endif
 
   FileHandle() = default;
@@ -47,12 +47,12 @@ class FileHandle {
   bool resize(usize new_size);
   usize get_size() const;
 
-  [[nodiscard]] bool is_valid() const { return handle_ != kInvalidHandle; }
+  [[nodiscard]] bool is_valid() const { return handle_ != INVALID_HANDLE; }
   [[nodiscard]] constexpr NativeHandle native_handle() const { return handle_; }
   [[nodiscard]] constexpr FileAccess access() const { return access_; }
 
  private:
-  NativeHandle handle_ = kInvalidHandle;
+  NativeHandle handle_ = INVALID_HANDLE;
   FileAccess access_ = FileAccess::Read;
 };
 

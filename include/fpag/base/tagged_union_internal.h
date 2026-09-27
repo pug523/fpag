@@ -35,12 +35,12 @@ template <typename Target, typename... Ts>
 struct ContainsType
     : std::disjunction<std::is_same<std::decay_t<Target>, Ts>...> {};
 
-// Helper detection idiom for 'kCount' member in enum types.
+// Helper detection idiom for 'COUNT' member in enum types.
 template <typename E, typename = void>
 struct HasCountMember : std::false_type {};
 
 template <typename E>
-struct HasCountMember<E, std::void_t<decltype(E::kCount)>> : std::true_type {};
+struct HasCountMember<E, std::void_t<decltype(E::COUNT)>> : std::true_type {};
 
 // Helper detection idiom for 'Count' member in enum types.
 template <typename E, typename = void>
@@ -58,8 +58,8 @@ consteval bool validate_tag_enum() noexcept {
                 "Underlying type of TagEnum must be an integral type.");
 
   if constexpr (HasCountMember<TagEnum>::value) {
-    static_assert(static_cast<usize>(TagEnum::kCount) == ExpectedCount,
-                  "TagEnum::kCount does not match the number of types.");
+    static_assert(static_cast<usize>(TagEnum::COUNT) == ExpectedCount,
+                  "TagEnum::COUNT does not match the number of types.");
   } else if constexpr (HasAltCountMember<TagEnum>::value) {
     static_assert(static_cast<usize>(TagEnum::Count) == ExpectedCount,
                   "TagEnum::Count does not match the number of types.");
@@ -71,16 +71,16 @@ consteval bool validate_tag_enum() noexcept {
 // Selects the minimum unsigned integer type that can hold Count values.
 template <usize Count>
 struct TagTypeImpl {
-  static constexpr bool kTagU8 = Count <= kU8Max;
-  static constexpr bool kTagU16 = !kTagU8 && Count <= kU16Max;
-  static constexpr bool kTagU32 = !kTagU8 && !kTagU16 && Count <= kU32Max;
-  static constexpr bool kTagUsize = !kTagU8 && !kTagU16 && !kTagU32;
+  static constexpr bool TAG_U8 = Count <= U8_MAX;
+  static constexpr bool TAG_U16 = !TAG_U8 && Count <= U16_MAX;
+  static constexpr bool TAG_U32 = !TAG_U8 && !TAG_U16 && Count <= U32_MAX;
+  static constexpr bool TAG_USIZE = !TAG_U8 && !TAG_U16 && !TAG_U32;
 
   using type = std::conditional_t<
-      kTagU8,
+      TAG_U8,
       u8,
       std::
-          conditional_t<kTagU16, u16, std::conditional_t<kTagU32, u32, usize>>>;
+          conditional_t<TAG_U16, u16, std::conditional_t<TAG_U32, u32, usize>>>;
 };
 
 template <usize Count>

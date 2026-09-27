@@ -18,7 +18,7 @@ namespace io {
 
 namespace {
 
-constexpr std::string_view kSmallText = "Hello, MemoryMappedStreamWriter!";
+constexpr std::string_view SMALL_TEXT = "Hello, MemoryMappedStreamWriter!";
 
 }  // namespace
 
@@ -36,21 +36,21 @@ TEST_CASE("MemoryMappedStreamWriter basic open and write",
   SECTION("Write small content and verify file size on finish") {
     REQUIRE(writer.open(temp_file.path(), /*initial_capacity=*/1024));
 
-    REQUIRE(writer.write(kSmallText.data(), kSmallText.size()));
-    CHECK(writer.bytes_written() == kSmallText.size());
+    REQUIRE(writer.write(SMALL_TEXT.data(), SMALL_TEXT.size()));
+    CHECK(writer.bytes_written() == SMALL_TEXT.size());
 
     writer.finish();
 
     // Verify file on disk is truncated to exact written size
     FileHandle read_handle;
     REQUIRE(read_handle.open(temp_file.path(), FileAccess::Read));
-    CHECK(read_handle.get_size() == kSmallText.size());
+    CHECK(read_handle.get_size() == SMALL_TEXT.size());
 
     MemoryMappedFile reader;
     REQUIRE(reader.map(read_handle, 0, 0));
     std::string_view file_content(reinterpret_cast<const char*>(reader.data()),
                                   reader.size());
-    CHECK(file_content == kSmallText);
+    CHECK(file_content == SMALL_TEXT);
   }
 }
 
@@ -60,9 +60,9 @@ TEST_CASE("MemoryMappedStreamWriter automatic capacity expansion",
   REQUIRE(temp_file.is_valid());
 
   MemoryMappedStreamWriter writer;
-  constexpr usize kInitialCapacity =
+  constexpr usize INITIAL_CAPACITY =
       64;  // Small initial capacity to trigger resize easily
-  REQUIRE(writer.open(temp_file.path(), kInitialCapacity));
+  REQUIRE(writer.open(temp_file.path(), INITIAL_CAPACITY));
 
   // Generate data exceeding initial capacity
   std::string large_data(2048, 'A');
@@ -93,15 +93,15 @@ TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
   MemoryMappedStreamWriter writer;
   REQUIRE(writer.open(temp_file.path(), /*initial_capacity=*/128));
 
-  constexpr usize kRequestedLength = 32;
-  u8* dest = writer.prepare_write_buffer(kRequestedLength);
+  constexpr usize REQUESTED_LENGTH = 32;
+  u8* dest = writer.prepare_write_buffer(REQUESTED_LENGTH);
   REQUIRE(dest != nullptr);
 
-  constexpr std::string_view kDirectData = "Direct zero-copy output";
-  std::memcpy(dest, kDirectData.data(), kDirectData.size());
-  writer.commit_write(kDirectData.size());
+  constexpr std::string_view DIRECT_DATA = "Direct zero-copy output";
+  std::memcpy(dest, DIRECT_DATA.data(), DIRECT_DATA.size());
+  writer.commit_write(DIRECT_DATA.size());
 
-  CHECK(writer.bytes_written() == kDirectData.size());
+  CHECK(writer.bytes_written() == DIRECT_DATA.size());
 
   writer.finish();
 
@@ -112,7 +112,7 @@ TEST_CASE("MemoryMappedStreamWriter zero-copy direct buffer formatting",
 
   std::string_view file_content(reinterpret_cast<const char*>(reader.data()),
                                 reader.size());
-  CHECK(file_content == kDirectData);
+  CHECK(file_content == DIRECT_DATA);
 }
 
 TEST_CASE("MemoryMappedStreamWriter refuses to write before open",
@@ -121,8 +121,8 @@ TEST_CASE("MemoryMappedStreamWriter refuses to write before open",
 
   // The capacity is zero until open() maps a file, and growing it still has to
   // make progress instead of doubling zero.
-  CHECK_FALSE(writer.write(kSmallText.data(), kSmallText.size()));
-  CHECK(writer.prepare_write_buffer(kSmallText.size()) == nullptr);
+  CHECK_FALSE(writer.write(SMALL_TEXT.data(), SMALL_TEXT.size()));
+  CHECK(writer.prepare_write_buffer(SMALL_TEXT.size()) == nullptr);
   CHECK(writer.bytes_written() == 0);
 }
 

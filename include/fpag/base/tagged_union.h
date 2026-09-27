@@ -361,12 +361,12 @@ class TaggedUnion {
     }
   }
 
-  static constexpr usize kStorageMaxAlign =
+  static constexpr usize STORAGE_MAX_ALIGN =
       std::max({internal::SafeAlignOf<Ts>...});
-  static constexpr usize kStorageMaxSize =
+  static constexpr usize STORAGE_MAX_SIZE =
       std::max({internal::SafeSizeOf<Ts>...});
 
-  FPAG_EMPTY_MEMBER internal::UnionStorage<kStorageMaxAlign, kStorageMaxSize>
+  FPAG_EMPTY_MEMBER internal::UnionStorage<STORAGE_MAX_ALIGN, STORAGE_MAX_SIZE>
       storage_;
   TagStorageType tag_;
 };

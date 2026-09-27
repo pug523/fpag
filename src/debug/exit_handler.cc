@@ -17,10 +17,10 @@ namespace {
 
 void reset_console_colors() {
   if (is_ansi_available(term::Stream::Stdout)) {
-    io::write(io::kStdoutFd, term::kReset, const_strlen(term::kReset));
+    io::write(io::STDOUT_FD, term::RESET, const_strlen(term::RESET));
   }
   if (is_ansi_available(term::Stream::Stderr)) {
-    io::write(io::kStderrFd, term::kReset, const_strlen(term::kReset));
+    io::write(io::STDERR_FD, term::RESET, const_strlen(term::RESET));
   }
 }
 

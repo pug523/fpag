@@ -225,7 +225,7 @@ class BackendWorker {
 
     while (current_head < target_head) {
       const char* const data_ptr =
-          queue_.peek(kPayloadMinHeaderSize, kPayloadAlign);
+          queue_.peek(PAYLOAD_MIN_HEADER_SIZE, PAYLOAD_ALIGN);
       const usize payload_size = *reinterpret_cast<const usize*>(data_ptr);
       FPAG_DCHECK(reinterpret_cast<uintptr_t>(data_ptr) % 8 == 0);
       const DeserializeFunction deserializer =
@@ -234,15 +234,15 @@ class BackendWorker {
       const LogLevel level = *reinterpret_cast<const LogLevel*>(
           data_ptr + sizeof(usize) + sizeof(DeserializeFunction));
 
-      FPAG_DCHECK_GE(payload_size, kPayloadMinHeaderSize);
+      FPAG_DCHECK_GE(payload_size, PAYLOAD_MIN_HEADER_SIZE);
 
       // Deserialize args and format into format buffer.
       format_buffer format_buf;
       deserializer(data_ptr, payload_size, &format_buf, interner_);
 
-      queue_.discard(payload_size, kPayloadAlign);
+      queue_.discard(payload_size, PAYLOAD_ALIGN);
 
-      const usize aligned_head = base::round_up(current_head, kPayloadAlign);
+      const usize aligned_head = base::round_up(current_head, PAYLOAD_ALIGN);
       current_head = aligned_head + payload_size;
 
       const std::string_view msg{format_buf.data(), format_buf.size()};

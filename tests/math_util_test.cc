@@ -26,7 +26,7 @@ TEST_CASE("is_power_of_two validates numbers correctly", "[base][math]") {
     CHECK_FALSE(is_power_of_two(3));
     CHECK_FALSE(is_power_of_two(7));
     CHECK_FALSE(is_power_of_two(1023));
-    CHECK_FALSE(is_power_of_two(kU64Max));
+    CHECK_FALSE(is_power_of_two(U64_MAX));
   }
 
   SECTION("Negative numbers (if signed)") {
@@ -63,11 +63,11 @@ TEST_CASE("next_power_of_two computes correct values", "[base][math]") {
 
 TEST_CASE("next_power_of_two constexpr evaluation", "[base][math]") {
   // Ensure functions can be used in constant expressions
-  constexpr bool is_p2 = base::is_power_of_two(16);
-  constexpr u64 next_p2 = base::next_power_of_two(31);
+  constexpr bool IS_P2 = base::is_power_of_two(16);
+  constexpr u64 NEXT_P2 = base::next_power_of_two(31);
 
-  STATIC_CHECK(is_p2);
-  STATIC_CHECK(next_p2 == 32);
+  STATIC_CHECK(IS_P2);
+  STATIC_CHECK(NEXT_P2 == 32);
 }
 
 }  // namespace base

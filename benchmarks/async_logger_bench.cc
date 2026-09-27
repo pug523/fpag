@@ -34,15 +34,15 @@ void cleanup(L* logger, usize dropped_count) {
   }
 }
 
-constexpr usize kMapCap = 1 << 16;
-constexpr usize kQueueCap = 1 << 30;
-constexpr container::SpscQueue::Mode kMode = container::SpscQueue::Mode::Drop;
+constexpr usize MAP_CAP = 1 << 16;
+constexpr usize QUEUE_CAP = 1 << 30;
+constexpr container::SpscQueue::Mode MODE = container::SpscQueue::Mode::Drop;
 
 // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 void async_logger_log_literal_compiled_string_w_interner(
     benchmark::State& state) {
   AsyncLogger<NullSink, LogLevel::Info, true> logger;
-  setup(&logger, kMapCap, kQueueCap, kMode);
+  setup(&logger, MAP_CAP, QUEUE_CAP, MODE);
   for (auto _ : state) {
     logger.info(FMT_COMPILE("test"));
   }
@@ -53,7 +53,7 @@ BENCHMARK(async_logger_log_literal_compiled_string_w_interner);
 void async_logger_log_literal_compiled_string_wo_interner(
     benchmark::State& state) {
   AsyncLogger<NullSink, LogLevel::Info, false> logger;
-  setup(&logger, kMapCap, kQueueCap, kMode);
+  setup(&logger, MAP_CAP, QUEUE_CAP, MODE);
   for (auto _ : state) {
     logger.info(FMT_COMPILE("test"));
   }
@@ -63,7 +63,7 @@ BENCHMARK(async_logger_log_literal_compiled_string_wo_interner);
 
 void async_logger_log_literal_string_w_interner(benchmark::State& state) {
   AsyncLogger<NullSink, LogLevel::Info, true> logger;
-  setup(&logger, kMapCap, kQueueCap, kMode);
+  setup(&logger, MAP_CAP, QUEUE_CAP, MODE);
   for (auto _ : state) {
     logger.info("test");
   }
@@ -73,7 +73,7 @@ BENCHMARK(async_logger_log_literal_string_w_interner);
 
 void async_logger_log_literal_string_wo_interner(benchmark::State& state) {
   AsyncLogger<NullSink, LogLevel::Info, false> logger;
-  setup(&logger, kMapCap, kQueueCap, kMode);
+  setup(&logger, MAP_CAP, QUEUE_CAP, MODE);
   for (auto _ : state) {
     logger.info("test");
   }

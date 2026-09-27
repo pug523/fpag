@@ -24,9 +24,9 @@ enum class LogLevel : u8 {
 };
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
-constexpr LogLevel kDefaultLogLevel = LogLevel::Debug;
+constexpr LogLevel DEFAULT_LOG_LEVEL = LogLevel::Debug;
 #else
-constexpr LogLevel kDefaultLogLevel = LogLevel::Info;
+constexpr LogLevel DEFAULT_LOG_LEVEL = LogLevel::Info;
 #endif
 
 }  // namespace logging

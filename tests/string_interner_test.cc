@@ -16,7 +16,7 @@ namespace str {
 
 namespace {
 
-constexpr usize kMapCapacity = 1024;
+constexpr usize MAP_CAPACITY = 1024;
 
 bool same_id(StringPoolId lhs, StringPoolId rhs) {
   return lhs.offset == rhs.offset && lhs.length == rhs.length;
@@ -36,7 +36,7 @@ void intern_all(StringInterner* interner,
 }  // namespace
 
 TEST_CASE("StringInterner hands back one id per string", "[str][interner]") {
-  StringInterner interner(kMapCapacity);
+  StringInterner interner(MAP_CAPACITY);
 
   const StringInterner::StringId first = interner.intern("alpha");
   const StringInterner::StringId second = interner.intern("beta");
@@ -51,42 +51,42 @@ TEST_CASE("StringInterner hands back one id per string", "[str][interner]") {
 
 TEST_CASE("StringInterner reads every string back after the pool grows",
           "[str][interner]") {
-  constexpr usize kCount = 4096;
+  constexpr usize COUNT = 4096;
 
-  StringInterner interner(kCount);
+  StringInterner interner(COUNT);
 
   std::vector<std::string> strings;
-  strings.reserve(kCount);
-  for (usize index = 0; index < kCount; ++index) {
+  strings.reserve(COUNT);
+  for (usize index = 0; index < COUNT; ++index) {
     strings.push_back("interned-string-" + std::to_string(index));
   }
 
   std::vector<StringPoolId> ids;
   intern_all(&interner, strings, &ids);
 
-  for (usize index = 0; index < kCount; ++index) {
+  for (usize index = 0; index < COUNT; ++index) {
     CHECK(interner.get(ids[index]) == strings[index]);
   }
-  CHECK(interner.string_count() == kCount);
+  CHECK(interner.string_count() == COUNT);
 }
 
 TEST_CASE("StringInterner gives several threads one id for the same string",
           "[str][interner][threads]") {
-  constexpr usize kWorkerCount = 4;
-  constexpr usize kStringCount = 256;
+  constexpr usize WORKER_COUNT = 4;
+  constexpr usize STRING_COUNT = 256;
 
-  StringInterner interner(kStringCount);
+  StringInterner interner(STRING_COUNT);
 
   std::vector<std::string> strings;
-  strings.reserve(kStringCount);
-  for (usize index = 0; index < kStringCount; ++index) {
+  strings.reserve(STRING_COUNT);
+  for (usize index = 0; index < STRING_COUNT; ++index) {
     strings.push_back("shared-string-" + std::to_string(index));
   }
 
-  std::vector<std::vector<StringPoolId>> ids(kWorkerCount);
+  std::vector<std::vector<StringPoolId>> ids(WORKER_COUNT);
   std::vector<std::thread> workers;
-  workers.reserve(kWorkerCount);
-  for (usize worker = 0; worker < kWorkerCount; ++worker) {
+  workers.reserve(WORKER_COUNT);
+  for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
     workers.emplace_back([&interner, &strings, &ids, worker] {
       intern_all(&interner, strings, &ids[worker]);
     });
@@ -97,8 +97,8 @@ TEST_CASE("StringInterner gives several threads one id for the same string",
 
   // Two threads that both see a string first can both append it to the pool;
   // the map keeps one winner, so every worker must still see the same id.
-  for (usize index = 0; index < kStringCount; ++index) {
-    for (usize worker = 0; worker < kWorkerCount; ++worker) {
+  for (usize index = 0; index < STRING_COUNT; ++index) {
+    for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
       CHECK(same_id(ids[worker][index], ids[0][index]));
       CHECK(interner.get(ids[0][index]) == strings[index]);
     }

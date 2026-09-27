@@ -17,7 +17,7 @@ struct Codec<T, std::enable_if_t<std::is_trivially_copyable_v<T>>> {
   using DecodedType = T;
 
   inline static usize encode(char* const out, const T& in) {
-    std::memcpy(out, &in, kArgSize);
+    std::memcpy(out, &in, ARG_SIZE);
     return body_size();
   }
 
@@ -27,10 +27,10 @@ struct Codec<T, std::enable_if_t<std::is_trivially_copyable_v<T>>> {
     return result;
   }
 
-  static constexpr usize kArgSize = sizeof(T);
+  static constexpr usize ARG_SIZE = sizeof(T);
 
   static consteval bool is_fixed_size() { return true; }
-  static consteval usize body_size() { return kArgSize; }
+  static consteval usize body_size() { return ARG_SIZE; }
 };
 
 }  // namespace logging

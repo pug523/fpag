@@ -12,7 +12,7 @@
 namespace base {
 
 using Logger =
-    logging::SyncLogger<logging::StdoutSink, logging::kDefaultLogLevel>;
+    logging::SyncLogger<logging::StdoutSink, logging::DEFAULT_LOG_LEVEL>;
 extern Logger logger;
 
 void init_logger(term::ColorStyle style);

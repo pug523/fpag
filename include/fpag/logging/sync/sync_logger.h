@@ -28,7 +28,7 @@ namespace logging {
 // on the concrete sink and is inlined; there is no virtual dispatch anywhere.
 // S is held in an optional because init() is the only thing that ever gives it
 // a value, and because a sink is not required to be default constructible.
-template <Sink S, LogLevel kMinLevel>
+template <Sink S, LogLevel MIN_LEVEL>
 class SyncLogger {
  public:
   constexpr SyncLogger() = default;
@@ -88,7 +88,7 @@ class SyncLogger {
 
  private:
   static consteval bool should_log(LogLevel level) {
-    return level >= kMinLevel;
+    return level >= MIN_LEVEL;
   }
 
   template <LogLevel level, typename Format, typename... Args>

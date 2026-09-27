@@ -37,7 +37,7 @@ TEST_CASE("StackTrace Lifecycle and Boundary Tests", "[base][stack_trace]") {
   }
 
   SECTION("Initialization with various depths") {
-    std::vector<StackTraceFrame> buffer(StackTrace::kMaxTraceDepth + 1);
+    std::vector<StackTraceFrame> buffer(StackTrace::MAX_TRACE_DEPTH + 1);
 
     SECTION("Normal initialization") {
       trace.init(buffer.data(), 10);
@@ -46,7 +46,7 @@ TEST_CASE("StackTrace Lifecycle and Boundary Tests", "[base][stack_trace]") {
     }
 
     SECTION("Max depth initialization") {
-      trace.init(buffer.data(), StackTrace::kMaxTraceDepth);
+      trace.init(buffer.data(), StackTrace::MAX_TRACE_DEPTH);
       REQUIRE(trace.frames() == buffer.data());
     }
 

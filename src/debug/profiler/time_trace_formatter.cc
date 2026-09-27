@@ -27,12 +27,12 @@ bool TimeTraceFormatter::write_to_file(
     return false;
   }
 
-  constexpr std::string_view kHeader = "{\"traceEvents\":[\n";
-  if (!writer.write(kHeader.data(), kHeader.size())) {
+  constexpr std::string_view HEADER = "{\"traceEvents\":[\n";
+  if (!writer.write(HEADER.data(), HEADER.size())) {
     return false;
   }
 
-  constexpr usize kMaxSingleEventWriteSize = 1024;
+  constexpr usize MAX_SINGLE_EVENT_WRITE_SIZE = 1024;
   const usize count = events.size();
 
   for (usize i = 0; i < count; ++i) {
@@ -42,14 +42,14 @@ bool TimeTraceFormatter::write_to_file(
     const char* comma = (i + 1 < count) ? "," : "";
 
     // Obtain direct pointer to memory-mapped region.
-    u8* dest_ptr = writer.prepare_write_buffer(kMaxSingleEventWriteSize);
+    u8* dest_ptr = writer.prepare_write_buffer(MAX_SINGLE_EVENT_WRITE_SIZE);
     if (!dest_ptr) {
       return false;
     }
 
     // Format directly into mapped file buffer (zero-copy / zero-allocation).
     auto result = fmt::format_to_n(
-        reinterpret_cast<char*>(dest_ptr), kMaxSingleEventWriteSize,
+        reinterpret_cast<char*>(dest_ptr), MAX_SINGLE_EVENT_WRITE_SIZE,
         FMT_COMPILE(
             "  {{\"name\":\"{}\",\"cat\":\"{}\",\"ph\":\"X\",\"ts\":{:.3f},"
             "\"dur\":{:.3f},\"pid\":{},\"tid\":{},\"args\":{{\"file\":\"{}\","
@@ -61,8 +61,8 @@ bool TimeTraceFormatter::write_to_file(
     writer.commit_write(result.size);
   }
 
-  constexpr std::string_view kFooter = "]}\n";
-  if (!writer.write(kFooter.data(), kFooter.size())) {
+  constexpr std::string_view FOOTER = "]}\n";
+  if (!writer.write(FOOTER.data(), FOOTER.size())) {
     return false;
   }
 

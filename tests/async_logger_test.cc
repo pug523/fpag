@@ -186,8 +186,8 @@ TEST_CASE("AsyncLogger carries an argument larger than 4 KiB",
               /*queue_capacity=*/1 << 16);
   logger.start_backend_worker();
 
-  constexpr usize kBigSize = 8ull * 1024;
-  const std::string big(kBigSize, 'x');
+  constexpr usize BIG_SIZE = 8ull * 1024;
+  const std::string big(BIG_SIZE, 'x');
 
   // The payload is longer than the format buffer, and it only fits in the queue
   // because the caller sized the queue for it.

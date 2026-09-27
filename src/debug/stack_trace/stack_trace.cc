@@ -25,8 +25,8 @@ void StackTrace::init(StackTraceFrame* frames_buf, usize depth, usize skip) {
 
   // `FPAG_DCHECK` uses StackTrace, so to avoid infinite recursion we use
   // `raw_FPAG_DCHECK_msg`.
-  FPAG_RAW_DCHECK_MSG(depth_ <= kMaxTraceDepth,
-                      "init called with depth exceeding kMaxTraceDepth.");
+  FPAG_RAW_DCHECK_MSG(depth_ <= MAX_TRACE_DEPTH,
+                      "init called with depth exceeding MAX_TRACE_DEPTH.");
   FPAG_RAW_DCHECK_MSG(skip_ <= depth_,
                       "init called with skip greater than depth.");
 
@@ -38,7 +38,7 @@ void StackTrace::collect_trace() {
                       "collect_trace called on uninitialized stack trace.");
 
   // Capture raw addresses
-  void* raw_addrs[kMaxTraceDepth];
+  void* raw_addrs[MAX_TRACE_DEPTH];
   const usize captured = capture_stack_addresses(raw_addrs, depth_, skip_);
 
   if (captured == 0) [[unlikely]] {
@@ -72,8 +72,8 @@ void StackTrace::collect_trace() {
 
 void StackTrace::print_trace(std::string_view prefix) const {
   if (status_ == StackTraceStatus::Failed) [[unlikely]] {
-    constexpr const char* kError = "stack trace collection failed";
-    io::write(io::kStderrFd, kError, const_strlen(kError));
+    constexpr const char* ERROR_MESSAGE = "stack trace collection failed";
+    io::write(io::STDERR_FD, ERROR_MESSAGE, const_strlen(ERROR_MESSAGE));
     return;
   }
 
@@ -82,7 +82,7 @@ void StackTrace::print_trace(std::string_view prefix) const {
       "print_trace_with_prefix called on uncollected stack trace.");
 
   const std::string out = format_frames(frames_, count_, prefix);
-  io::write(io::kStdoutFd, out.data(), out.size());
+  io::write(io::STDOUT_FD, out.data(), out.size());
 }
 
 std::string StackTrace::to_string() const {
@@ -105,9 +105,9 @@ std::string_view StackTrace::intern_string(std::string_view str) {
 }
 
 void print_stack_trace_from_here() {
-  std::vector<StackTraceFrame> stack_trace_buf(StackTrace::kMaxTraceDepth);
+  std::vector<StackTraceFrame> stack_trace_buf(StackTrace::MAX_TRACE_DEPTH);
   StackTrace trace;
-  trace.init(stack_trace_buf.data(), StackTrace::kMaxTraceDepth, 4);
+  trace.init(stack_trace_buf.data(), StackTrace::MAX_TRACE_DEPTH, 4);
   trace.collect_trace();
   trace.print_trace();
 }

@@ -13,7 +13,7 @@ namespace base {
 
 using IdxBaseType = u32;
 
-constexpr IdxBaseType kInvalidIdx = std::numeric_limits<IdxBaseType>::max();
+constexpr IdxBaseType INVALID_IDX = std::numeric_limits<IdxBaseType>::max();
 
 template <typename T>
 concept HasIdxType = requires { typename T::IdxType; };
@@ -29,7 +29,7 @@ struct Idx {
   constexpr explicit Idx(IdxType id) : idx(id) {}
   constexpr auto operator<=>(const Idx&) const = default;
 
-  static constexpr Idx invalid() { return Idx(kInvalidIdx); }
+  static constexpr Idx invalid() { return Idx(INVALID_IDX); }
 
   // Preincrement
   constexpr Idx& operator++() {
@@ -57,7 +57,7 @@ struct Idx {
     return lhs - Idx{static_cast<IdxType>(i)};
   }
 
-  bool is_valid() const { return idx != kInvalidIdx; }
+  bool is_valid() const { return idx != INVALID_IDX; }
 };
 
 }  // namespace base

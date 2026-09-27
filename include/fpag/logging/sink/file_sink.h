@@ -35,8 +35,8 @@ class FileSink {
   FileSink& operator=(FileSink&&) noexcept = default;
 
   void log(const LogEntry& entry) {
-    constexpr usize kMaxLogLineSize = 2048;
-    u8* dest = writer_.prepare_write_buffer(kMaxLogLineSize);
+    constexpr usize MAX_LOG_LINE_SIZE = 2048;
+    u8* dest = writer_.prepare_write_buffer(MAX_LOG_LINE_SIZE);
     if (!dest) [[unlikely]] {
       return;
     }
@@ -50,7 +50,7 @@ class FileSink {
     // TODO(logging): Include Location once added to LogEntry:
     // " [{}:{}]", entry.location.file, entry.location.line
     const auto result =
-        fmt::format_to_n(reinterpret_cast<char*>(dest), kMaxLogLineSize,
+        fmt::format_to_n(reinterpret_cast<char*>(dest), MAX_LOG_LINE_SIZE,
                          FMT_COMPILE("[{}][{}] {}\n"), entry.timestamp_ns,
                          level_str, entry.message);
 

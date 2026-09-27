@@ -34,7 +34,7 @@ struct MoveOnlyType {
 // Poisons itself on move and on destruction, so a value read after either
 // carries the poison instead of whatever the storage happens to hold.
 struct PoisonedValue {
-  static constexpr i32 kPoison = -1;
+  static constexpr i32 POISON = -1;
 
   i32 val = 0;
 
@@ -44,11 +44,11 @@ struct PoisonedValue {
   PoisonedValue& operator=(const PoisonedValue&) = default;
 
   PoisonedValue(PoisonedValue&& other) noexcept : val(other.val) {
-    other.val = kPoison;
+    other.val = POISON;
   }
   PoisonedValue& operator=(PoisonedValue&& other) noexcept = default;
 
-  ~PoisonedValue() { val = kPoison; }
+  ~PoisonedValue() { val = POISON; }
 };
 
 }  // namespace

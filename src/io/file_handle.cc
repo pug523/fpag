@@ -23,7 +23,7 @@ namespace io {
 
 FileHandle::FileHandle(FileHandle&& other) noexcept
     : handle_(other.handle_), access_(other.access_) {
-  other.handle_ = kInvalidHandle;
+  other.handle_ = INVALID_HANDLE;
 }
 
 FileHandle& FileHandle::operator=(FileHandle&& other) noexcept {
@@ -31,7 +31,7 @@ FileHandle& FileHandle::operator=(FileHandle&& other) noexcept {
     close();
     handle_ = other.handle_;
     access_ = other.access_;
-    other.handle_ = kInvalidHandle;
+    other.handle_ = INVALID_HANDLE;
   }
   return *this;
 }
@@ -70,7 +70,7 @@ void FileHandle::close() {
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   ::close(handle_);
 #endif
-  handle_ = kInvalidHandle;
+  handle_ = INVALID_HANDLE;
 }
 
 bool FileHandle::resize(usize new_size) {

@@ -30,12 +30,12 @@ class StringPool {
   // address spaces (e.g. wasm32): every StringInterner reserves this up
   // front, so it must stay well under linear-memory caps.
 #if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
-  static constexpr usize kDefaultPoolCapacity = 1ull * 1024 * 1024 * 1024;
+  static constexpr usize DEFAULT_POOL_CAPACITY = 1ull * 1024 * 1024 * 1024;
 #else
-  static constexpr usize kDefaultPoolCapacity = 64ull * 1024 * 1024;
+  static constexpr usize DEFAULT_POOL_CAPACITY = 64ull * 1024 * 1024;
 #endif
 
-  explicit StringPool(usize capacity = kDefaultPoolCapacity) {
+  explicit StringPool(usize capacity = DEFAULT_POOL_CAPACITY) {
     FPAG_DCHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");
     FPAG_DCHECK_MSG(
         capacity <= static_cast<usize>(std::numeric_limits<u32>::max()),

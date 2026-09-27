@@ -82,14 +82,14 @@ class SimpleConcurrentHashMap {
     // would corrupt the map rather than fail.
     FPAG_CHECK_MSG(base::is_power_of_two(capacity),
                    "SimpleConcurrentHashMap: capacity must be a power of two");
-    FPAG_CHECK_MSG(capacity <= kMaxCapacity,
+    FPAG_CHECK_MSG(capacity <= MAX_CAPACITY,
                    "SimpleConcurrentHashMap: capacity is out of range");
 
     const u64 entries_capacity = base::round_up(capacity, mem::page_size());
     const u64 entries_size = sizeof(Entry) * entries_capacity;
     // Rounding the count up to a page can push the byte size past what usize
     // holds even when the count itself passed the check above.
-    FPAG_CHECK_MSG(entries_size <= kUsizeMax,
+    FPAG_CHECK_MSG(entries_size <= USIZE_MAX,
                    "SimpleConcurrentHashMap: capacity is out of range");
     capacity_.store(entries_capacity, std::memory_order_relaxed);
     void* const raw_mem = mem::allocate_pages(static_cast<usize>(entries_size));
@@ -125,10 +125,10 @@ class SimpleConcurrentHashMap {
       const u64 entry_hash = wait_unlocked(e);
 
       // Check if the entry is empty
-      if (entry_hash == kEmptyHash) {
-        u64 expected = kEmptyHash;
+      if (entry_hash == EMPTY_HASH) {
+        u64 expected = EMPTY_HASH;
         // Try to lock the entry
-        if (e.hash.compare_exchange_strong(expected, kLockedHash,
+        if (e.hash.compare_exchange_strong(expected, LOCKED_HASH,
                                            std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           // We own the slot - write key/value, then publish the hash.
@@ -150,7 +150,7 @@ class SimpleConcurrentHashMap {
         // The key is already here. Take the slot before writing the value, or
         // the write races with every reader that got a pointer from find().
         u64 expected = h;
-        if (e.hash.compare_exchange_strong(expected, kLockedHash,
+        if (e.hash.compare_exchange_strong(expected, LOCKED_HASH,
                                            std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           e.value = value;
@@ -178,7 +178,7 @@ class SimpleConcurrentHashMap {
       const u64 entry_hash = wait_unlocked(e);
       if (entry_hash == h && e.key == key) [[likely]] {
         return &e.value;
-      } else if (entry_hash == kEmptyHash) {
+      } else if (entry_hash == EMPTY_HASH) {
         return nullptr;
       }
     }
@@ -198,9 +198,9 @@ class SimpleConcurrentHashMap {
 
       const u64 cur = wait_unlocked(e);
 
-      if (cur == kEmptyHash) {
-        u64 expected = kEmptyHash;
-        if (e.hash.compare_exchange_strong(expected, kLockedHash,
+      if (cur == EMPTY_HASH) {
+        u64 expected = EMPTY_HASH;
+        if (e.hash.compare_exchange_strong(expected, LOCKED_HASH,
                                            std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
           // Successfully locked the slot; write the key/value and publish.
@@ -240,11 +240,11 @@ class SimpleConcurrentHashMap {
     V value;
   };
 
-  static constexpr u64 kEmptyHash = 0;
-  static constexpr u64 kLockedHash = kU64Max;
+  static constexpr u64 EMPTY_HASH = 0;
+  static constexpr u64 LOCKED_HASH = U64_MAX;
   // The entries go to mem::allocate_pages() as one byte size, so the count has
   // to keep `sizeof(Entry) * capacity` representable in usize.
-  static constexpr u64 kMaxCapacity = kUsizeMax / sizeof(Entry);
+  static constexpr u64 MAX_CAPACITY = USIZE_MAX / sizeof(Entry);
 
   // A slot is empty, locked by one writer, or published. Waits out a writer and
   // returns the state the slot settled on, so a caller that loses the race for
@@ -252,7 +252,7 @@ class SimpleConcurrentHashMap {
   // inserted into it.
   static u64 wait_unlocked(const Entry& e) {
     u64 entry_hash = e.hash.load(std::memory_order_acquire);
-    while (entry_hash == kLockedHash) {
+    while (entry_hash == LOCKED_HASH) {
       entry_hash = e.hash.load(std::memory_order_acquire);
     }
     return entry_hash;
@@ -260,7 +260,7 @@ class SimpleConcurrentHashMap {
 
   u64 hash(const K& key) const {
     const u64 h = hasher_(key);
-    if (h == kEmptyHash || h == kLockedHash) [[unlikely]] {
+    if (h == EMPTY_HASH || h == LOCKED_HASH) [[unlikely]] {
       return 1;
     } else {
       return h;

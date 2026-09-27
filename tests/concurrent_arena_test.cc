@@ -120,36 +120,36 @@ TEST_CASE("ConcurrentArena is usable from several threads",
   // Every thread writes its own pattern into the block it just received. A
   // block that is advertised as committed but was not actually made writable
   // yet is written to here, and the write faults.
-  constexpr usize kThreads = 8;
-  constexpr usize kAllocationsPerThread = 512;
-  constexpr usize kBlockSize = 64;
-  constexpr usize kTotalBlocks = kThreads * kAllocationsPerThread;
+  constexpr usize THREADS = 8;
+  constexpr usize ALLOCATIONS_PER_THREAD = 512;
+  constexpr usize BLOCK_SIZE = 64;
+  constexpr usize TOTAL_BLOCKS = THREADS * ALLOCATIONS_PER_THREAD;
 
   ConcurrentArena arena;
-  arena.reserve(base::round_up(kTotalBlocks * kBlockSize + page_size() * 16,
+  arena.reserve(base::round_up(TOTAL_BLOCKS * BLOCK_SIZE + page_size() * 16,
                                page_size()));
 
-  std::vector<u8*> blocks(kTotalBlocks, nullptr);
+  std::vector<u8*> blocks(TOTAL_BLOCKS, nullptr);
 
   const auto worker = [&arena, &blocks](usize thread_index) {
     const u8 pattern = static_cast<u8>(thread_index + 1);
-    for (usize i = 0; i < kAllocationsPerThread; ++i) {
-      u8* const block = static_cast<u8*>(arena.alloc(kBlockSize, 1));
+    for (usize i = 0; i < ALLOCATIONS_PER_THREAD; ++i) {
+      u8* const block = static_cast<u8*>(arena.alloc(BLOCK_SIZE, 1));
       // No assertion in here: Catch2's assertion machinery is not thread-safe,
       // and a null block shows up as a null entry checked after the join.
       if (block == nullptr) {
         return;
       }
-      for (usize j = 0; j < kBlockSize; ++j) {
+      for (usize j = 0; j < BLOCK_SIZE; ++j) {
         block[j] = pattern;
       }
-      blocks[thread_index * kAllocationsPerThread + i] = block;
+      blocks[thread_index * ALLOCATIONS_PER_THREAD + i] = block;
     }
   };
 
   std::vector<std::thread> threads;
-  threads.reserve(kThreads);
-  for (usize t = 0; t < kThreads; ++t) {
+  threads.reserve(THREADS);
+  for (usize t = 0; t < THREADS; ++t) {
     threads.emplace_back(worker, t);
   }
   for (std::thread& thread : threads) {
@@ -157,7 +157,7 @@ TEST_CASE("ConcurrentArena is usable from several threads",
   }
 
   const auto block_matches = [](const u8* block, u8 expected) {
-    for (usize i = 0; i < kBlockSize; ++i) {
+    for (usize i = 0; i < BLOCK_SIZE; ++i) {
       if (block[i] != expected) {
         return false;
       }
@@ -165,10 +165,10 @@ TEST_CASE("ConcurrentArena is usable from several threads",
     return true;
   };
 
-  for (usize t = 0; t < kThreads; ++t) {
+  for (usize t = 0; t < THREADS; ++t) {
     const u8 pattern = static_cast<u8>(t + 1);
-    for (usize i = 0; i < kAllocationsPerThread; ++i) {
-      const u8* const block = blocks[t * kAllocationsPerThread + i];
+    for (usize i = 0; i < ALLOCATIONS_PER_THREAD; ++i) {
+      const u8* const block = blocks[t * ALLOCATIONS_PER_THREAD + i];
       REQUIRE(block != nullptr);
       CHECK(block_matches(block, pattern));
     }

@@ -16,15 +16,15 @@ namespace debug {
 
 TEST_CASE("capture_stack_addresses basic functionality",
           "[base][debug][stack_trace]") {
-  const usize kMaxDepth = 10;
-  void* frames[kMaxDepth];
+  const usize MAX_DEPTH = 10;
+  void* frames[MAX_DEPTH];
 
   SECTION("Capture at least one frame") {
     // Basic capture to ensure the function returns a non-zero value in a
     // standard environment.
-    const usize captured = capture_stack_addresses(frames, kMaxDepth, 0);
+    const usize captured = capture_stack_addresses(frames, MAX_DEPTH, 0);
 
-    CHECK(captured <= kMaxDepth);
+    CHECK(captured <= MAX_DEPTH);
 #if FPAG_BUILD_FLAG(IS_OS_ASMJS)
     // The wasm build has no unwinder, so capture reports no frames by design.
     CHECK(captured == 0);
@@ -44,14 +44,14 @@ TEST_CASE("capture_stack_addresses basic functionality",
   }
 
   SECTION("Respect max_depth limit") {
-    const usize kSmallDepth = 2;
-    void* small_frames[kSmallDepth];
+    const usize SMALL_DEPTH = 2;
+    void* small_frames[SMALL_DEPTH];
 
-    // Even if the stack is deep, it should only return up to kSmallDepth.
+    // Even if the stack is deep, it should only return up to SMALL_DEPTH.
     const usize captured =
-        capture_stack_addresses(small_frames, kSmallDepth, 0);
+        capture_stack_addresses(small_frames, SMALL_DEPTH, 0);
 
-    CHECK(captured <= kSmallDepth);
+    CHECK(captured <= SMALL_DEPTH);
   }
 
   SECTION("Handle zero max_depth") {
@@ -75,17 +75,17 @@ FPAG_NOINLINE usize deep_stack_function(void** out_frames,
 
 TEST_CASE("capture_stack_addresses skip functionality",
           "[base][debug][stack_trace]") {
-  const usize kMaxDepth = 10;
-  void* frames_normal[kMaxDepth];
-  void* frames_skipped[kMaxDepth];
+  const usize MAX_DEPTH = 10;
+  void* frames_normal[MAX_DEPTH];
+  void* frames_skipped[MAX_DEPTH];
 
   SECTION("Skip shifts the captured addresses") {
     // Capture without extra skip.
-    const usize count_normal = deep_stack_function(frames_normal, kMaxDepth, 0);
+    const usize count_normal = deep_stack_function(frames_normal, MAX_DEPTH, 0);
 
     // Capture skipping the DeepStackFunction itself.
     const usize count_skipped =
-        deep_stack_function(frames_skipped, kMaxDepth, 1);
+        deep_stack_function(frames_skipped, MAX_DEPTH, 1);
 
     if (count_normal > 1 && count_skipped > 0) {
       // The first frame of the skipped capture should match
@@ -97,7 +97,7 @@ TEST_CASE("capture_stack_addresses skip functionality",
   SECTION("Excessive skip returns zero or minimal frames") {
     // Skipping more frames than likely exist in this test runner context.
     const usize captured =
-        capture_stack_addresses(frames_normal, kMaxDepth, 1000);
+        capture_stack_addresses(frames_normal, MAX_DEPTH, 1000);
 
     // Depending on implementation, this usually returns 0 if the stack is
     // exhausted.

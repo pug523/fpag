@@ -31,16 +31,16 @@ class StackTrace {
 
 #if FPAG_BUILD_FLAG(IS_OS_ANDROID)
   // Android has a issue with deep stack traces, so we limit it to 62.
-  static constexpr usize kMaxTraceDepth = 62;
+  static constexpr usize MAX_TRACE_DEPTH = 62;
 #else
   // Seems reasonable for most cases without being huge.
-  static constexpr usize kMaxTraceDepth = 256;
+  static constexpr usize MAX_TRACE_DEPTH = 256;
 #endif
 
   // Initializes the stack trace with a buffer of `frames_buf` which has `depth`
-  // frames. `depth` must be less than or equal to kMaxTraceDepth.
+  // frames. `depth` must be less than or equal to MAX_TRACE_DEPTH.
   void init(StackTraceFrame* frames_buf,
-            usize depth = kMaxTraceDepth,
+            usize depth = MAX_TRACE_DEPTH,
             usize skip = 2);
 
   // Collects the current stack trace up to the `depth_`.
@@ -66,7 +66,7 @@ class StackTrace {
 
   StackTraceFrame* frames_ = nullptr;
   // Maximum number of frames to capture (set by init()).
-  usize depth_ = kMaxTraceDepth;
+  usize depth_ = MAX_TRACE_DEPTH;
 
   // Number of frames to skip before capturing (set by init()).
   usize skip_ = 0;

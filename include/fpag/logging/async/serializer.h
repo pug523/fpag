@@ -29,7 +29,7 @@
 
 namespace logging {
 
-template <typename Format, bool kUseInterner, typename... Args>
+template <typename Format, bool USE_INTERNER, typename... Args>
 class Serializer {
  public:
   Serializer() = delete;
@@ -39,43 +39,43 @@ class Serializer {
                            container::SpscQueue* queue,
                            Format fmt,
                            Args&&... args) {
-    constexpr bool kAreAllArgsFixedSize =
+    constexpr bool ARE_ALL_ARGS_FIXED_SIZE =
         (Codec<std::decay_t<Args>>::is_fixed_size() && ...);
 
-    using Deserializer = Deserializer<Format, kUseInterner, Args...>;
-    static constexpr DeserializeFunction kDeserializeFunc =
+    using Deserializer = Deserializer<Format, USE_INTERNER, Args...>;
+    static constexpr DeserializeFunction DESERIALIZE_FUNC =
         &Deserializer::deserialize;
     using Eqs = container::SpscQueue::EnqueueStatus;
 
     if constexpr (sizeof...(Args) == 0) {
       void* out_ptr = nullptr;
-      const Eqs status = queue->reserve(Deserializer::kPayloadHeaderSize,
-                                        &out_ptr, kPayloadAlign);
+      const Eqs status = queue->reserve(Deserializer::PAYLOAD_HEADER_SIZE,
+                                        &out_ptr, PAYLOAD_ALIGN);
       if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 
       write_header(static_cast<char*>(out_ptr),
-                   Deserializer::kPayloadHeaderSize, kDeserializeFunc, level,
+                   Deserializer::PAYLOAD_HEADER_SIZE, DESERIALIZE_FUNC, level,
                    fmt, interner);
-      queue->commit(Deserializer::kPayloadHeaderSize);
-    } else if constexpr (kAreAllArgsFixedSize) {
-      constexpr usize kArgsSize =
+      queue->commit(Deserializer::PAYLOAD_HEADER_SIZE);
+    } else if constexpr (ARE_ALL_ARGS_FIXED_SIZE) {
+      constexpr usize ARGS_SIZE =
           (Codec<std::decay_t<Args>>::body_size() + ...);
-      constexpr usize kTotalPayloadSize =
-          Deserializer::kPayloadHeaderSize + kArgsSize;
+      constexpr usize TOTAL_PAYLOAD_SIZE =
+          Deserializer::PAYLOAD_HEADER_SIZE + ARGS_SIZE;
       void* out_ptr = nullptr;
       const Eqs status =
-          queue->reserve(kTotalPayloadSize, &out_ptr, kPayloadAlign);
+          queue->reserve(TOTAL_PAYLOAD_SIZE, &out_ptr, PAYLOAD_ALIGN);
       if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 
-      write_header(static_cast<char*>(out_ptr), kTotalPayloadSize,
-                   kDeserializeFunc, level, fmt, interner);
+      write_header(static_cast<char*>(out_ptr), TOTAL_PAYLOAD_SIZE,
+                   DESERIALIZE_FUNC, level, fmt, interner);
 
       char* arg_out_cursor =
-          static_cast<char*>(out_ptr) + Deserializer::kPayloadHeaderSize;
+          static_cast<char*>(out_ptr) + Deserializer::PAYLOAD_HEADER_SIZE;
       // clang-format off
       ([&] {
         using Codec = Codec<std::decay_t<decltype(args)>>;
@@ -85,8 +85,8 @@ class Serializer {
       // clang-format on
 
       FPAG_DCHECK(arg_out_cursor - static_cast<const char*>(out_ptr) ==
-                  kTotalPayloadSize);
-      queue->commit(kTotalPayloadSize);
+                  TOTAL_PAYLOAD_SIZE);
+      queue->commit(TOTAL_PAYLOAD_SIZE);
     } else {
       usize args_body_size = 0;
       // clang-format off
@@ -106,18 +106,18 @@ class Serializer {
 
       void* out_ptr = nullptr;
       const usize total_payload_size =
-          Deserializer::kPayloadHeaderSize + args_body_size;
+          Deserializer::PAYLOAD_HEADER_SIZE + args_body_size;
       const Eqs status =
-          queue->reserve(total_payload_size, &out_ptr, kPayloadAlign);
+          queue->reserve(total_payload_size, &out_ptr, PAYLOAD_ALIGN);
       if (status == Eqs::Dropped) [[unlikely]] {
         return;
       }
 
       char* const payload_head = static_cast<char*>(out_ptr);
-      write_header(payload_head, total_payload_size, kDeserializeFunc, level,
+      write_header(payload_head, total_payload_size, DESERIALIZE_FUNC, level,
                    fmt, interner);
 
-      char* arg_out_cursor = payload_head + Deserializer::kPayloadHeaderSize;
+      char* arg_out_cursor = payload_head + Deserializer::PAYLOAD_HEADER_SIZE;
       // clang-format off
       // NOLINTBEGIN(whitespace/braces,whitespace/line_length)
       ([&] {
@@ -162,10 +162,10 @@ class Serializer {
     out_cursor += base::round_up(sizeof(func), alignof(DeserializeFunction));
     std::memcpy(out_cursor, &level, sizeof(level));
     if constexpr (!fmt::is_compiled_string<Format>::value) {
-      out_cursor += base::round_up(sizeof(level), kPayloadAlign);
+      out_cursor += base::round_up(sizeof(level), PAYLOAD_ALIGN);
 
       const std::string_view fmt_string = static_cast<std::string_view>(fmt);
-      if constexpr (kUseInterner) {
+      if constexpr (USE_INTERNER) {
         const str::StringInterner::StringId id = interner->intern(fmt_string);
         std::memcpy(out_cursor, &id, sizeof(id));
       } else {

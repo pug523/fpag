@@ -17,8 +17,8 @@ struct StringPoolId {
   u32 length;
 };
 
-constexpr u32 kInvalidOffset = 0xFFFFFFFFu;
-constexpr StringPoolId kInvalidStringPoolId = {kInvalidOffset, 0};
-constexpr StringPoolId kEmptyStringId = {0, 0};
+constexpr u32 INVALID_OFFSET = 0xFFFFFFFFu;
+constexpr StringPoolId INVALID_STRING_POOL_ID = {INVALID_OFFSET, 0};
+constexpr StringPoolId EMPTY_STRING_ID = {0, 0};
 
 }  // namespace str

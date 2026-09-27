@@ -50,20 +50,20 @@ TempDir::TempDir(std::string_view name) {
 }
 
 TempDir TempDir::create_unique(std::string_view prefix) {
-  static constexpr char kChars[] =
+  static constexpr char CHARS[] =
       "abcdefghijklmnopqrstuvwxyz"
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "0123456789";
 
   thread_local std::mt19937 rng(std::random_device{}());
-  std::uniform_int_distribution<usize> dist(0, sizeof(kChars) - 2);
+  std::uniform_int_distribution<usize> dist(0, sizeof(CHARS) - 2);
 
   std::string name(prefix);
-  constexpr usize kRandomLength = 16;
-  name.reserve(name.size() + kRandomLength);
+  constexpr usize RANDOM_LENGTH = 16;
+  name.reserve(name.size() + RANDOM_LENGTH);
 
-  for (usize i = 0; i < kRandomLength; ++i) {
-    name.push_back(kChars[dist(rng)]);
+  for (usize i = 0; i < RANDOM_LENGTH; ++i) {
+    name.push_back(CHARS[dist(rng)]);
   }
 
   return TempDir(name);

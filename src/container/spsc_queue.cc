@@ -76,8 +76,8 @@ void SpscQueue::init(usize capacity, Mode mode) {
   capacity_ = capacity;
   FPAG_CHECK_MSG(base::is_power_of_two(capacity_),
                  "SpscQueue: capacity must be a power of two.");
-  FPAG_CHECK_MSG(capacity_ <= kMaxCapacity,
-                 "SpscQueue: capacity must be <= kMaxCapacity");
+  FPAG_CHECK_MSG(capacity_ <= MAX_CAPACITY,
+                 "SpscQueue: capacity must be <= MAX_CAPACITY");
 
   mode_ = mode;
 

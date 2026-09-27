@@ -67,7 +67,7 @@ class StdoutSink {
 
   void flush() {
     if (offset_ > 0 && use_buffer_) [[likely]] {
-      io::write(io::kStdoutFd, buffer_, offset_);
+      io::write(io::STDOUT_FD, buffer_, offset_);
       offset_ = 0;
     }
   }
@@ -77,9 +77,9 @@ class StdoutSink {
 
   inline void directly_write(const std::string_view& prefix,
                              const std::string_view& message) {
-    io::write(io::kStdoutFd, prefix.data(), prefix.size());
-    io::write(io::kStdoutFd, message.data(), message.size());
-    io::write(io::kStdoutFd, "\n", 1);
+    io::write(io::STDOUT_FD, prefix.data(), prefix.size());
+    io::write(io::STDOUT_FD, message.data(), message.size());
+    io::write(io::STDOUT_FD, "\n", 1);
   }
 
   char* buffer_;

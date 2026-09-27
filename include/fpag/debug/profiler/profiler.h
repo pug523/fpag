@@ -15,9 +15,9 @@ namespace debug {
 
 class Profiler {
  public:
-  static constexpr usize kDefaultInitialCapacity = static_cast<usize>(1024);
+  static constexpr usize DEFAULT_INITIAL_CAPACITY = static_cast<usize>(1024);
 
-  explicit Profiler(usize initial_capacity = kDefaultInitialCapacity) noexcept;
+  explicit Profiler(usize initial_capacity = DEFAULT_INITIAL_CAPACITY) noexcept;
   ~Profiler() noexcept = default;
 
   Profiler(const Profiler&) = delete;

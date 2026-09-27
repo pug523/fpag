@@ -14,8 +14,8 @@ namespace {
 // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 void spsc_queue_simple_enqueue_single_thread(benchmark::State& state) {
   SpscQueue queue;
-  constexpr usize kCap = 1 << 30;
-  queue.init(kCap, SpscQueue::Mode::Drop);
+  constexpr usize CAP = 1 << 30;
+  queue.init(CAP, SpscQueue::Mode::Drop);
 
   const u64 sample_data = 168;
   for (auto _ : state) {

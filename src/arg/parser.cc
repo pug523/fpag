@@ -100,11 +100,11 @@ bool Parser::long_option(const std::vector<const Command*>& scope,
     }
 
     if (level->builtin_enabled()) {
-      if (content == kBuiltinHelpArgLong) {
+      if (content == BUILTIN_HELP_ARG_LONG) {
         *status = ParseStatus::HelpRequested;
         help_command_ = level;
         return true;
-      } else if (content == kBuiltinVersionArgLong) {
+      } else if (content == BUILTIN_VERSION_ARG_LONG) {
         *status = ParseStatus::VersionRequested;
         return true;
       }
@@ -142,11 +142,11 @@ bool Parser::short_options(const std::vector<const Command*>& scope,
         break;
       }
       if (level->builtin_enabled()) {
-        if (c == kBuiltinHelpArgShort) {
+        if (c == BUILTIN_HELP_ARG_SHORT) {
           *status = ParseStatus::HelpRequested;
           help_command_ = level;
           return true;
-        } else if (c == kBuiltinVersionArgShort) {
+        } else if (c == BUILTIN_VERSION_ARG_SHORT) {
           *status = ParseStatus::VersionRequested;
           return true;
         }

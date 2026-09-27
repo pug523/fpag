@@ -42,81 +42,81 @@ TEST_CASE("SpscQueue Enqueue Dequeue Single Element",
   SECTION(
       "Manual enqueue(reserve/commit) and dequeue(peek/discard) single "
       "integer") {
-    constexpr i32 kDataIn = 42;
+    constexpr i32 DATA_IN = 42;
 
     void* ptr = nullptr;
     const SpscQueue::EnqueueStatus result =
-        queue.reserve(sizeof(kDataIn), &ptr);
+        queue.reserve(sizeof(DATA_IN), &ptr);
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
-    *static_cast<i32*>(ptr) = kDataIn;
-    queue.commit(sizeof(kDataIn));
+    *static_cast<i32*>(ptr) = DATA_IN;
+    queue.commit(sizeof(DATA_IN));
     CHECK_FALSE(queue.empty());
-    CHECK(queue.size() == sizeof(kDataIn));
-    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kDataIn));
+    CHECK(queue.size() == sizeof(DATA_IN));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(DATA_IN));
 
-    const char* peeked = queue.peek(sizeof(kDataIn));
+    const char* peeked = queue.peek(sizeof(DATA_IN));
     const i32* data_out_ptr = reinterpret_cast<const i32*>(peeked);
     const i32 data_out_copied = *data_out_ptr;
     queue.discard(sizeof(data_out_copied));
     CHECK(queue.empty());
     CHECK(queue.size() == 0);
     CHECK(queue.available() == SpscQueue::default_capacity());
-    CHECK(data_out_copied == kDataIn);
+    CHECK(data_out_copied == DATA_IN);
   }
 
   SECTION(
       "Manual enqueue(reserve/commit) and dequeue(peek/discard) single char") {
-    constexpr char kCharIn = 'A';
+    constexpr char CHAR_IN = 'A';
 
     void* ptr = nullptr;
     const SpscQueue::EnqueueStatus result =
-        queue.reserve(sizeof(kCharIn), &ptr);
+        queue.reserve(sizeof(CHAR_IN), &ptr);
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
-    *static_cast<char*>(ptr) = kCharIn;
-    queue.commit(sizeof(kCharIn));
+    *static_cast<char*>(ptr) = CHAR_IN;
+    queue.commit(sizeof(CHAR_IN));
     CHECK_FALSE(queue.empty());
-    CHECK(queue.size() == sizeof(kCharIn));
-    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kCharIn));
+    CHECK(queue.size() == sizeof(CHAR_IN));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(CHAR_IN));
 
     const char char_out =
-        *reinterpret_cast<const char*>(queue.peek(sizeof(kCharIn)));
-    queue.discard(sizeof(kCharIn));
+        *reinterpret_cast<const char*>(queue.peek(sizeof(CHAR_IN)));
+    queue.discard(sizeof(CHAR_IN));
     CHECK(queue.empty());
-    CHECK(char_out == kCharIn);
+    CHECK(char_out == CHAR_IN);
   }
 
   SECTION("Automatic enqueue and dequeue single integer") {
-    constexpr i32 kDataIn = 42;
+    constexpr i32 DATA_IN = 42;
 
     const SpscQueue::EnqueueStatus result =
-        queue.enqueue(&kDataIn, sizeof(kDataIn));
+        queue.enqueue(&DATA_IN, sizeof(DATA_IN));
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
-    CHECK(queue.size() == sizeof(kDataIn));
-    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kDataIn));
+    CHECK(queue.size() == sizeof(DATA_IN));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(DATA_IN));
 
     i32 data_out = 0;
     queue.dequeue(static_cast<void*>(&data_out), sizeof(data_out));
     CHECK(queue.empty());
     CHECK(queue.size() == 0);
     CHECK(queue.available() == SpscQueue::default_capacity());
-    CHECK(data_out == kDataIn);
+    CHECK(data_out == DATA_IN);
   }
 
   SECTION("Automatic enqueue and dequeue single char") {
-    constexpr char kCharIn = 'A';
+    constexpr char CHAR_IN = 'A';
 
     const SpscQueue::EnqueueStatus result =
-        queue.enqueue(&kCharIn, sizeof(kCharIn));
+        queue.enqueue(&CHAR_IN, sizeof(CHAR_IN));
     CHECK(result == SpscQueue::EnqueueStatus::Ok);
     CHECK_FALSE(queue.empty());
-    CHECK(queue.size() == sizeof(kCharIn));
-    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(kCharIn));
+    CHECK(queue.size() == sizeof(CHAR_IN));
+    CHECK(queue.available() == SpscQueue::default_capacity() - sizeof(CHAR_IN));
 
     char char_out = 0;
-    queue.dequeue(&char_out, sizeof(kCharIn));
+    queue.dequeue(&char_out, sizeof(CHAR_IN));
     CHECK(queue.empty());
-    CHECK(char_out == kCharIn);
+    CHECK(char_out == CHAR_IN);
   }
 }
 
@@ -126,8 +126,8 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
   // size_consumer() pairs with the producer's release store, and that pairing
   // is what orders the consumer's reads after the producer's writes. With a
   // relaxed load the two race, which TSan reports for this case.
-  constexpr usize kRecords = 4096;
-  constexpr usize kRecordSize = 64;
+  constexpr usize RECORDS = 4096;
+  constexpr usize RECORD_SIZE = 64;
 
   SpscQueue queue;
   queue.init(SpscQueue::default_capacity(), SpscQueue::Mode::Block);
@@ -135,8 +135,8 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
   std::atomic<bool> mismatch{false};
 
   std::thread consumer([&queue, &mismatch] {
-    std::vector<u8> out(kRecordSize);
-    for (usize record = 0; record < kRecords; ++record) {
+    std::vector<u8> out(RECORD_SIZE);
+    for (usize record = 0; record < RECORDS; ++record) {
       SpscQueue::DequeueStatus status = SpscQueue::DequeueStatus::Empty;
       do {
         status = queue.dequeue(out.data(), out.size());
@@ -145,7 +145,7 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
         }
       } while (status != SpscQueue::DequeueStatus::Ok);
 
-      for (usize i = 0; i < kRecordSize; ++i) {
+      for (usize i = 0; i < RECORD_SIZE; ++i) {
         if (out[i] != static_cast<u8>(record + i)) {
           mismatch.store(true);
         }
@@ -153,9 +153,9 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
     }
   });
 
-  std::vector<u8> record(kRecordSize);
-  for (usize r = 0; r < kRecords; ++r) {
-    for (usize i = 0; i < kRecordSize; ++i) {
+  std::vector<u8> record(RECORD_SIZE);
+  for (usize r = 0; r < RECORDS; ++r) {
+    for (usize i = 0; i < RECORD_SIZE; ++i) {
       record[i] = static_cast<u8>(r + i);
     }
 
