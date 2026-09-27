@@ -42,6 +42,15 @@ function(_fpag_add_probeable_options target)
     endif()
   endforeach()
 
+  # -Woverloaded-virtual is part of the warning set below, but GCC only gained
+  # it in 14 and treats an unknown -W as an error rather than a warning, so it
+  # goes through the same probe as the language flags above.
+  fpag_probe_flag(-Woverloaded-virtual accepted)
+  if(accepted)
+    target_compile_options(${target} PRIVATE
+                           "$<$<COMPILE_LANGUAGE:CXX>:${accepted}>")
+  endif()
+
   if(WIN32)
     # clang-cl and clang++ on Windows both honour the MSVC CRT's deprecation
     # attributes, and both need this to compile _open, fopen and friends. It has
@@ -78,8 +87,14 @@ function(_fpag_add_probeable_options target)
       -Wnull-dereference
       -Wformat=2
       -Wundef
-      -Wnon-virtual-dtor
-      -Woverloaded-virtual)
+      -Wnon-virtual-dtor)
+  # GCC 15 and newer read an inlined std::char_traits::copy() as a memcpy that
+  # overlaps by SIZE_MAX bytes, which no program means. The warning is worth
+  # having, the false positive is not in code this project can change, and it
+  # arrives through a system header, so it is off for GCC.
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    list(APPEND warnings -Wno-restrict)
+  endif()
   if(FPAG_WARNINGS_AS_ERRORS)
     list(APPEND warnings -Werror)
   endif()
