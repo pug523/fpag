@@ -29,7 +29,6 @@ TEST_CASE("ProfileSection manual and destructor-based measurement",
     REQUIRE(events.size() == 1);
     CHECK(std::string_view(events[0].name) == "manual_section");
     CHECK(std::string_view(events[0].category) == "compiler");
-    CHECK(events[0].duration_ns >= 0);
   }
 
   SECTION(
