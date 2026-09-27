@@ -262,8 +262,11 @@ std::string read_file(const std::string& path) {
   isize total_read = 0;
   while (total_read < size) {
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-    i64 bytes = _read(fd.get(), &result[static_cast<usize>(total_read)],
-                      static_cast<u32>(size - total_read));
+    // Both branches have to produce the same type, or the accumulation below
+    // is a conversion rather than an addition.
+    const isize bytes = static_cast<isize>(
+        _read(fd.get(), &result[static_cast<usize>(total_read)],
+              static_cast<u32>(size - total_read)));
 #else
     const isize bytes =
         ::read(fd.get(), &result[static_cast<usize>(total_read)],
@@ -272,7 +275,7 @@ std::string read_file(const std::string& path) {
     if (bytes <= 0) {
       break;
     }
-    total_read += static_cast<usize>(bytes);
+    total_read += bytes;
   }
   result.resize(static_cast<usize>(total_read));
 
