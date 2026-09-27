@@ -43,6 +43,21 @@ endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Emscripten's toolchain points the cross compiling emulator at node. The wasm
+# test binary runs under bun by default when it is installed, and under whatever
+# the toolchain found otherwise. CMake reads the variable when it creates the
+# target, so this has to happen before FpagTargets includes the executables, and
+# an explicit -DCMAKE_CROSSCOMPILING_EMULATOR on the command line wins over
+# both.
+if(EMSCRIPTEN
+   AND (NOT DEFINED CMAKE_CROSSCOMPILING_EMULATOR
+        OR CMAKE_CROSSCOMPILING_EMULATOR MATCHES "node"))
+  find_program(FPAG_JS_RUNTIME NAMES bun)
+  if(FPAG_JS_RUNTIME)
+    set(CMAKE_CROSSCOMPILING_EMULATOR "${FPAG_JS_RUNTIME}")
+  endif()
+endif()
+
 # Release builds hide symbols, which is what a library wants, but the tests and
 # the benchmarks are executables that people read backtraces of.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
