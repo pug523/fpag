@@ -65,6 +65,15 @@ jobs:
             build_type: Release
             stdlib: libc++
             libunwind: "ON"
+          # The distribution compiler rather than the LLVM one the setup action
+          # installs, because the point is a second compiler's opinion: a
+          # consumer compiles fpag's public headers with whatever it uses.
+          - name: linux-x86_64-release-gcc
+            os: ubuntu-24.04
+            build_type: Release
+            stdlib: ""
+            compiler: g++
+            libunwind: "ON"
           - name: macos-arm64-debug
             os: macos-26
             build_type: Debug
@@ -104,12 +113,17 @@ jobs:
         run: |
           cmake --version
           ninja --version
-          clang++ --version
+          ${{ matrix.compiler || 'clang++' }} --version
 
       - name: Install libunwind
         if: runner.os == 'Linux'
         shell: bash
         run: sudo apt-get update && sudo apt-get install -y libunwind-dev
+
+      - name: Install g++
+        if: matrix.compiler
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y g++
 
       # The thread sanitizer maps a fixed shadow region, which collides with
       # the kernel's full 32 bits of mmap randomization on the runner image.
@@ -132,7 +146,7 @@ jobs:
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler || env.CXX }}
           -DFPAG_BUILD_TESTS=ON
           -DFPAG_CXX_STDLIB=${{ matrix.stdlib }}
           -DFPAG_ENABLE_SANITIZERS=${{ matrix.sanitizers || 'OFF' }}
