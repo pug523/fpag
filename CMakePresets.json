@@ -82,8 +82,10 @@
       "name": "tidy",
       "inherits": "base",
       "displayName": "Debug with clang-tidy as the compiler launcher",
+      "description": "The benchmarks are on because the tidy target checks every translation unit, and one it cannot compile is one it cannot check.",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "FPAG_BUILD_BENCHMARKS": "ON",
         "FPAG_ENABLE_CLANG_TIDY": "ON"
       }
     },
