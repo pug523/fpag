@@ -17,7 +17,7 @@ namespace str {
 
 namespace {
 
-constexpr usize kPoolCapacity = 1024 * 1024;
+constexpr usize kPoolCapacity = 1024ull * 1024;
 constexpr usize kStringSize = 16;
 
 // Every string is the same length, so an offset that points at a neighbouring

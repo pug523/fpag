@@ -182,11 +182,11 @@ TEST_CASE("AsyncLogger carries an argument larger than 4 KiB",
           "[logging][async][aliased_pages]") {
   std::vector<std::string> messages;
   AsyncLogger<CapturingSink, LogLevel::Trace> logger;
-  logger.init(CapturingSink{&messages}, /*interner_map_capacity=*/16 * 1024,
+  logger.init(CapturingSink{&messages}, /*interner_map_capacity=*/16ull * 1024,
               /*queue_capacity=*/1 << 16);
   logger.start_backend_worker();
 
-  constexpr usize kBigSize = 8 * 1024;
+  constexpr usize kBigSize = 8ull * 1024;
   const std::string big(kBigSize, 'x');
 
   // The payload is longer than the format buffer, and it only fits in the queue
