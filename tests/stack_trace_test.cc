@@ -68,6 +68,10 @@ TEST_CASE("StackTrace Collection and Strings", "[base][stack_trace]") {
   SECTION("Collect trace captures current stack") {
     trace.collect_trace();
 
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+    // The wasm build has no unwinder, so a collected trace is empty by design.
+    REQUIRE(trace.frame_count() == 0);
+#else
     REQUIRE(trace.frame_count() > 0);
     REQUIRE(trace.frame_count() <= test_depth);
 
@@ -77,6 +81,7 @@ TEST_CASE("StackTrace Collection and Strings", "[base][stack_trace]") {
       const std::string res = trace.to_string();
       REQUIRE_FALSE(res.empty());
     }
+#endif
   }
 }
 
@@ -122,9 +127,11 @@ TEST_CASE("StackTrace Symbol Resolution", "[base][stack_trace]") {
   SECTION("Captures functions in anonymous namespace") {
     anonymous_func_outer(&trace);
 
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+    // The wasm build has no unwinder, so there are no frames to resolve.
+    REQUIRE(trace.frame_count() == 0);
+#else
     REQUIRE(trace.frame_count() > 0);
-
-    // trace.print_trace();
 
     // We only check the frame names in debug mode, as release builds do not
     // have debug information and inlines functions.
@@ -133,6 +140,7 @@ TEST_CASE("StackTrace Symbol Resolution", "[base][stack_trace]") {
     const std::string trace_str = trace.to_string();
     REQUIRE_THAT(trace_str, ContainsSubstring("anonymous_func_inner"));
     REQUIRE_THAT(trace_str, ContainsSubstring("anonymous_func_outer"));
+#endif
 #endif
   }
 }

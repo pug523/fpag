@@ -24,8 +24,12 @@ TEST_CASE("capture_stack_addresses basic functionality",
     // standard environment.
     const usize captured = capture_stack_addresses(frames, kMaxDepth, 0);
 
-    CHECK(captured > 0);
     CHECK(captured <= kMaxDepth);
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+    // The wasm build has no unwinder, so capture reports no frames by design.
+    CHECK(captured == 0);
+#else
+    CHECK(captured > 0);
 
     // Ensure the addresses are not all null.
     bool found_valid_address = false;
@@ -36,6 +40,7 @@ TEST_CASE("capture_stack_addresses basic functionality",
       }
     }
     CHECK(found_valid_address);
+#endif
   }
 
   SECTION("Respect max_depth limit") {
