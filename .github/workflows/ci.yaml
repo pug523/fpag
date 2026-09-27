@@ -176,6 +176,69 @@ jobs:
             build/fpag_tests
           if-no-files-found: error
 
+  # A 32-bit architecture that CI can actually execute, so the narrowing and
+  # layout assumptions a 64-bit host never shows are caught here. The wasm test
+  # binary runs under bun, which CMake picks up from PATH instead of node, and
+  # the cases that need threads or the ring buffer's circular mapping are
+  # skipped at discovery time; CONTRIBUTING.md has the details.
+  wasm:
+    name: wasm32-emscripten (bun)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+
+      - name: Setup build environment
+        uses: pug523/actions/cxx-base-setup@5f03ab8dd394823acdad6cbfdf141849938b8a7b
+        with:
+          os: ${{ runner.os }}
+          llvm_version: 22.1.8
+
+      # Emscripten pins the compiler, the sysroot and the wasm linker as one
+      # toolchain, and the action caches the download between runs.
+      - name: Setup Emscripten
+        uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+        with:
+          version: 6.0.10
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+
+      - name: Report toolchain versions
+        shell: bash
+        run: |
+          emcc --version | head -1
+          bun --version
+
+      # These dependencies are built for wasm, so they get a cache key of their
+      # own rather than sharing one with the native jobs.
+      - name: Restore dependency cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: ${{ github.workspace }}/build/wasm/_deps
+          key: deps-wasm-${{ hashFiles('cmake/FpagDependencies.cmake') }}
+          restore-keys: deps-wasm-
+
+      - name: Configure
+        shell: bash
+        run: >
+          emcmake cmake -S . -B build/wasm -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DFPAG_BUILD_TESTS=ON
+          -DFPAG_ENABLE_LIBUNWIND=OFF
+
+      - name: Build
+        shell: bash
+        run: cmake --build build/wasm --parallel
+
+      - name: Test
+        shell: bash
+        run: ctest --test-dir build/wasm --output-on-failure --no-tests=error
+
   static-analysis:
     name: static analysis (clang-tidy, clang-format, cpplint)
     runs-on: ubuntu-24.04
