@@ -13,6 +13,7 @@ change lands, and what the reviewers will be looking for.
 - Clang 22 or newer, for `clang-format`, `clang-tidy` and `llvm-cov`
 - `uv`, for `cpplint` and the license header script
 - `libunwind` development headers, only for `FPAG_ENABLE_LIBUNWIND=ON`
+- Emscripten for the wasm build, and bun to run its tests
 
 Nix users can get all of it from the flake:
 
@@ -165,6 +166,33 @@ library directory ahead of the system one, so a bare `-lunwind` picks the wrong
 one and the GNU unwinder entry points end up unresolved. `find_library` does
 not read `LDFLAGS`, so it cannot be confused that way.
 
+## WebAssembly
+
+The library and the test suite build for `wasm32` with Emscripten, and the test
+binary runs under bun, which the configure step finds on `PATH` in preference to
+node. No preset covers it, because the toolchain is selected by `emcmake`:
+
+```bash
+emcmake cmake -S . -B build/wasm -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/wasm
+ctest --test-dir build/wasm
+```
+
+Two runtime features are missing on that target, and the cases that need them
+are tagged so the wasm test list leaves them out at discovery time:
+
+- **Aliased pages.** `SpscQueue`, and therefore `AsyncLogger`, are built on a
+  ring buffer that maps the same physical pages twice, which wasm linear memory
+  cannot do. `mem::allocate_aliased_pages` returns null there, and the cases
+  that construct one carry the `[aliased_pages]` tag.
+- **Threads.** Emscripten's pthreads need a JavaScript runtime that can execute
+  wasm workers, and bun hangs on the first one. The wasm test binary is not
+  linked with `-pthread`, so a case that constructs a `std::thread` aborts;
+  those cases carry the `[threads]` tag.
+
+The native targets run both sets as usual. CI has a single wasm job that does
+the same configure, build and test as the commands above.
+
 ## Conventions
 
 - **Standard.** C++20, no exceptions, no RTTI, anywhere. The tests and the
@@ -243,10 +271,10 @@ The `dev` preset builds them, at `-O0`, where it does not trigger.
   impossible that was, say so in the commit message. That is the information a
   reviewer cannot reconstruct from the diff.
 - Make sure CI passes before asking for a review. It runs the test suite on
-  Linux, macOS and Windows in both Debug and Release, a sanitizer pass, a
-  thread sanitizer pass, a coverage pass, `clang-tidy`, `clang-format` and
-  `cpplint`, and a job that installs the package and compiles a consumer
-  against it.
+  Linux, macOS and Windows in both Debug and Release, on wasm32 under bun, a
+  sanitizer pass, a thread sanitizer pass, a coverage pass, `clang-tidy`,
+  `clang-format` and `cpplint`, and a job that installs the package and compiles
+  a consumer against it.
 - The project is pre-1.0, so the API still moves. Call breaking changes out in
   the commit message rather than letting them hide in a rename.
 

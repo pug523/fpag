@@ -285,6 +285,20 @@ files, because both were found the hard way:
   it shares its name with the libunwind inside an LLVM toolchain, which sits
   earlier in the link line. See `cmake/FpagDependencies.cmake`.
 
+WebAssembly is a port with two holes, and both are runtime features that wasm
+does not have:
+
+- **Aliased pages.** `SpscQueue`, and therefore `AsyncLogger`, are built on a
+  ring buffer that maps the same physical pages twice so that a record which
+  straddles the end is one contiguous run. wasm linear memory cannot be mapped
+  twice, so `mem::allocate_aliased_pages` returns null there and neither type is
+  available on that target.
+- **Threads.** Emscripten pthreads need a JavaScript runtime that can execute
+  wasm workers; bun, which the wasm tests run under, hangs on the first one. The
+  wasm test binary is not linked with `-pthread`, so the cases that need a
+  `std::thread` carry the `[threads]` tag and are skipped there, as are the
+  `[aliased_pages]` ones. The native targets run all of them.
+
 ## Known tensions
 
 Recorded rather than hidden, so that a future change does not rediscover them

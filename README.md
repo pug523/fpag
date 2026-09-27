@@ -30,6 +30,10 @@ The presets are `default`, `debug`, `release`, `dev` (tests and benchmarks),
 `asan`, `tsan`, `coverage`, `tidy` and `native`. Run `cmake --list-presets` to
 see them all.
 
+`wasm32` through Emscripten is a supported target, for the library and for the
+tests, which run under bun. [CONTRIBUTING.md](CONTRIBUTING.md#webassembly) has
+the commands and the two runtime features that target does not have.
+
 To consume it from another CMake project, either add this tree with
 `add_subdirectory()` and link `fpag::fpag`, or install and use
 `find_package`:

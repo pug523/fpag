@@ -64,6 +64,11 @@ Read these before changing anything. Do not guess at the design.
   is stricter about `-Wconversion` under `-Werror`, so a green GCC build is not
   proof and a red one may not be your fault. Check the flags CI uses before
   concluding that a pre-existing warning is yours.
+- **wasm32 is a second architecture to keep honest.** `emcmake cmake -S . -B
+  build/wasm -G Ninja -DFPAG_BUILD_TESTS=ON` and `ctest --test-dir build/wasm`
+  run the suite under bun, and catch the narrowing and layout assumptions a
+  64-bit host hides. The `[threads]` and `[aliased_pages]` cases are skipped
+  there by design.
 - **Run the tests before claiming anything works.**
   `ctest --preset dev`, and `ctest --preset asan` or `ctest --preset tsan` when
   you touched memory, lifetimes, arenas or anything lock-free. All cases must
