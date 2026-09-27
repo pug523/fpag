@@ -138,6 +138,7 @@ function(fpag_add_tests)
     tests/soo_vec_test.cc
     tests/spsc_queue_test.cc
     tests/stack_trace_test.cc
+    tests/string_interner_test.cc
     tests/string_pool_test.cc
     tests/sync_logger_test.cc
     tests/tagged_union_test.cc
