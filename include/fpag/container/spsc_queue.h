@@ -43,7 +43,8 @@ class SpscQueue {
   SpscQueue& operator=(SpscQueue&&) noexcept;
 
   // Initialize the queue with the given data buffer and capacity.
-  // `capacity` must be a power of 2.
+  // `capacity` must be a power of 2 and a whole number of pages: the ring is
+  // read through a circular aliasing of the same physical pages.
   void init(usize capacity = default_capacity(), Mode mode = Mode::Default);
   void reset();
 

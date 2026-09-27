@@ -76,6 +76,11 @@ void SpscQueue::init(usize capacity, Mode mode) {
   capacity_ = capacity;
   FPAG_CHECK_MSG(base::is_power_of_two(capacity_),
                  "SpscQueue: capacity must be a power of two.");
+  // The alias is a whole number of pages, and a page is 4 KiB on Linux and
+  // Windows but 16 KiB on Apple silicon, so a capacity between the two sizes
+  // cannot be mapped at all.
+  FPAG_CHECK_MSG(capacity_ % mem::page_size() == 0,
+                 "SpscQueue: capacity must be a multiple of the page size.");
   FPAG_CHECK_MSG(capacity_ <= MAX_CAPACITY,
                  "SpscQueue: capacity must be <= MAX_CAPACITY");
 

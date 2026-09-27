@@ -12,10 +12,18 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
+#include "fpag/mem/page_allocator.h"
 
 namespace container {
 
 namespace {
+
+// The ring is mapped a whole number of pages, and a page is 4 KiB on Linux and
+// Windows but 16 KiB on Apple silicon, so the cases that need a small ring take
+// its size from the allocator rather than from a literal.
+usize ring_bytes() {
+  return mem::page_size();
+}
 
 TEST_CASE("SpscQueue Constructor and Capacity",
           "[SpscQueueTest][aliased_pages]") {
@@ -171,11 +179,12 @@ TEST_CASE("SpscQueue hands a record from one thread to another",
 TEST_CASE("SpscQueue wraps a record across the end of the ring",
           "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
-  queue.init(4096);
+  queue.init(ring_bytes());
 
-  // Walk both ends of the ring to 4000, so the next record has to continue
-  // past the end. The circular mapping is what makes that one contiguous run.
-  std::vector<u8> fill(4000);
+  // Walk both ends of the ring to within a hundred bytes of the end, so the
+  // next record has to continue past it. The circular mapping is what makes
+  // that one contiguous run.
+  std::vector<u8> fill(ring_bytes() - 96);
   for (usize i = 0; i < fill.size(); ++i) {
     fill[i] = static_cast<u8>(i % 251);
   }
@@ -203,11 +212,11 @@ TEST_CASE("SpscQueue wraps a record across the end of the ring",
 TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
           "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
-  queue.init(4096);
+  queue.init(ring_bytes());
 
   // Leave seven bytes free, then ask for a seven byte record aligned to eight.
   // The payload fits, the seven bytes of padding in front of it do not.
-  std::vector<u8> fill(4089);
+  std::vector<u8> fill(ring_bytes() - 7);
   for (usize i = 0; i < fill.size(); ++i) {
     fill[i] = static_cast<u8>(i % 251);
   }
@@ -232,7 +241,7 @@ TEST_CASE("SpscQueue refuses a record whose alignment padding does not fit",
 TEST_CASE("SpscQueue dequeue accounts for alignment padding",
           "[SpscQueueTest][aliased_pages]") {
   SpscQueue queue;
-  queue.init(4096);
+  queue.init(ring_bytes());
 
   // Leave the consumer one byte into the ring, so a record aligned to eight
   // needs seven bytes of padding.
@@ -279,13 +288,13 @@ TEST_CASE("SpscQueue move assignment takes over the source's state",
   // is not visible from here, so what this case pins down is the state
   // transfer: the records and the counters both belong to the moved queue.
   SpscQueue source;
-  source.init(4096, SpscQueue::Mode::Drop);
+  source.init(ring_bytes(), SpscQueue::Mode::Drop);
   const i32 value = 7;
   REQUIRE(source.enqueue(&value, sizeof(value)) ==
           SpscQueue::EnqueueStatus::Ok);
 
   // Fill the rest of the ring, then one more record has to be dropped.
-  std::vector<u8> fill(4096 - sizeof(value));
+  std::vector<u8> fill(ring_bytes() - sizeof(value));
   REQUIRE(source.enqueue(fill.data(), fill.size()) ==
           SpscQueue::EnqueueStatus::Ok);
   const u8 dropped = 0;
@@ -296,7 +305,7 @@ TEST_CASE("SpscQueue move assignment takes over the source's state",
   destination.init();
   destination = std::move(source);
 
-  CHECK(destination.capacity() == 4096);
+  CHECK(destination.capacity() == ring_bytes());
   CHECK(destination.dropped_count() == 1);
   i32 out = 0;
   REQUIRE(destination.dequeue(&out, sizeof(out)) ==
