@@ -15,6 +15,7 @@ option(FPAG_INSTALL "Generate install and package config rules" ${FPAG_IS_TOP_LE
 
 option(FPAG_ENABLE_SANITIZERS "Enable the address, leak and undefined sanitizers"
        OFF)
+option(FPAG_ENABLE_THREAD_SANITIZER "Enable the thread sanitizer" OFF)
 option(FPAG_ENABLE_COVERAGE "Instrument the library for llvm-cov reports" OFF)
 option(FPAG_ENABLE_CLANG_TIDY
        "Run clang-tidy over fpag's own translation units while building" OFF)
@@ -51,11 +52,21 @@ if(FPAG_WERROR)
       CACHE BOOL "" FORCE)
 endif()
 
+# The address and thread sanitizers cannot share one binary, so at most one
+# group is selected.
+if(FPAG_ENABLE_SANITIZERS AND FPAG_ENABLE_THREAD_SANITIZER)
+  message(
+    FATAL_ERROR
+      "FPAG_ENABLE_SANITIZERS and FPAG_ENABLE_THREAD_SANITIZER are mutually exclusive"
+  )
+endif()
+
 # The sanitizers and the coverage instrumentation are both implemented in
 # llvm, and coverage rewrites the same -ftime-trace free line table that
 # llvm-profdata reads, so they are not combined.
-if(FPAG_ENABLE_SANITIZERS AND FPAG_ENABLE_COVERAGE)
-  message(FATAL_ERROR "FPAG_ENABLE_SANITIZERS and FPAG_ENABLE_COVERAGE are mutually exclusive")
+if((FPAG_ENABLE_SANITIZERS OR FPAG_ENABLE_THREAD_SANITIZER)
+   AND FPAG_ENABLE_COVERAGE)
+  message(FATAL_ERROR "The sanitizers and FPAG_ENABLE_COVERAGE are mutually exclusive")
 endif()
 
 if(FPAG_ENABLE_LIBUNWIND AND NOT (UNIX AND NOT APPLE))

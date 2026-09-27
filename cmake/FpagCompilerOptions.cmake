@@ -100,8 +100,15 @@ function(_fpag_add_probeable_options target)
     target_link_options(${target} PRIVATE "-stdlib=${FPAG_CXX_STDLIB}")
   endif()
 
-  if(FPAG_ENABLE_SANITIZERS)
-    set(sanitizers -fsanitize=address,leak,undefined)
+  # The thread sanitizer is a group of its own: it does not share a binary with
+  # the address sanitizer, and it wants the same frame pointers. FpagOptions
+  # rejects the combination before this point.
+  if(FPAG_ENABLE_SANITIZERS OR FPAG_ENABLE_THREAD_SANITIZER)
+    if(FPAG_ENABLE_THREAD_SANITIZER)
+      set(sanitizers -fsanitize=thread)
+    else()
+      set(sanitizers -fsanitize=address,leak,undefined)
+    endif()
     target_compile_options(${target} PRIVATE
                            "$<$<COMPILE_LANGUAGE:CXX>:${sanitizers};-fno-omit-frame-pointer>")
     target_link_options(${target} PRIVATE ${sanitizers})

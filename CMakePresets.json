@@ -61,6 +61,15 @@
       }
     },
     {
+      "name": "tsan",
+      "inherits": "base",
+      "displayName": "Debug with the thread sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FPAG_ENABLE_THREAD_SANITIZER": "ON"
+      }
+    },
+    {
       "name": "coverage",
       "inherits": "base",
       "displayName": "Debug instrumented for llvm-cov",
@@ -111,6 +120,10 @@
       "configurePreset": "asan"
     },
     {
+      "name": "tsan",
+      "configurePreset": "tsan"
+    },
+    {
       "name": "coverage",
       "configurePreset": "coverage"
     },
@@ -159,6 +172,11 @@
       "name": "asan",
       "inherits": "base",
       "configurePreset": "asan"
+    },
+    {
+      "name": "tsan",
+      "inherits": "base",
+      "configurePreset": "tsan"
     },
     {
       "name": "coverage",
