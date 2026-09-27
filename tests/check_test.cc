@@ -4,6 +4,11 @@
 
 #include "fpag/debug/check.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
+#include "catch2/catch_message.hpp"
 #include "fpag/build/build_config.h"
 
 // A failed check is fatal by design, so the only way to observe one is from a

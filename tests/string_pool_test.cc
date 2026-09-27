@@ -11,6 +11,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace str {
 

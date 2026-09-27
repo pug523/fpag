@@ -2,6 +2,7 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
+#include "fpag/base/numeric.h"
 #include "fpag/build/build_flag.h"
 #include "fpag/debug/process_id.h"
 #include "fpag/debug/thread_id.h"

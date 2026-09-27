@@ -10,11 +10,13 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fmt/compile.h"
-#include "fmt/ranges.h"
+#include "fmt/ranges.h"  // IWYU pragma: keep
 #include "fpag/base/numeric.h"
 #include "fpag/logging/async/codec/ref_arg.h"
+#include "fpag/logging/log_entry.h"
 #include "fpag/logging/log_level.h"
 #include "fpag/logging/sink/null_sink.h"
+#include "fpag/logging/sink/sink.h"
 #include "fpag/term/console.h"
 // #include "fpag/logging/sink/stdout_sink.h"
 // #include "fpag/mem/page_allocator.h"

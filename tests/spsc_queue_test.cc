@@ -5,6 +5,7 @@
 #include "fpag/container/spsc_queue.h"
 
 #include <atomic>
+#include <cstdint>
 #include <thread>
 #include <utility>
 #include <vector>

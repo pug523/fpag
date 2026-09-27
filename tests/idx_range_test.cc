@@ -9,7 +9,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/idx.h"
-#include "fpag/base/idx_hash.h"
+#include "fpag/base/idx_hash.h"  // IWYU pragma: keep
 #include "fpag/base/numeric.h"
 
 namespace base {
