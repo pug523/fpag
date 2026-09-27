@@ -8,8 +8,10 @@ change lands, and what the reviewers will be looking for.
 
 - CMake 3.28 or newer
 - Ninja, or any other generator you like
-- A C++20 compiler. Clang is what the project is developed against and what CI
-  uses; GCC mostly works but is stricter about `-Wconversion` and `-Werror`.
+- A C++20 compiler. Clang is the reference: it is what the project is developed
+  against, and its opinion is the one that decides. GCC is supported on Linux as
+  well and CI runs it, because a consumer compiles fpag's public headers with
+  whatever compiler it uses, not with ours.
 - Clang 22 or newer, for `clang-format`, `clang-tidy` and `llvm-cov`
 - `uv`, for `cpplint` and the license header script
 - `libunwind` development headers, only for `FPAG_ENABLE_LIBUNWIND=ON`
@@ -271,10 +273,10 @@ The `dev` preset builds them, at `-O0`, where it does not trigger.
   impossible that was, say so in the commit message. That is the information a
   reviewer cannot reconstruct from the diff.
 - Make sure CI passes before asking for a review. It runs the test suite on
-  Linux, macOS and Windows in both Debug and Release, on wasm32 under bun, a
-  sanitizer pass, a thread sanitizer pass, a coverage pass, `clang-tidy`,
-  `clang-format` and `cpplint`, and a job that installs the package and compiles
-  a consumer against it.
+  Linux with clang and with GCC, on macOS and Windows in both Debug and Release,
+  on wasm32 under bun, a sanitizer pass, a thread sanitizer pass, a coverage
+  pass, `clang-tidy`, `clang-format` and `cpplint`, and a job that installs the
+  package and compiles a consumer against it.
 - The project is pre-1.0, so the API still moves. Call breaking changes out in
   the commit message rather than letting them hide in a rename.
 

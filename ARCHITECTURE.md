@@ -285,6 +285,14 @@ files, because both were found the hard way:
   it shares its name with the libunwind inside an LLVM toolchain, which sits
   earlier in the link line. See `cmake/FpagDependencies.cmake`.
 
+A third detail is about the warning set, which has to be the intersection of two
+compilers because CI gates both. A flag one of them lacks is probed rather than
+assumed, since GCC treats an unknown `-W` as an error: `-Woverloaded-virtual`
+arrived in GCC 14. `-Wrestrict` is off for GCC, which reads an inlined
+`std::char_traits::copy` as a memcpy that overlaps by `SIZE_MAX` bytes. Both
+live in `cmake/FpagCompilerOptions.cmake`, which is where a compiler difference
+belongs.
+
 WebAssembly is a port with two holes, and both are runtime features that wasm
 does not have:
 

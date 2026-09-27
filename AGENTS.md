@@ -61,9 +61,11 @@ Read these before changing anything. Do not guess at the design.
   flag is in the wrong place, and is silently ineffective if the file includes a
   header before the define.
 - **Build with the project's toolchain.** Clang, and `cmake --preset dev`. GCC
-  is stricter about `-Wconversion` under `-Werror`, so a green GCC build is not
-  proof and a red one may not be your fault. Check the flags CI uses before
-  concluding that a pre-existing warning is yours.
+  is a second gate on Linux, so a GCC failure is a real failure: fix the code or
+  the build, not the warning set. Two differences are deliberate and already in
+  `cmake/FpagCompilerOptions.cmake`, do not undo them: `-Woverloaded-virtual` is
+  probed because GCC gained it only in 14, and `-Wrestrict` is off for GCC
+  because it false-positives on an inlined `std::char_traits::copy`.
 - **wasm32 is a second architecture to keep honest.** `emcmake cmake -S . -B
   build/wasm -G Ninja -DFPAG_BUILD_TESTS=ON` and `ctest --test-dir build/wasm`
   run the suite under bun, and catch the narrowing and layout assumptions a
