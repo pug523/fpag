@@ -180,7 +180,11 @@ TEST_CASE("AutoTaggedUnion move semantics", "[base][tagged_union]") {
 
   SECTION("Self move assignment") {
     AutoTaggedUnion<MoveTracker, i32>* self = &u1;
+    // GCC has -Wself-move in -Wall, and this line is what the case is about.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
     *self = std::move(*self);
+#pragma GCC diagnostic pop
     CHECK(u1.is<MoveTracker>());
     CHECK(move_count == 1);
   }
