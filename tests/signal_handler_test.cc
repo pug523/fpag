@@ -19,6 +19,21 @@
 #include <array>
 #include <string>
 
+// A sanitizer replaces the signal handling this file asserts on.
+// AddressSanitizer installs its own handlers and asks for the signal to be
+// delivered on the thread stack, so a handler that correctly runs on the alt
+// stack is a fault it cannot report, and the report comes back empty. Read
+// from the compiler's own predefines rather than a build flag, because a flag
+// would have to be set by every caller that sanitizes, and a caller that
+// forgets it gets a red suite.
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#  define FPAG_TEST_SIGNAL_ALT_STACK 1
+#elif defined(__has_feature)
+#  if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
+#    define FPAG_TEST_SIGNAL_ALT_STACK 1
+#  endif
+#endif
+
 #include "catch2/catch_message.hpp"
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
@@ -85,6 +100,7 @@ std::string run_in_child(bool disable_signal_stack) {
 }
 
 // The addresses in the report, one per frame, and how many hex digits each had.
+#ifndef FPAG_TEST_SIGNAL_ALT_STACK
 usize count_addresses(const std::string& report) {
   usize addresses = 0;
   // Each line is an index and an address, both hex; the address is the one
@@ -110,9 +126,11 @@ usize count_addresses(const std::string& report) {
   }
   return addresses;
 }
+#endif  // FPAG_TEST_SIGNAL_ALT_STACK
 
 }  // namespace
 
+#ifndef FPAG_TEST_SIGNAL_ALT_STACK
 TEST_CASE("The signal handler reports on the stack it was given",
           "[debug][signal_handler]") {
   // This process is on the thread stack, and says so: the note below is only
@@ -130,6 +148,7 @@ TEST_CASE("The signal handler reports on the stack it was given",
   CHECK(reported.find('\0') == std::string::npos);
   CHECK(count_addresses(reported) > 3);
 }
+#endif  // FPAG_TEST_SIGNAL_ALT_STACK
 
 TEST_CASE("The signal handler says when it had no stack of its own",
           "[debug][signal_handler]") {

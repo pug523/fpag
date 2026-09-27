@@ -34,11 +34,18 @@ std::string read_file(const std::string& path);
 
 bool write_file(const std::span<const u8> data, const std::string& output_path);
 
-// File descriptors are 1 and 2 on every platform fpag supports, so this does
-// not need a platform branch and the header does not need a platform include.
+// File descriptors are 0, 1 and 2 on every platform fpag supports, so this
+// does not need a platform branch and the header does not need a platform
+// include.
+constexpr i32 STDIN_FD = 0;
 constexpr i32 STDOUT_FD = 1;
 constexpr i32 STDERR_FD = 2;
 
 void write(i32 fd, const char* data, usize size);
+
+// Reads up to `size` bytes, returning the count read, 0 at end of file, or
+// a negative value on error. A short read is not an error: a pipe and a
+// terminal both deliver less than asked for.
+isize read(i32 fd, char* data, usize size);
 
 }  // namespace io

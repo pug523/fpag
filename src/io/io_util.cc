@@ -76,6 +76,17 @@ void write(i32 fd, const char* data, usize size) {
 #endif
 }
 
+isize read(i32 fd, char* data, usize size) {
+#if FPAG_BUILD_FLAG(IS_OS_WIN)
+  return static_cast<isize>(::_read(fd, data, static_cast<u32>(size)));
+#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
+  // ssize_t, so isize rather than a narrower type: a pipe hands back
+  // whatever is ready, and a caller looping on a short read has to be able
+  // to see the difference between 0 and a partial one.
+  return static_cast<isize>(::read(fd, data, size));
+#endif
+}
+
 bool is_file(const std::string& file_name) {
   const char* ptr = file_name.c_str();
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
