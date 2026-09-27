@@ -23,10 +23,14 @@ void StackTrace::init(StackTraceFrame* frames_buf, usize depth, usize skip) {
   depth_ = depth;
   skip_ = skip;
 
-  // `FPAG_DCHECK` uses StackTrace, so to avoid infinite recursion we use
-  // `raw_FPAG_DCHECK_msg`.
-  FPAG_RAW_DCHECK_MSG(depth_ <= MAX_TRACE_DEPTH,
-                      "init called with depth exceeding MAX_TRACE_DEPTH.");
+  // `FPAG_DCHECK` uses StackTrace, so to avoid infinite recursion we use the
+  // raw entry points.
+  //
+  // The depth one is fatal in every build rather than a debug check:
+  // collect_trace() captures into a fixed local array of MAX_TRACE_DEPTH, so a
+  // larger depth is a stack overwrite in release, not a smaller trace.
+  FPAG_RAW_CHECK_MSG(depth_ <= MAX_TRACE_DEPTH,
+                     "init called with depth exceeding MAX_TRACE_DEPTH.");
   FPAG_RAW_DCHECK_MSG(skip_ <= depth_,
                       "init called with skip greater than depth.");
 
@@ -42,29 +46,43 @@ void StackTrace::collect_trace() {
   const usize captured = capture_stack_addresses(raw_addrs, depth_, skip_);
 
   if (captured == 0) [[unlikely]] {
+    count_ = 0;
     status_ = StackTraceStatus::Failed;
     return;
   }
 
   count_ = captured;
 
-  // Symbolicate
-  // Pre-allocate string_buffer_ to avoid reallocations that would invalidate
-  // string_view pointers. Worst case: 256 chars per frame (function + file).
-  string_buffer_.reserve(count_ * 256);
-
+  // The frames hold pointers into string_buffer_, so a buffer that reallocates
+  // while they are being filled leaves every name interned so far dangling. A
+  // worst-case reservation is a guess, and one deeply nested template name is
+  // enough to overshoot it, so the names are resolved first and the buffer is
+  // sized from what they actually need.
   const Symbolicator sym;
+  std::vector<SymbolInfo> infos;
+  infos.reserve(count_);
+  for (usize i = 0; i < count_; ++i) {
+    infos.push_back(sym.resolve(raw_addrs[i]));
+  }
+
+  string_buffer_.clear();
+  usize needed = 0;
+  for (const SymbolInfo& info : infos) {
+    // One terminator per string; an empty one costs nothing, so the sum can be
+    // larger than what intern_string() writes and never smaller.
+    needed += info.function.size() + info.file.size() + 2;
+  }
+  string_buffer_.reserve(needed);
+
   for (usize i = 0; i < count_; ++i) {
     frames_[i].address = raw_addrs[i];
     frames_[i].index = i;
 
-    const SymbolInfo info = sym.resolve(raw_addrs[i]);
-
     // Intern the strings so that string_view members remain valid.
-    frames_[i].location.function = intern_string(info.function).data();
-    frames_[i].location.file = intern_string(info.file).data();
-    frames_[i].location.line = info.line;
-    frames_[i].location.column = info.column;
+    frames_[i].location.function = intern_string(infos[i].function).data();
+    frames_[i].location.file = intern_string(infos[i].file).data();
+    frames_[i].location.line = infos[i].line;
+    frames_[i].location.column = infos[i].column;
   }
 
   status_ = StackTraceStatus::Collected;

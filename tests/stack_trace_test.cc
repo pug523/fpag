@@ -5,8 +5,10 @@
 #include "fpag/debug/stack_trace/stack_trace.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "catch2/catch_message.hpp"
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
@@ -26,6 +28,32 @@ FPAG_NOINLINE void anonymous_func_inner(StackTrace* trace) {
 
 FPAG_NOINLINE void anonymous_func_outer(StackTrace* trace) {
   anonymous_func_inner(trace);
+}
+
+// Nested so that the demangled name of the frame below is several times longer
+// than a function name usually is. The trace used to reserve a fixed budget per
+// frame and intern into a vector, so a few of these overshot the reservation
+// and left the names interned before the reallocation dangling.
+//
+// External linkage on purpose: a name only reaches a trace when the symbol is
+// exported, and an anonymous namespace function is never exported.
+template <typename T>
+struct Nested {
+  using type = Nested<Nested<T>>;
+};
+
+using LongName = Nested<Nested<Nested<Nested<Nested<Nested<
+    Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<
+        Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<Nested<
+            Nested<Nested<Nested<Nested<int>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;
+
+template <typename T>
+FPAG_NOINLINE void descend(usize depth, StackTrace* trace) {
+  if (depth == 0) {
+    trace->collect_trace();
+    return;
+  }
+  descend<T>(depth - 1, trace);
 }
 
 TEST_CASE("StackTrace Lifecycle and Boundary Tests", "[base][stack_trace]") {
@@ -144,5 +172,60 @@ TEST_CASE("StackTrace Symbol Resolution", "[base][stack_trace]") {
 #endif
   }
 }
+
+// Names only reach a trace where the binary exports its symbols, and the
+// project exports them for a debug build, so this case is a debug one. The
+// collection itself is not: what it checks is where the names end up.
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+TEST_CASE("StackTrace keeps every name when one is very long",
+          "[base][stack_trace]") {
+  StackTrace trace;
+  // Deep enough that the long names outweigh any per-frame budget: the frames
+  // the test runner itself contributes are short, so they cannot make up the
+  // difference.
+  const usize test_depth = 160;
+  std::vector<StackTraceFrame> buffer(test_depth);
+  trace.init(buffer.data(), test_depth, 2);
+
+  descend<LongName>(120, &trace);
+
+#if FPAG_BUILD_FLAG(IS_OS_ASMJS)
+  // The wasm build has no unwinder, so there is nothing to keep alive.
+  REQUIRE(trace.frame_count() == 0);
+#else
+  // The demangled name every frame of the descent is expected to start with.
+  constexpr std::string_view DESCEND_PREFIX = "void debug::descend";
+
+  REQUIRE(trace.frame_count() > 32);
+
+  usize named = 0;
+  const char* previous = nullptr;
+  for (usize i = 0; i < trace.frame_count(); ++i) {
+    const std::string_view name = trace.frames()[i].location.function_name();
+    if (!name.starts_with(DESCEND_PREFIX)) {
+      continue;
+    }
+    ++named;
+
+    // Consecutive names are consecutive in the trace's own storage, because
+    // that is how they are interned. A buffer that reallocated while the later
+    // and longer names were being added leaves the earlier ones pointing into
+    // freed storage, which still reads the right bytes often enough that
+    // comparing names against to_string() would not notice; the layout always
+    // does.
+    INFO("frame " << i);
+    if (previous != nullptr) {
+      CHECK(name.data() == previous);
+    }
+    previous = name.data() + name.size() + 1;
+  }
+
+  // Deep enough that the names outweigh any per-frame budget the storage could
+  // have reserved: the frames the test runner contributes are short, so they
+  // cannot make up the difference.
+  CHECK(named > 32);
+#endif
+}
+#endif
 
 }  // namespace debug
