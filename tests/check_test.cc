@@ -7,8 +7,9 @@
 #include "fpag/build/build_config.h"
 
 // A failed check is fatal by design, so the only way to observe one is from a
-// parent process. The death test below is POSIX only.
-#if FPAG_BUILD_FLAG(IS_OS_POSIX)
+// parent process. The death test below needs fork(), which the wasm runtime
+// does not provide even though build_config.h counts wasm as POSIX.
+#if FPAG_BUILD_FLAG(IS_OS_POSIX) && !FPAG_BUILD_FLAG(IS_OS_ASMJS)
 
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -148,4 +149,4 @@ TEST_CASE("Unwrapping the wrong ParseResult tag reports in every build",
 
 }  // namespace debug
 
-#endif  // FPAG_BUILD_FLAG(IS_OS_POSIX)
+#endif  // FPAG_BUILD_FLAG(IS_OS_POSIX) && !FPAG_BUILD_FLAG(IS_OS_ASMJS)
