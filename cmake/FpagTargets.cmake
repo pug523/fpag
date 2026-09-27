@@ -160,10 +160,23 @@ function(fpag_add_tests)
   # cases keep running. The session runs from the build directory because the
   # test binary writes a Perfetto trace on the way out and a test run must not
   # be able to dirty the source tree.
+  #
+  # Emscripten's threads come from a pthread runtime that the JavaScript
+  # runtimes cannot execute: bun hangs on the first worker. The wasm test binary
+  # is therefore built without -pthread, and a case that constructs a
+  # std::thread aborts. Those cases carry the [threads] tag. The cases that need
+  # the circular mapping for a ring buffer carry [aliased_pages], because wasm
+  # linear memory cannot be mapped twice. Both tags are left out of the wasm
+  # test list; the native targets run the cases.
+  set(discovery_args)
+  if(EMSCRIPTEN)
+    set(discovery_args TEST_SPEC "~[threads]~[aliased_pages]")
+  endif()
   list(APPEND CMAKE_MODULE_PATH "${FPAG_CATCH_MODULE_DIR}")
   include(Catch)
   catch_discover_tests(
     fpag_tests
+    ${discovery_args}
     PROPERTIES WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     TEST_PREFIX "fpag.")
 endfunction()
