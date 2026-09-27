@@ -144,6 +144,7 @@ function(fpag_add_tests)
     tests/sync_logger_test.cc
     tests/tagged_union_test.cc
     tests/temp_dir_test.cc
+    tests/term_test.cc
     tests/test_main.cc
     tests/time_trace_formatter_test.cc
     tests/union_test.cc
