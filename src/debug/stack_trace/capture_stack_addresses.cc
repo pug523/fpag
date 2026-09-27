@@ -12,6 +12,10 @@
 #include <libunwind.h>  // IWYU pragma: keep
 #elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
 // Emscripten provides no execinfo.h; stack capture is stubbed out below.
+#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
+// Android is POSIX as far as build_config.h is concerned, and bionic has no
+// execinfo.h, so the Android branch has to come first or it never runs.
+#include <unwind.h>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <execinfo.h>
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
@@ -20,8 +24,6 @@
 #include <windows.h>
 #include <dbghelp.h>
 // clang-format on
-#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
-#include <unwind.h>
 #else
 #error "Unsupported platform for stack trace capture"
 #endif
@@ -170,12 +172,14 @@ FPAG_NOINLINE usize capture_stack_addresses(void** out_frames,
   return capture_stack_addresses_libunwind(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_ASMJS)
   return capture_stack_addresses_asmjs(out_frames, max_depth, skip);
+#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
+  // Ahead of POSIX for the same reason as the include: Android is POSIX, and
+  // this is the branch that can compile there.
+  return capture_stack_addresses_android(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   return capture_stack_addresses_posix(out_frames, max_depth, skip);
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   return capture_stack_addresses_win(out_frames, max_depth, skip);
-#elif FPAG_BUILD_FLAG(IS_OS_ANDROID)
-  return capture_stack_addresses_android(out_frames, max_depth, skip);
 #endif
 }
 
