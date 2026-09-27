@@ -113,5 +113,9 @@ CheckOptions:
     value:        1
   - key:          modernize-loop-convert.MakeReverseRangeHeader
     value:        1
+  # <bits/...> is libc's own header for the types it declares behind another
+  # one, and it does not exist on every platform fpag builds for, so the check
+  # must not ask for it. The POSIX header is included either way, with a
+  # NOLINTNEXTLINE where the check asks for a direct one.
   - key: misc-include-cleaner.IgnoreHeaders
-    value:        '^.*[\\/](third_party|include[\\/]build)[\\/].*$'
+    value:        '^.*[\\/](third_party|include[\\/]build|bits)[\\/].*$'
