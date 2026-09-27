@@ -27,8 +27,8 @@ ctest --preset default
 ```
 
 The presets are `default`, `debug`, `release`, `dev` (tests and benchmarks),
-`asan`, `coverage`, `tidy` and `native`. Run `cmake --list-presets` to see
-them all.
+`asan`, `tsan`, `coverage`, `tidy` and `native`. Run `cmake --list-presets` to
+see them all.
 
 To consume it from another CMake project, either add this tree with
 `add_subdirectory()` and link `fpag::fpag`, or install and use

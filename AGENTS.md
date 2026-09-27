@@ -65,8 +65,9 @@ Read these before changing anything. Do not guess at the design.
   proof and a red one may not be your fault. Check the flags CI uses before
   concluding that a pre-existing warning is yours.
 - **Run the tests before claiming anything works.**
-  `ctest --preset dev`, and `ctest --preset asan` when you touched memory,
-  lifetimes, arenas or anything lock-free. All 126 cases must pass.
+  `ctest --preset dev`, and `ctest --preset asan` or `ctest --preset tsan` when
+  you touched memory, lifetimes, arenas or anything lock-free. All cases must
+  pass.
 - **A log call before `init()` is a defect, not a style question.** The sink is
   held in a `std::optional` for exactly this reason. Do not reintroduce a
   default-constructed sink, and do not add a default constructor to a sink to

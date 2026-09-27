@@ -36,6 +36,7 @@ ctest --preset dev
 
 # Everything CI runs, before you push.
 ctest --preset asan
+ctest --preset tsan
 cmake --build build/asan --target coverage
 cmake --build build/tidy --target tidy
 cmake --build build/tidy --target lint
@@ -51,6 +52,7 @@ knowing by heart:
 | `release` | Release, `-O3`, symbols hidden |
 | `dev` | Debug with tests **and** benchmarks |
 | `asan` | Debug with the address, leak and undefined sanitizers |
+| `tsan` | Debug with the thread sanitizer |
 | `coverage` | Debug instrumented for `llvm-cov` |
 | `tidy` | Debug with `clang-tidy` as the compiler launcher |
 | `native` | Release tuned for this machine. Not reproducible, never for CI |
@@ -101,6 +103,7 @@ cmake --preset dev
 | `FPAG_BUILD_BENCHMARKS` | `OFF` | Build the Google Benchmark binary |
 | `FPAG_INSTALL` | `ON` when top level | Generate install and package config rules |
 | `FPAG_ENABLE_SANITIZERS` | `OFF` | `-fsanitize=address,leak,undefined` |
+| `FPAG_ENABLE_THREAD_SANITIZER` | `OFF` | `-fsanitize=thread` |
 | `FPAG_ENABLE_COVERAGE` | `OFF` | `-fprofile-instr-generate`, adds a `coverage` target |
 | `FPAG_ENABLE_CLANG_TIDY` | `OFF` | `clang-tidy` as the compiler launcher |
 | `FPAG_ENABLE_LIBUNWIND` | `OFF` | Stack traces through libunwind. Linux only |
@@ -241,8 +244,9 @@ The `dev` preset builds them, at `-O0`, where it does not trigger.
   reviewer cannot reconstruct from the diff.
 - Make sure CI passes before asking for a review. It runs the test suite on
   Linux, macOS and Windows in both Debug and Release, a sanitizer pass, a
-  coverage pass, `clang-tidy`, `clang-format` and `cpplint`, and a job that
-  installs the package and compiles a consumer against it.
+  thread sanitizer pass, a coverage pass, `clang-tidy`, `clang-format` and
+  `cpplint`, and a job that installs the package and compiles a consumer
+  against it.
 - The project is pre-1.0, so the API still moves. Call breaking changes out in
   the commit message rather than letting them hide in a rename.
 
