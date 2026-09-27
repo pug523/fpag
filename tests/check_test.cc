@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include <csignal>
+
 #include "catch2/catch_message.hpp"
 #include "fpag/build/build_config.h"
 
