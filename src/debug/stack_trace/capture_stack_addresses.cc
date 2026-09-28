@@ -4,7 +4,7 @@
 
 #include "fpag/debug/stack_trace/capture_stack_addresses.h"
 
-#include <cstdint>
+#include <cstdint>  // IWYU pragma: keep
 
 #include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
