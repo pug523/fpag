@@ -99,6 +99,12 @@ TEST_CASE("Reading a descriptor returns the bytes written", "[io]") {
   CHECK(std::string_view(got.data(), static_cast<usize>(count)) == payload);
 }
 
+// The two cases below ask a pipe for its end of stream, and the wasm runtime's
+// pipe has none: read() there reports -1 past the last byte instead of zero,
+// which is the same missing-POSIX kind of thing as the fork() check_test.cc
+// cannot use. The read itself is covered on wasm by the case above.
+#if !FPAG_BUILD_FLAG(IS_OS_ASMJS)
+
 TEST_CASE("A read is short when the buffer is", "[io]") {
   // A caller draining a pipe has to loop, and can only do that if a short
   // read is distinguishable from the end of the stream.
@@ -133,5 +139,7 @@ TEST_CASE("Reading a closed descriptor reports zero at end of file", "[io]") {
   const isize count = read(pipe.read_fd, buffer, sizeof(buffer));
   CHECK(count == 0);
 }
+
+#endif  // !FPAG_BUILD_FLAG(IS_OS_ASMJS
 
 }  // namespace io
