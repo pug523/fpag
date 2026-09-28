@@ -81,7 +81,7 @@ class Cursor {
   Cursor() = default;
   Cursor(const u8* data, u64 size) : data_(data), size_(size) {}
 
-  [[nodiscard]] usize position() const { return position_; }
+  [[nodiscard]] u64 position() const { return position_; }
   [[nodiscard]] u64 size() const { return size_; }
 
   bool seek(u64 position);

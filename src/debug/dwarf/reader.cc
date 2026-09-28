@@ -571,9 +571,10 @@ bool read_line_header(Cursor* cursor,
         }
       }
       if (files != nullptr) {
-        const std::string& directory = directory_index < directories.size()
-                                           ? directories[directory_index]
-                                           : std::string();
+        const std::string& directory =
+            directory_index < directories.size()
+                ? directories[static_cast<usize>(directory_index)]
+                : std::string();
         files->push_back(join_path(tables, directory, path));
       }
     }
@@ -613,10 +614,11 @@ bool read_line_header(Cursor* cursor,
       // Before version 5 the directory a file names is counted from one: index
       // zero is the working directory of the unit, and the table starts at one.
       const std::string& directory =
-          directory_index == 0 ? tables.working_directory
-                               : (directory_index - 1 < directories.size()
-                                      ? directories[directory_index - 1]
-                                      : std::string());
+          directory_index == 0
+              ? tables.working_directory
+              : (directory_index - 1 < directories.size()
+                     ? directories[static_cast<usize>(directory_index - 1)]
+                     : std::string());
       files->push_back(join_path(tables, directory, path));
     }
   }
@@ -1147,14 +1149,18 @@ bool line_position(const Tables& tables,
   };
   // Answers the query when the open row is the one that ends at `end`.
   const auto close_row_at = [&](u64 end) {
-    if (row_open && link_address >= row_address && link_address < end &&
-        row_file < unit.files.size() && !unit.files[row_file].empty() &&
-        row_line > 0) {
-      out->file = unit.files[row_file].c_str();
-      out->line = static_cast<u32>(row_line);
-      out->column = static_cast<u32>(row_column);
-      answered = true;
+    if (!row_open || link_address < row_address || link_address >= end ||
+        row_file >= unit.files.size() || row_line <= 0) {
+      return;
     }
+    const std::string& file = unit.files[static_cast<usize>(row_file)];
+    if (file.empty()) {
+      return;
+    }
+    out->file = file.c_str();
+    out->line = static_cast<u32>(row_line);
+    out->column = static_cast<u32>(row_column);
+    answered = true;
   };
   // A row covers the addresses from its own address up to the address of the
   // next row, which is why an advance that emits no row closes nothing: the
