@@ -2,7 +2,6 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
-#include "catch2/catch_session.hpp"
 #include "fpag/base/numeric.h"
 #include "fpag/debug/exit_handler.h"
 #include "fpag/debug/profiler/profile_scope.h"
@@ -11,6 +10,11 @@
 #include "fpag/debug/signal_handler.h"
 #include "fpag/debug/terminate_handler.h"
 #include "fpag/term/console.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"  // For windows
+#include "catch2/catch_session.hpp"
+#pragma GCC diagnostic pop
 
 #define CATCH_CONFIG_RUNNER
 
