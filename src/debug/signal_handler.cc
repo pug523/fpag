@@ -158,7 +158,13 @@ void register_signal_handlers() {
     struct sigaction action = {};
     action.sa_handler = signal_handler;
     action.sa_flags = SA_ONSTACK | SA_RESTART;
-    ::sigemptyset(&action.sa_mask);
+    // sa_mask is left as the aggregate initialisation made it: all bits zero,
+    // which is the empty set, because signal numbers are all positive.
+    // Calling sigemptyset would say so explicitly but does not compile
+    // everywhere: macOS defines it as a macro expanding to `(*(set) = 0, 0)`,
+    // so `::sigemptyset(x)` becomes `::(*(x) = 0, 0)` and will not parse, and
+    // asking for the real function needs a feature-test macro defined before
+    // any system header.
     // Only a programming error reaches here: the numbers are constants and the
     // flags are supported wherever this file compiles.
     FPAG_CHECK_MSG(::sigaction(signal_number, &action, nullptr) == 0,
