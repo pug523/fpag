@@ -181,13 +181,17 @@ jobs:
           path: build/coverage/html/index.html
           retention-days: 7
 
+      # The archive and the test binary are named for the platform, so the paths
+      # are too: a Windows build produces fpag.lib and fpag_tests.exe, and every
+      # other one libfpag.a and fpag_tests. if-no-files-found turns a name that
+      # has gone stale into a red job rather than an empty artifact.
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ matrix.name }}
           path: |
-            build/libfpag.a
-            build/fpag_tests
+            build/${{ runner.os == 'Windows' && 'fpag.lib' || 'libfpag.a' }}
+            build/${{ runner.os == 'Windows' && 'fpag_tests.exe' || 'fpag_tests' }}
           if-no-files-found: error
 
   # A 32-bit architecture that CI can actually execute, so the narrowing and
