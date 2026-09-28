@@ -95,11 +95,11 @@ static constexpr std::string_view ANSI256_PREFIXES[] = {
 // True color
 static constexpr std::string_view ANSI_TRUE_COLOR_PREFIXES[] = {
     "\033[1;38;2;100;100;100mtrace\033[0m: ",  // Trace: Gray
-    "\033[1;38;2;040;190;240mdebug\033[0m: ",  // Debug: Sky Blue
-    "\033[1;38;2;025;210;025m info\033[0m: ",  // Info: Green
-    "\033[1;38;2;225;230;015m warn\033[0m: ",  // Warn: Yellow
-    "\033[1;38;2;250;060;060merror\033[0m: ",  // Error: Red
-    "\033[1;38;2;255;040;255mfatal\033[0m: ",  // Fatal: Magenta
+    "\033[1;38;2;140;210;230mdebug\033[0m: ",  // Debug: Sky Blue
+    "\033[1;38;2;150;230;140m info\033[0m: ",  // Info: Green
+    "\033[1;38;2;230;200;100m warn\033[0m: ",  // Warn: Yellow
+    "\033[1;38;2;230;110;120merror\033[0m: ",  // Error: Red
+    "\033[1;38;2;180;120;230mfatal\033[0m: ",  // Fatal: Magenta
 };
 
 inline constexpr std::string_view log_prefix(LogLevel level,
