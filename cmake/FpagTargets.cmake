@@ -26,6 +26,9 @@ set(FPAG_SOURCES
     src/container/spsc_queue.cc
     src/debug/check.cc
     src/debug/dlog.cc
+    src/debug/dwarf/module.cc
+    src/debug/dwarf/module_cache.cc
+    src/debug/dwarf/reader.cc
     src/debug/exit_handler.cc
     src/debug/fatal.cc
     src/debug/logger.cc

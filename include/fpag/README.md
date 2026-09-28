@@ -8,8 +8,8 @@ allowed to depend on, and what each one is for.
 * `build/`: Platform, compiler and architecture detection macros
 * `container/`: Lock-free containers, currently an SPSC queue and a
   fixed-capacity concurrent hash map
-* `debug/`: Assertions, fatal crashes, stack traces, the profiler, and the
-  opt-in process level handlers
+* `debug/`: Assertions, fatal crashes, stack traces with symbol and source
+  resolution, the profiler, and the opt-in process level handlers
 * `hardware/`: CPU primitives
 * `hash/`: Hashing
 * `io/`: File descriptors, memory mapped files, temporary files and directories

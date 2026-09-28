@@ -269,6 +269,18 @@ handler that interrupted them cannot do. The report says which stack the handler
 got, because that is the difference between a report and no report, and a
 consumer reading one offline can still name every frame with addr2line.
 
+Outside a handler, `StackTrace::collect_trace()` names every frame itself and
+needs no external tool. `dladdr` says which object an address is in, and the
+object answers the rest: `src/debug/dwarf/` maps the file, reads its symbol
+table for the function, and its `.debug_info` and `.debug_line` for the file,
+line and column. The symbol table is what puts a name on a static function or
+one in an anonymous namespace, which the dynamic table has never heard of, and
+the line table is what survives a release build. DWARF 2 through 5 are read, in
+both the `.debug_ranges` shape the versions before 5 use and the
+`.debug_rnglists` shape from 5. The reader is private to `debug` and is Linux
+and Android only, and the `Symbolicator` that owns it maps each object once per
+trace rather than once per frame.
+
 ## Ports and build contract
 
 `build/build_config.h` is a vendored copy of Chromium's, with attribution. It
@@ -328,9 +340,10 @@ as if they were new.
   you the library.
 - `LogEntry` has no source location, so the two file sinks carry a `TODO` and
   cannot annotate a line. `debug::Location` exists and is unused here.
-- The DWARF inlined-line path in `stack_trace/symbolicator.h` is commented out,
-  which is why the file references a `debug/dwarf/provider.h` that does not
-  exist. Symbolication resolves functions, not lines within them.
+- The DWARF reader in `src/debug/dwarf/` resolves a frame to the function and
+  the source position it was written at, but not to the function *inside* an
+  inlined one: `DW_TAG_inlined_subroutine` is skipped, so an inlined call is
+  reported at the line of the call rather than as the frames it expanded into.
 - The project is young, and the public API still changes. `base::numeric.h`
   exporting into the global namespace is the kind of decision that is much
   cheaper to make now than in a year.

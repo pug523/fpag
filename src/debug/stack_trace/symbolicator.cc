@@ -5,9 +5,10 @@
 #include "fpag/debug/stack_trace/symbolicator.h"
 
 #include <cstdint>
-#include <utility>
+#include <memory>
 
-#include "fmt/base.h"
+#include "debug/dwarf/module.h"
+#include "debug/dwarf/reader.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 #include "fpag/debug/stack_trace/demangle.h"
@@ -25,23 +26,20 @@
 #endif
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
-// TODO: Add support for Linux/Android stack trace file / line / column
-// resolution provided by DWARF parser.
-// #include "fpag/debug/dwarf/provider.h"
-#endif
-
-#if FPAG_BUILD_FLAG(IS_OS_LINUX)
-// TODO: Remove this section when we implement DWARF parser.
-#include <stdio.h>
-
-#include <memory>
-#include <string>
-
+#include "debug/dwarf/module_cache.h"
 #endif
 
 namespace debug {
 
 #if FPAG_BUILD_FLAG(IS_OS_POSIX)
+
+Symbolicator::Symbolicator() {
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+  modules_ = std::make_unique<dwarf::ModuleCache>();
+#endif
+}
+
+Symbolicator::~Symbolicator() = default;
 
 SymbolInfo Symbolicator::resolve_posix(const void* address) const {
   SymbolInfo info;
@@ -50,88 +48,54 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
   // Emscripten provides no dladdr; symbol resolution is unsupported.
   (void)address;
   return info;
-#endif
-
+#else
   Dl_info dl = {};
   if (!::dladdr(address, &dl)) {
     return info;
   }
 
-  if (dl.dli_sname && dl.dli_sname[0]) {
-    info.function = demangle(dl.dli_sname);
-    info.resolved = true;
-  } else if (dl.dli_fname && dl.dli_fname[0]) {
-    // At minimum we know which module it came from.
-    info.resolved = true;
-  }
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+  // The object's own tables are the better answer: they name the symbols the
+  // dynamic table leaves out, and they carry the line the frame came from.
+  if (dl.dli_fname != nullptr && dl.dli_fname[0] != '\0') {
+    const dwarf::Module* const module = modules_->at(dl.dli_fname);
+    if (module != nullptr && module->loaded()) {
+      const u64 link_address =
+          static_cast<u64>(reinterpret_cast<uintptr_t>(address)) -
+          module->load_bias_to(
+              static_cast<u64>(reinterpret_cast<uintptr_t>(dl.dli_fbase)));
 
-#if FPAG_BUILD_FLAG(IS_OS_LINUX)
-  // TODO: Remove this section when we implement DWARF parser.
-  if (dl.dli_fname && dl.dli_fname[0]) {
-    constexpr usize BUF_SIZE = 512;
-    char command[BUF_SIZE];
+      if (const char* const name = module->function_at(link_address)) {
+        info.function = demangle(name);
+        info.resolved = true;
+      }
 
-    uintptr_t offset = reinterpret_cast<uintptr_t>(address);
-    if (dl.dli_fname[0] == '/') {
-      offset -= reinterpret_cast<uintptr_t>(dl.dli_fbase);
-    }
-    const auto result = fmt::format_to_n(
-        command, sizeof(command), "addr2line -e {} -f -p -C {:x} 2>/dev/null",
-        dl.dli_fname, offset);
-    if (result.size < sizeof(command)) {
-      command[result.size] = '\0';
-
-      const auto deleter = [](FILE* f) { pclose(f); };
-      const std::unique_ptr<FILE, decltype(deleter)> pipe(popen(command, "r"),
-                                                          deleter);
-
-      if (pipe) {
-        char buffer[BUF_SIZE];
-
-        if (fgets(buffer, sizeof(buffer), pipe.get())) {
-          std::string output(buffer);
-          if (!output.empty() && output.back() == '\n') {
-            output.pop_back();
-          }
-
-          const usize at_pos = output.find(" at ");
-          if (at_pos != std::string::npos) {
-            const std::string file_line = output.substr(at_pos + 4);
-            const usize colon_pos = file_line.find_last_of(':');
-
-            if (colon_pos != std::string::npos) {
-              std::string file = file_line.substr(0, colon_pos);
-              std::string line_str = file_line.substr(colon_pos + 1);
-
-              if (file != "??" && !line_str.empty() && line_str[0] != '?') {
-                info.file = std::move(file);
-                info.line = static_cast<u32>(std::stoi(line_str));
-              }
-            }
-          }
-        }
+      dwarf::SourcePosition position = {};
+      if (module->source_at(link_address, &position)) {
+        info.file = position.file;
+        info.line = position.line;
+        info.column = position.column;
       }
     }
   }
 #endif
 
-#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
-  // TODO: Add support for Linux/Android stack trace file / line / column
-  // resolution provided by DWARF parser.
-  //
-  // const DwarfModule* module =
-  //     dwarf_provider_.module(dl.dli_fname, dl.dli_fbase);
-  // if (module) {
-  //   const DwarfInfo dwarf = module->lookup(address);
-  //   if (dwarf.found) {
-  //     info.file = std::move(dwarf.file);
-  //     info.line = dwarf.line;
-  //     info.column = dwarf.column;
-  //   }
-#endif
+  // What the dynamic table can still add: a name for an object this reader
+  // cannot read, such as one stripped of its symbol table.
+  if (!info.resolved && dl.dli_sname != nullptr && dl.dli_sname[0] != '\0') {
+    info.function = demangle(dl.dli_sname);
+    info.resolved = true;
+  }
+  if (!info.resolved && dl.dli_fname != nullptr && dl.dli_fname[0] != '\0') {
+    // At minimum we know which module it came from.
+    info.resolved = true;
+  }
 
   return info;
+#endif
 }
+
+#elif FPAG_BUILD_FLAG(IS_OS_WIN)
 
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
 

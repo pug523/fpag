@@ -14,6 +14,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 #include "fpag/debug/stack_trace/stack_frame.h"
+#include "fpag/debug/stack_trace/symbolicator.h"
 
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 #include "catch2/matchers/catch_matchers.hpp"
@@ -201,14 +202,16 @@ TEST_CASE("StackTrace keeps every name when one is very long",
   usize named = 0;
   const char* previous = nullptr;
   for (usize i = 0; i < trace.frame_count(); ++i) {
-    const std::string_view name = trace.frames()[i].location.function_name();
+    const StackTraceFrame& frame = trace.frames()[i];
+    const std::string_view name = frame.location.function_name();
+    const std::string_view file = frame.location.file_name();
     if (!name.starts_with(DESCEND_PREFIX)) {
       continue;
     }
     ++named;
 
-    // Consecutive names are consecutive in the trace's own storage, because
-    // that is how they are interned. A buffer that reallocated while the later
+    // A frame's name and its file are interned one after the other, so the next
+    // frame's name starts after both. A buffer that reallocated while the later
     // and longer names were being added leaves the earlier ones pointing into
     // freed storage, which still reads the right bytes often enough that
     // comparing names against to_string() would not notice; the layout always
@@ -217,7 +220,8 @@ TEST_CASE("StackTrace keeps every name when one is very long",
     if (previous != nullptr) {
       CHECK(name.data() == previous);
     }
-    previous = name.data() + name.size() + 1;
+    CHECK(file.data() == name.data() + name.size() + 1);
+    previous = file.data() + file.size() + 1;
   }
 
   // Deep enough that the names outweigh any per-frame budget the storage could
@@ -226,6 +230,64 @@ TEST_CASE("StackTrace keeps every name when one is very long",
   CHECK(named > 32);
 #endif
 }
+#endif
+
+// The rest of this file is about what a single address resolves to, which on
+// Linux and Android is read out of the object file itself. A release build
+// carries no debug information to read, so the source position is a debug case;
+// the function name is not, because it comes from the symbol table.
+#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
+namespace {
+
+// Resolves the address the call above it returns to, which is inside the
+// caller. A return address is the instruction after the call, so it is taken
+// back by one to land on the call itself: that is what makes the line the
+// calling line, and it is what a stack frame address needs as well.
+FPAG_NOINLINE SymbolInfo resolve_caller() {
+  const auto* const returns =
+      static_cast<const u8*>(__builtin_return_address(0));
+  return Symbolicator{}.resolve(returns - 1);
+}
+
+// Local linkage, so the dynamic symbol table has no name for it and the object
+// file's own symbol table is the only place a name can come from. The line the
+// call is written on comes back with the answer, so a test can check what the
+// address resolves to without hard coding a number a later edit would move.
+FPAG_NOINLINE SymbolInfo
+resolve_caller_in_an_anonymous_namespace(u32* call_line) {
+  const u32 line = __LINE__ + 1;
+  const SymbolInfo info = resolve_caller();
+  *call_line = line;
+  return info;
+}
+
+}  // namespace
+
+TEST_CASE("Symbolication names a function the dynamic table leaves out",
+          "[base][stack_trace]") {
+  u32 call_line = 0;
+  const SymbolInfo info = resolve_caller_in_an_anonymous_namespace(&call_line);
+
+  REQUIRE(info.resolved);
+  REQUIRE(info.function.find("resolve_caller_in_an_anonymous_namespace") !=
+          std::string::npos);
+}
+
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+TEST_CASE("Symbolication places an address at the line that called",
+          "[base][stack_trace]") {
+  constexpr std::string_view THIS_FILE = "stack_trace_test.cc";
+
+  u32 call_line = 0;
+  const SymbolInfo info = resolve_caller_in_an_anonymous_namespace(&call_line);
+
+  REQUIRE(info.resolved);
+  REQUIRE(std::string_view(info.file).ends_with(THIS_FILE));
+  CHECK(info.line == call_line);
+  CHECK(info.column > 0);
+}
+#endif
+
 #endif
 
 }  // namespace debug

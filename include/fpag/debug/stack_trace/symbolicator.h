@@ -4,16 +4,19 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 
-#if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
-// #include "fpag/debug/dwarf/provider.h"
-#endif
-
 namespace debug {
+
+namespace dwarf {
+// Defined in src/debug/dwarf/module_cache.h. The reader behind it is not part
+// of this header's interface, so it is named and not included.
+class ModuleCache;
+}  // namespace dwarf
 
 // Result of symbolicating a single address. All strings are owned by this
 // struct (not views) because the symbolication layer may allocate them.
@@ -27,13 +30,8 @@ struct SymbolInfo {
 
 class Symbolicator {
  public:
-#if FPAG_BUILD_FLAG(IS_OS_POSIX)
-  Symbolicator() = default;
-  ~Symbolicator() = default;
-#else
   Symbolicator();
   ~Symbolicator();
-#endif
 
   Symbolicator(const Symbolicator&) = delete;
   Symbolicator& operator=(const Symbolicator&) = delete;
@@ -50,7 +48,9 @@ class Symbolicator {
 #endif
 
 #if FPAG_BUILD_FLAG(IS_OS_LINUX) || FPAG_BUILD_FLAG(IS_OS_ANDROID)
-  // DwarfProvider dwarf_provider_;
+  // The object reader, held behind a pointer because it is an implementation
+  // detail of this class rather than part of what a caller sees.
+  std::unique_ptr<dwarf::ModuleCache> modules_;
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
   void* process_handle_ = nullptr;
   bool dbghelp_initialized_ = false;
