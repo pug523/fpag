@@ -83,6 +83,21 @@ i32 run_failing_check(std::string* reported) {
                       reported);
 }
 
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+// The signal a trap raises is the architecture's, not the standard's: an
+// undefined instruction raises SIGILL, a breakpoint raises SIGTRAP, and the brk
+// an arm64 __builtin_trap() emits is the second of those. So a child traps and
+// the parent reads the signal off it, and the cases below can ask for the trap
+// without a table of what each architecture calls it. Only a debug build traps,
+// so only a debug build needs to know.
+i32 trap_signal() {
+  std::string unused;
+  const i32 status = run_in_child([] { __builtin_trap(); }, &unused);
+  REQUIRE(WIFSIGNALED(status));
+  return WTERMSIG(status);
+}
+#endif  // FPAG_BUILD_FLAG(IS_DEBUG)
+
 }  // namespace
 
 TEST_CASE("A failed check reports without a debug logger sink",
@@ -107,7 +122,7 @@ TEST_CASE("A failed check reports without a debug logger sink",
       WIFSIGNALED(status) && (WTERMSIG(status) == SIGSEGV);
   CHECK_FALSE(died_from_stack_overflow);
   REQUIRE(WIFSIGNALED(status));
-  CHECK(WTERMSIG(status) == SIGILL);
+  CHECK(WTERMSIG(status) == trap_signal());
 #endif
 }
 
@@ -129,7 +144,7 @@ TEST_CASE("Unwrapping the wrong Result tag reports in every build",
   CHECK_FALSE(returned_normally);
 #if FPAG_BUILD_FLAG(IS_DEBUG)
   REQUIRE(WIFSIGNALED(status));
-  CHECK(WTERMSIG(status) == SIGILL);
+  CHECK(WTERMSIG(status) == trap_signal());
 #endif
 }
 
@@ -150,7 +165,7 @@ TEST_CASE("Unwrapping the wrong ParseResult tag reports in every build",
   CHECK_FALSE(returned_normally);
 #if FPAG_BUILD_FLAG(IS_DEBUG)
   REQUIRE(WIFSIGNALED(status));
-  CHECK(WTERMSIG(status) == SIGILL);
+  CHECK(WTERMSIG(status) == trap_signal());
 #endif
 }
 
