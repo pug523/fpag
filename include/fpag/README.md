@@ -15,7 +15,7 @@ allowed to depend on, and what each one is for.
 * `logging/`: The structured logger, `SyncLogger` and `AsyncLogger`, with its
   sinks, codecs and wait strategies
 * `mem/`: Page allocation and arenas
-* `str/`: A string pool and a string interner
+* `str/`: A string pool, a string interner, and the table behind it
 * `term/`: Terminal capability detection and ANSI styling
 * `testing/`: Instrumented probe types, for asserting that a container really
   did copy, move or destroy what it should have
