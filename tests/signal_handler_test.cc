@@ -18,6 +18,7 @@
 
 #include <array>
 #include <string>
+#include <string_view>
 
 // A sanitizer replaces the signal handling this file asserts on.
 // AddressSanitizer installs its own handlers and asks for the signal to be
@@ -38,10 +39,17 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
 #include "fpag/debug/logger.h"
+#include "fpag/io/io_util.h"
 
 namespace debug {
 
 namespace {
+
+// What the child writes when it managed to take its alternate stack away. The
+// case below needs to know, because a platform that refuses the disable has no
+// "no stack of its own" to report and asserting a note it cannot produce would
+// be asserting the platform rather than the code.
+constexpr std::string_view ALT_STACK_DISABLED = "alt stack disabled\n";
 
 // The child: a sink for the logger, the handlers, and then a crash.
 //
@@ -60,7 +68,10 @@ namespace {
     stack_t off = {};  // NOLINTNEXTLINE(misc-include-cleaner)
     off.ss_flags = SS_DISABLE;
     if (::sigaltstack(&off, nullptr) == 0) {
-      // Falls through to the crash below with nowhere of its own to run.
+      // Falls through to the crash below with nowhere of its own to run, and
+      // says so on the way past so the parent knows the case is there.
+      io::write(io::STDOUT_FD, ALT_STACK_DISABLED.data(),
+                ALT_STACK_DISABLED.size());
     }
   }
 
@@ -154,6 +165,10 @@ TEST_CASE("The signal handler says when it had no stack of its own",
           "[debug][signal_handler]") {
   const std::string reported = run_in_child(/*disable_signal_stack=*/true);
   INFO(reported);
+
+  if (reported.find(ALT_STACK_DISABLED) == std::string::npos) {
+    SKIP("this platform would not take the alternate signal stack away");
+  }
 
   // The other half of the note: with the installation undone, the handler runs
   // where it always did and the report says so, which is what tells a reader
