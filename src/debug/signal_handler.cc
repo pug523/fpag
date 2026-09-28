@@ -100,6 +100,8 @@ void signal_handler(i32 signal_number) {
 
 namespace {
 
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
+
 // The stack the handlers run on, kept here because sigaltstack() has no query
 // to ask with. A plain pointer and size: a static that runs an initializer
 // would be a static constructor, which fpag does not have.
@@ -134,7 +136,11 @@ void install_signal_stack() {
   signal_stack_bytes = SIGNAL_STACK_BYTES;
 }
 
+#endif  // FPAG_BUILD_FLAG(IS_OS_POSIX)
+
 }  // namespace
+
+#if FPAG_BUILD_FLAG(IS_OS_POSIX)
 
 bool running_on_signal_stack() noexcept {
   if (signal_stack == nullptr) {
@@ -184,5 +190,29 @@ void register_signal_handlers() {
   install(SIGINT);
 #endif
 }
+
+#else  // !FPAG_BUILD_FLAG(IS_OS_POSIX)
+
+// There is no alternate signal stack to run on: Windows reports a fault
+// through a structured exception rather than a signal, and a handler that has
+// run out of thread stack has nowhere to be moved to.
+bool running_on_signal_stack() noexcept {
+  return false;
+}
+
+void register_signal_handlers() {
+  // No sigaction either, so signal() is the whole interface. It cannot ask for
+  // SA_ONSTACK, and on this platform there is no such flag to ask for.
+  std::signal(SIGSEGV, signal_handler);
+  std::signal(SIGABRT, signal_handler);
+  std::signal(SIGFPE, signal_handler);
+  std::signal(SIGILL, signal_handler);
+
+#if FPAG_BUILD_FLAG(IS_DEBUG)
+  std::signal(SIGINT, signal_handler);
+#endif
+}
+
+#endif  // FPAG_BUILD_FLAG(IS_OS_POSIX)
 
 }  // namespace debug
