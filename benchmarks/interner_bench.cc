@@ -97,7 +97,7 @@ constexpr bool is_identifier_char(char c) {
 // has just matched, so it is a state machine.
 void lex_identifiers(std::string_view text,
                      std::vector<std::string_view>* out) {
-  enum class State { Code, LineComment, BlockComment, String, Char };
+  enum class State : u8 { Code, LineComment, BlockComment, String, Char };
   State state = State::Code;
   usize index = 0;
   while (index < text.size()) {
