@@ -194,8 +194,11 @@ TEST_CASE("StackTrace keeps every name when one is very long",
   // The wasm build has no unwinder, so there is nothing to keep alive.
   REQUIRE(trace.frame_count() == 0);
 #else
-  // The demangled name every frame of the descent is expected to start with.
-  constexpr std::string_view DESCEND_PREFIX = "void debug::descend";
+  // The qualified template name every frame of the descent carries. It is the
+  // only part of the demangled name both manglers agree on: Itanium puts it
+  // straight after the return type, where a start_with would find it, and the
+  // MSVC undname puts the calling convention in between.
+  constexpr std::string_view DESCEND_NAME = "debug::descend<";
 
   REQUIRE(trace.frame_count() > 32);
 
@@ -205,7 +208,7 @@ TEST_CASE("StackTrace keeps every name when one is very long",
     const StackTraceFrame& frame = trace.frames()[i];
     const std::string_view name = frame.location.function_name();
     const std::string_view file = frame.location.file_name();
-    if (!name.starts_with(DESCEND_PREFIX)) {
+    if (name.find(DESCEND_NAME) == std::string_view::npos) {
       continue;
     }
     ++named;
