@@ -135,7 +135,7 @@ jobs:
       # FetchContent has to download fmt, xxhash and Catch2, which is the one
       # part of the build that is not reproducible from the checkout alone.
       - name: Restore dependency cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ github.workspace }}/build/_deps
           key: deps-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('cmake/FpagDependencies.cmake') }}
@@ -231,7 +231,7 @@ jobs:
       # These dependencies are built for wasm, so they get a cache key of their
       # own rather than sharing one with the native jobs.
       - name: Restore dependency cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ github.workspace }}/build/wasm/_deps
           key: deps-wasm-${{ hashFiles('cmake/FpagDependencies.cmake') }}
