@@ -140,7 +140,6 @@ function(fpag_add_tests)
     tests/profiler_test.cc
     tests/result_test.cc
     tests/signal_handler_test.cc
-    tests/simple_concurrent_hash_map_test.cc
     tests/sinks_test.cc
     tests/soo_vec_test.cc
     tests/spsc_queue_test.cc
@@ -199,7 +198,6 @@ function(fpag_add_benchmarks)
     benchmarks/async_logger_bench.cc
     benchmarks/benchmark_main.cc
     benchmarks/interner_bench.cc
-    benchmarks/simple_concurrent_hash_map_bench.cc
     benchmarks/spsc_queue_bench.cc)
 
   target_link_libraries(fpag_benchmarks PRIVATE fpag::fpag

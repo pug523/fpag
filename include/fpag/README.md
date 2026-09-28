@@ -6,8 +6,7 @@ allowed to depend on, and what each one is for.
 * `arg/`: Command line parsing, with subcommands and typed conversion
 * `base/`: Foundational types, `Result`, vectors, tagged unions, integer types
 * `build/`: Platform, compiler and architecture detection macros
-* `container/`: Lock-free containers, currently an SPSC queue and a
-  fixed-capacity concurrent hash map
+* `container/`: Lock-free containers, currently an SPSC queue
 * `debug/`: Assertions, fatal crashes, stack traces with symbol and source
   resolution, the profiler, and the opt-in process level handlers
 * `hardware/`: CPU primitives

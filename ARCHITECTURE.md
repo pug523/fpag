@@ -45,8 +45,8 @@ dependencies, and `logging` sits near the top of the graph while still feeding
 | `hash` | XXH3 hasher | yes |
 | `io` | File descriptors, memory mapped files, temporary files and directories | no |
 | `mem` | Page allocation, arenas | no |
-| `container` | Lock-free SPSC queue, fixed-capacity concurrent hash map | partly |
-| `str` | String pool, string interner | partly |
+| `container` | Lock-free SPSC queue | partly |
+| `str` | String pool, string interner, the interner's table | partly |
 | `debug` | Assertions, fatal crashes, stack traces, profiler, process handlers | no |
 | `logging` | `SyncLogger`, `AsyncLogger`, sinks, codecs, wait strategies | yes |
 | `arg` | Command line parsing, subcommands, typed conversion | no |
@@ -155,9 +155,13 @@ other sinks, or own a resource outright. See `include/fpag/logging/sink/sink.h`.
 - `container::SpscQueue` separates the producer's and the consumer's counters
   onto their own cache lines and gives each side a private, non-atomic mirror
   of the other's. The steady-state loop touches no shared atomic at all.
-- `container::SimpleConcurrentHashMap` locks a slot with a compare-exchange
-  on its hash, and never resizes. Insert contention shows up as a failed
-  `try_insert`, not as a blocked thread.
+- `str::InternTable` claims a slot with a compare-exchange on its control
+  byte, and the claim is held across the append into the pool. A thread that
+  loses the race for a name retries the probe and reads the winner's entry, so
+  the pool takes one copy of a name rather than one per thread that wanted it.
+  It never resizes: a table that grows by reallocating cannot promise that the
+  entry a reader holds stays valid, and an interner's id is a pool offset that
+  has to outlive every name interned after it.
 - `mem::ConcurrentArena` is a compare-exchange bump pointer, with a second
   compare-exchange loop to commit the pages the new allocation reached.
 - The default back-pressure policy on the log queue is to **drop**, not to
@@ -340,6 +344,23 @@ as if they were new.
   you the library.
 - `LogEntry` has no source location, so the two file sinks carry a `TODO` and
   cannot annotate a line. `debug::Location` exists and is unused here.
+- `str::InternTable` is sized and never grows, so a caller that interns more
+  names than it asked for gets a fatal check in the middle of a build rather
+  than a table that doubled. That is the price of the promise it makes instead:
+  the entry a reader holds stays valid for the interner's lifetime, which a
+  reallocating table cannot say. The default size is a compiler's share of
+  names, and it is a reservation rather than an allocation, so the common case
+  never reaches the check.
+- The interner has a table of its own rather than a general concurrent map,
+  because an entry is the pool id that holds the name and nothing else: 9 bytes
+  against the 32 a `std::string_view` key and a duplicate value needed. The
+  cost of that decision is a second implementation of a data structure that a
+  general map would have provided, and the benefit does not survive a workload
+  that is neither. It was measured against a general table on the corpus in
+  `benchmarks/interner_bench.cc`: filling 1.38M names 621 ns per name becomes
+  302 and walking them 52.7 becomes 42.2, at three and a half times less
+  memory. It was not measured against a general map that stores a full hash in
+  the entry, and that is the honest limit of the claim.
 - The DWARF reader in `src/debug/dwarf/` resolves a frame to the function and
   the source position it was written at, but not to the function *inside* an
   inlined one: `DW_TAG_inlined_subroutine` is skipped, so an inlined call is
