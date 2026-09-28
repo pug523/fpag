@@ -197,6 +197,7 @@ function(fpag_add_benchmarks)
     fpag_benchmarks
     benchmarks/async_logger_bench.cc
     benchmarks/benchmark_main.cc
+    benchmarks/interner_bench.cc
     benchmarks/simple_concurrent_hash_map_bench.cc
     benchmarks/spsc_queue_bench.cc)
 
@@ -204,6 +205,10 @@ function(fpag_add_benchmarks)
                                              ${FPAG_BENCHMARK_TARGET})
   target_include_directories(fpag_benchmarks
                              PRIVATE "${PROJECT_SOURCE_DIR}/benchmarks")
+  # The interner benchmark lexes this repository's own sources, so it needs to
+  # know where they are; FPAG_BENCH_CORPUS adds more roots at run time.
+  target_compile_definitions(fpag_benchmarks
+                             PRIVATE FPAG_BENCH_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
   fpag_apply_options(fpag_benchmarks)
 endfunction()
