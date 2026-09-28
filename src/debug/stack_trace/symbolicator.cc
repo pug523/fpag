@@ -97,8 +97,6 @@ SymbolInfo Symbolicator::resolve_posix(const void* address) const {
 
 #elif FPAG_BUILD_FLAG(IS_OS_WIN)
 
-#elif FPAG_BUILD_FLAG(IS_OS_WIN)
-
 Symbolicator::Symbolicator() {
   process_handle_ = ::GetCurrentProcess();
   ::SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES |
