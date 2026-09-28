@@ -2,12 +2,14 @@
 // This source code is licensed under the Apache License, Version 2.0
 // which can be found in the LICENSE file.
 
+#include "fpag/io/io_util.h"
+
 #include <string>
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
-#include "fpag/io/io_util.h"
+#include "fpag/build/build_flag.h"
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
 #include <io.h>

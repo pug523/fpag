@@ -27,11 +27,11 @@
 // would have to be set by every caller that sanitizes, and a caller that
 // forgets it gets a red suite.
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
-#  define FPAG_TEST_SIGNAL_ALT_STACK 1
+#define FPAG_TEST_SIGNAL_ALT_STACK 1
 #elif defined(__has_feature)
-#  if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
-#    define FPAG_TEST_SIGNAL_ALT_STACK 1
-#  endif
+#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
+#define FPAG_TEST_SIGNAL_ALT_STACK 1
+#endif
 #endif
 
 #include "catch2/catch_message.hpp"
