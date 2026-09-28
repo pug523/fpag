@@ -46,9 +46,9 @@ namespace debug {
 namespace {
 
 // What the child writes when it managed to take its alternate stack away. The
-// case below needs to know, because a platform that refuses the disable has no
-// "no stack of its own" to report and asserting a note it cannot produce would
-// be asserting the platform rather than the code.
+// case below reads the note against it, because a platform that refuses the
+// disable has no "no stack of its own" to report and asserting a note it cannot
+// produce would be asserting the platform rather than the code.
 constexpr std::string_view ALT_STACK_DISABLED = "alt stack disabled\n";
 
 // The child: a sink for the logger, the handlers, and then a crash.
@@ -166,14 +166,27 @@ TEST_CASE("The signal handler says when it had no stack of its own",
   const std::string reported = run_in_child(/*disable_signal_stack=*/true);
   INFO(reported);
 
-  if (reported.find(ALT_STACK_DISABLED) == std::string::npos) {
-    SKIP("this platform would not take the alternate signal stack away");
-  }
-
   // The other half of the note: with the installation undone, the handler runs
   // where it always did and the report says so, which is what tells a reader
   // that a missing report may be the missing stack.
-  CHECK(reported.find("handler ran on the thread stack") != std::string::npos);
+  //
+  // Darwin takes the stack away and delivers a raised signal onto it anyway, so
+  // the note is read against what the child managed to do: a report that names
+  // the thread stack when the stack was still installed would be the lie worth
+  // catching. The case cannot skip instead, because a skip is a throw and this
+  // binary is built -fno-exceptions, so the throw takes the teardown with it.
+  const bool disabled = reported.find(ALT_STACK_DISABLED) != std::string::npos;
+  const bool names_thread_stack =
+      reported.find("handler ran on the thread stack") != std::string::npos;
+  if (disabled) {
+    CHECK(names_thread_stack);
+  } else {
+    // The stack is still installed, so the report has to name it rather than
+    // claim a thread stack the handler never ran on.
+    CHECK_FALSE(names_thread_stack);
+    CHECK(reported.find("handler ran on the signal stack") !=
+          std::string::npos);
+  }
 }
 
 }  // namespace debug
