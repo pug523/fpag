@@ -4,8 +4,6 @@
 
 #include "fpag/debug/stack_trace/capture_stack_addresses.h"
 
-#include <cstdint>
-
 #include "fpag/base/attributes.h"
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
