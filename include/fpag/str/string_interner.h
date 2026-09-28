@@ -7,8 +7,7 @@
 #include <string_view>
 
 #include "fpag/base/numeric.h"
-#include "fpag/container/simple_concurrent_hash_map.h"
-#include "fpag/hash/xxh3_hasher.h"
+#include "fpag/str/intern_table.h"
 #include "fpag/str/string_pool.h"
 #include "fpag/str/string_pool_id.h"
 
@@ -17,14 +16,13 @@ namespace str {
 // Concurrent string interner that uses a StringPool for storage.
 class StringInterner {
  public:
-  using Map = container::SimpleConcurrentHashMap<std::string_view,
-                                                 StringPoolId,
-                                                 hash::Xxh3Hasher64>;
-
   using StringId = StringPoolId;
 
-  explicit StringInterner(usize map_init_capacity = 0)
-      : map_(map_init_capacity) {}
+  // @p names is how many distinct names the table is sized for. Zero takes
+  // InternTable::DEFAULT_NAMES, which is a reservation rather than an
+  // allocation: a caller that does not know how many names it will intern does
+  // not have to say.
+  explicit StringInterner(usize names = 0) : table_(&pool_, names) {}
   ~StringInterner() = default;
 
   StringInterner(const StringInterner&) = delete;
@@ -33,14 +31,15 @@ class StringInterner {
   StringInterner(StringInterner&&) noexcept = delete;
   StringInterner& operator=(StringInterner&&) noexcept = delete;
 
-  void init(usize map_capacity) { map_.reserve(map_capacity); }
+  // Sizes the table for @p names, which releases the region it had. Runs before
+  // the first intern, because a table cannot be resized while it is being read.
+  void init(usize names) { table_.reserve(names); }
 
   // Interns the string and returns a stable StringId.
   StringId intern(const std::string_view str);
 
   std::string_view get(StringId id) const { return pool_.get(id); }
   constexpr const StringPool& pool() const { return pool_; }
-  constexpr const Map& map() const { return map_; }
 
   // Returns the total size of all strings in the pool.
   usize size() const { return pool_.size(); }
@@ -48,8 +47,10 @@ class StringInterner {
   usize string_count() const { return pool_.string_count(); }
 
  private:
+  // The pool comes first: the table appends to it, so it has to be constructed
+  // before the table and destroyed after it.
   StringPool pool_;
-  Map map_;
+  InternTable<> table_;
 };
 
 }  // namespace str

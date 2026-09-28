@@ -6,28 +6,10 @@
 
 #include <string_view>
 
-#include "fpag/str/string_pool.h"
-#include "fpag/str/string_pool_id.h"
-
 namespace str {
 
 StringInterner::StringId StringInterner::intern(const std::string_view str) {
-  if (const StringPoolId* existing = map_.find(str)) {
-    return *existing;
-  }
-
-  std::string_view stored;
-  const StringPoolId pool_id = pool_.append(str, &stored);
-
-  bool inserted = false;
-  const StringPoolId* ptr = map_.try_insert(stored, pool_id, &inserted);
-
-  // Benign race: if another thread inserted the same string concurrently,
-  // try_insert returns the winner's id (equal content, possibly a different
-  // offset). The loser's pool bytes are wasted but never freed, so all views
-  // stay valid.
-
-  return *ptr;
+  return table_.intern(str);
 }
 
 }  // namespace str

@@ -125,6 +125,7 @@ function(fpag_add_tests)
     tests/concurrent_arena_test.cc
     tests/converter_test.cc
     tests/idx_range_test.cc
+    tests/intern_table_test.cc
     tests/io_util_test.cc
     tests/location_test.cc
     tests/macro_test.cc

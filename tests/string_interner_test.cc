@@ -70,6 +70,41 @@ TEST_CASE("StringInterner reads every string back after the pool grows",
   CHECK(interner.string_count() == COUNT);
 }
 
+TEST_CASE("A default-constructed interner holds names without being sized",
+          "[str][interner]") {
+  // The case a caller that does not know how many names it will intern is in.
+  // The table takes its default size, and that size is a reservation rather
+  // than an allocation, so naming nothing costs address space and not memory.
+  StringInterner interner;
+
+  const StringInterner::StringId first = interner.intern("a-name");
+  const StringInterner::StringId second = interner.intern("another-name");
+  const StringInterner::StringId again = interner.intern("a-name");
+
+  CHECK(same_id(first, again));
+  CHECK_FALSE(same_id(first, second));
+  CHECK(interner.get(first) == "a-name");
+  CHECK(interner.string_count() == 2);
+}
+
+TEST_CASE("The empty name interns to the pool's empty id", "[str][interner]") {
+  StringInterner interner(MAP_CAPACITY);
+
+  const StringInterner::StringId first = interner.intern("");
+  const StringInterner::StringId again = interner.intern("");
+
+  // The pool does not store an empty name, so its id is the empty one. What
+  // matters here is that the table holds it like any other name: interning the
+  // empty string twice has to give one id, or a caller that interns an empty
+  // format string once per log line would grow an entry per line.
+  CHECK(same_id(first, again));
+  // The pool stores no bytes for an empty name, so its count does not move.
+  // What matters is that the two calls agree, which is what says the table
+  // holds one entry for the empty name rather than one per call.
+  CHECK(interner.size() == 0);
+  CHECK(interner.string_count() == 0);
+}
+
 TEST_CASE("StringInterner gives several threads one id for the same string",
           "[str][interner][threads]") {
   constexpr usize WORKER_COUNT = 4;
