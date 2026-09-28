@@ -216,12 +216,17 @@ TEST_CASE("StackTrace keeps every name when one is very long",
     // freed storage, which still reads the right bytes often enough that
     // comparing names against to_string() would not notice; the layout always
     // does.
+    const char* const after_name = name.data() + name.size() + 1;
     INFO("frame " << i);
     if (previous != nullptr) {
       CHECK(name.data() == previous);
     }
-    CHECK(file.data() == name.data() + name.size() + 1);
-    previous = file.data() + file.size() + 1;
+    // An empty file costs nothing in the storage, so a frame with no file is
+    // its name alone: that is what an object with no line table reports.
+    if (!file.empty()) {
+      CHECK(file.data() == after_name);
+    }
+    previous = file.empty() ? after_name : file.data() + file.size() + 1;
   }
 
   // Deep enough that the names outweigh any per-frame budget the storage could
