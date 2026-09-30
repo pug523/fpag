@@ -352,6 +352,18 @@ as if they were new.
   you the library.
 - `LogEntry` has no source location, so the two file sinks carry a `TODO` and
   cannot annotate a line. `debug::Location` exists and is unused here.
+- `str::StringPool`'s byte and string totals and `str::InternTable`'s count are
+  words that every appender writes, so at eight threads they are contended cache
+  lines on the insert path. Each is on a line of its own rather than sharing one
+  with the members a probe reads, and each is one read-modify-write where the
+  pool used to do two, which is what that costs. Striping them per thread would
+  take the rest of it out and is not done, because the index it needs is a
+  thread-local one: a `thread_local` with a runtime initializer in a `-fPIC`
+  library resolves through `__tls_get_addr`, which is a call on the path of
+  every intern, and `initial-exec` breaks a library that is loaded with
+  `dlopen`. Neither is a price worth paying to count a number nothing on the hot
+  path reads, and the way out is an index the caller supplies rather than one
+  hidden in the library.
 - `str::InternTable` is sized and never grows, so a caller that interns more
   names than it asked for gets a fatal check in the middle of a build rather
   than a table that doubled. That is the price of the promise it makes instead:
