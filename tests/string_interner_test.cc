@@ -10,6 +10,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/base/numeric.h"
+#include "fpag/str/string_pool.h"
 #include "fpag/str/string_pool_id.h"
 
 namespace str {
@@ -66,6 +67,21 @@ TEST_CASE("StringInterner reads every string back after the pool grows",
   CHECK(interner.string_count() == COUNT);
 }
 
+TEST_CASE("An interner takes the pool capacity it is given",
+          "[str][interner]") {
+  // A caller on a small address space names a pool smaller than the default,
+  // which on 32-bit is a large enough share of the address space to matter.
+  constexpr usize POOL_BYTES = 64 * 1024;
+  StringInterner interner(MAP_CAPACITY, POOL_BYTES);
+
+  const StringInterner::StringId first = interner.intern("a-name");
+  const StringInterner::StringId again = interner.intern("a-name");
+
+  CHECK(interner.pool().capacity() == POOL_BYTES);
+  CHECK(interner.get(first) == "a-name");
+  CHECK(first == again);
+}
+
 TEST_CASE("A default-constructed interner holds names without being sized",
           "[str][interner]") {
   // The case a caller that does not know how many names it will intern is in.
@@ -81,6 +97,7 @@ TEST_CASE("A default-constructed interner holds names without being sized",
   CHECK(first != second);
   CHECK(interner.get(first) == "a-name");
   CHECK(interner.string_count() == 2);
+  CHECK(interner.pool().capacity() == StringPool::DEFAULT_POOL_CAPACITY);
 }
 
 TEST_CASE("The empty name interns to the pool's empty id", "[str][interner]") {

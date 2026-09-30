@@ -21,8 +21,13 @@ class StringInterner {
   // @p names is how many distinct names the table is sized for. Zero takes
   // InternTable::DEFAULT_NAMES, which is a reservation rather than an
   // allocation: a caller that does not know how many names it will intern does
-  // not have to say.
-  explicit StringInterner(usize names = 0) : table_(&pool_, names) {}
+  // not have to say. @p pool_bytes is how much storage the pool reserves, and
+  // has to be page aligned. Zero takes StringPool::DEFAULT_POOL_CAPACITY, which
+  // is 1 GiB on 64-bit but 64 MiB on 32-bit: a caller on a small address space,
+  // or one that does not need that much of it, names a smaller pool.
+  explicit StringInterner(usize names = 0, usize pool_bytes = 0)
+      : pool_(pool_bytes == 0 ? StringPool::DEFAULT_POOL_CAPACITY : pool_bytes),
+        table_(&pool_, names) {}
   ~StringInterner() = default;
 
   StringInterner(const StringInterner&) = delete;

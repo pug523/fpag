@@ -18,12 +18,16 @@
 namespace str {
 
 StringPool::StringPool(usize capacity) {
-  FPAG_DCHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");
-  FPAG_DCHECK_MSG(
+  // A capacity this pool cannot honour is checked in every build, not only
+  // in a debug one: a capacity past u32 max truncates an offset into a
+  // StringPoolId that names a different string, and an unaligned one is
+  // refused by reserve_pages() with a message that names no parameter.
+  FPAG_CHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");
+  FPAG_CHECK_MSG(
       capacity <= static_cast<usize>(std::numeric_limits<u32>::max()),
       "Pool capacity must fit in StringPoolId's u32 offset.");
-  FPAG_DCHECK_MSG(mem::is_page_aligned_size(capacity),
-                  "Pool capacity must be page aligned.");
+  FPAG_CHECK_MSG(mem::is_page_aligned_size(capacity),
+                 "Capacity must be page aligned.");
   capacity_ = capacity;
   arena_.reserve(capacity_);
   reserve_empty_name();
