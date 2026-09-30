@@ -27,7 +27,7 @@ struct CollidingHasher {
 };
 
 bool same_id(StringPoolId lhs, StringPoolId rhs) {
-  return lhs.offset == rhs.offset && lhs.length == rhs.length;
+  return lhs.offset == rhs.offset;
 }
 
 }  // namespace
@@ -69,14 +69,14 @@ TEST_CASE("A name that shares every fingerprint is still its own entry",
     CHECK(same_id(found, ids[index]));
     CHECK(pool.get(found) == name);
     // And a lookup, which walks the chain rather than inserting into it.
-    const StringPoolId* looked_up = table.find(name);
-    REQUIRE(looked_up != nullptr);
+    const std::optional<StringPoolId> looked_up = table.find(name);
+    REQUIRE(looked_up.has_value());
     CHECK(same_id(*looked_up, ids[index]));
   }
 
   // The name past the end of what was interned is still not in the table, which
   // is the case a probe that stopped at a fingerprint match would get wrong.
-  CHECK(table.find("name-" + std::to_string(COUNT)) == nullptr);
+  CHECK_FALSE(table.find("name-" + std::to_string(COUNT)).has_value());
   CHECK(table.count() == COUNT);
 }
 
@@ -110,8 +110,8 @@ TEST_CASE("An id stays readable after the table has taken more names",
   // The id is an offset into the pool, so it survives every name after it. An
   // interner that handed out pointers into its own table would not.
   CHECK(pool.get(first) == "first");
-  const StringPoolId* looked_up = table.find("first");
-  REQUIRE(looked_up != nullptr);
+  const std::optional<StringPoolId> looked_up = table.find("first");
+  REQUIRE(looked_up.has_value());
   CHECK(same_id(*looked_up, first));
 }
 
@@ -192,8 +192,8 @@ TEST_CASE("A reader finds a name while a writer is publishing it",
   while (spins < SPIN_LIMIT) {
     const usize upto = published_upto.load(std::memory_order_acquire);
     for (usize index = 0; index < upto; ++index) {
-      const StringPoolId* found = table.find(names[index]);
-      if (found == nullptr || !same_id(*found, published[index])) {
+      const std::optional<StringPoolId> found = table.find(names[index]);
+      if (!found.has_value() || !same_id(*found, published[index])) {
         misses.fetch_add(1, std::memory_order_relaxed);
       }
     }
@@ -225,7 +225,7 @@ TEST_CASE("A default-sized table holds a compiler's share of names",
     CHECK(pool.get(id) == "name-" + std::to_string(index));
   }
   CHECK(table.count() == 1000);
-  // Nine bytes a slot is the whole claim, and it is what a compiler's symbol
+  // Five bytes a slot is the whole claim, and it is what a compiler's symbol
   // table costs: the entry it replaces was 32.
   CHECK(table.allocated_bytes() <=
         table.capacity() * (1 + sizeof(StringPoolId)));

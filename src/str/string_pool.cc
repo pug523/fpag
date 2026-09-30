@@ -16,69 +16,84 @@
 
 namespace str {
 
+StringPool::StringPool(usize capacity) {
+  FPAG_DCHECK_MSG(capacity > 0, "Pool capacity must be nonzero.");
+  FPAG_DCHECK_MSG(
+      capacity <= static_cast<usize>(std::numeric_limits<u32>::max()),
+      "Pool capacity must fit in StringPoolId's u32 offset.");
+  FPAG_DCHECK_MSG(mem::is_page_aligned_size(capacity),
+                  "Pool capacity must be page aligned.");
+  capacity_ = capacity;
+  arena_.reserve(capacity_);
+  reserve_empty_name();
+}
+
 StringPool::StringPool(StringPool&& other) noexcept
-    : capacity_(std::exchange(other.capacity_, 0)) {
-  arena_ = std::move(other.arena_);
-
-  size_.store(other.size_.load(std::memory_order_relaxed),
-              std::memory_order_relaxed);
-  string_count_.store(other.string_count_.load(std::memory_order_relaxed),
-                      std::memory_order_relaxed);
-
-  other.size_.store(0, std::memory_order_relaxed);
-  other.string_count_.store(0, std::memory_order_relaxed);
+    : arena_(std::move(other.arena_)),
+      capacity_(std::exchange(other.capacity_, 0)),
+      totals_(other.totals_.load(std::memory_order_relaxed)) {
+  other.totals_.store(0, std::memory_order_relaxed);
 }
 
 StringPool& StringPool::operator=(StringPool&& other) noexcept {
-  if (this == &other) [[unlikely]] {
-    return *this;
+  if (this != &other) [[unlikely]] {
+    arena_ = std::move(other.arena_);
+    capacity_ = std::exchange(other.capacity_, 0);
+    totals_.store(other.totals_.load(std::memory_order_relaxed),
+                  std::memory_order_relaxed);
+    other.totals_.store(0, std::memory_order_relaxed);
   }
-
-  arena_ = std::move(other.arena_);
-  capacity_ = std::exchange(other.capacity_, 0);
-
-  size_.store(other.size_.load(std::memory_order_relaxed),
-              std::memory_order_relaxed);
-  string_count_.store(other.string_count_.load(std::memory_order_relaxed),
-                      std::memory_order_relaxed);
-
-  other.size_.store(0, std::memory_order_relaxed);
-  other.string_count_.store(0, std::memory_order_relaxed);
 
   return *this;
 }
 
+void StringPool::reserve_empty_name() {
+  void* const ptr = arena_.alloc(LENGTH_PREFIX_BYTES, alignof(u32));
+  FPAG_CHECK_MSG(ptr != nullptr, "StringPool is out of capacity.");
+
+  const u32 empty = 0;
+  std::memcpy(ptr, &empty, sizeof(empty));
+}
+
 StringPoolId StringPool::append(const std::string_view str,
                                 std::string_view* out) {
-  if (str.empty()) {
+  if (str.empty()) [[unlikely]] {
     return EMPTY_STRING_ID;
   }
 
-  void* const ptr = arena_.alloc(str.size(), 1);
+  // The length goes in front of the bytes, so it is a load away from the first
+  // byte of the name. The allocation is 4-byte aligned rather than byte aligned
+  // for the same reason: the length is read on every comparison against a name
+  // the interner already holds, and an aligned load of it is never split.
+  void* const ptr =
+      arena_.alloc(LENGTH_PREFIX_BYTES + str.size(), alignof(u32));
   FPAG_CHECK_MSG(ptr != nullptr, "StringPool is out of capacity.");
 
-  std::memcpy(ptr, str.data(), str.size());
+  const u32 length = static_cast<u32>(str.size());
+  std::memcpy(ptr, &length, sizeof(length));
+  char* const bytes = static_cast<char*>(ptr) + LENGTH_PREFIX_BYTES;
+  std::memcpy(bytes, str.data(), str.size());
 
   if (out) {
-    *out = std::string_view(static_cast<char*>(ptr), str.size());
+    *out = {bytes, str.size()};
   }
 
   // The offset has to come from the pointer the arena handed out: reading the
   // arena's size before allocating races with the other appenders, and the id
   // would then name whichever string took that slot.
   const usize offset =
-      static_cast<usize>(static_cast<const char*>(ptr) - arena_.base_ptr());
+      static_cast<usize>(static_cast<const char*>(ptr) - arena_.base_ptr()) +
+      LENGTH_PREFIX_BYTES;
 
-  size_.fetch_add(str.size(), std::memory_order_relaxed);
-  string_count_.fetch_add(1, std::memory_order_relaxed);
+  totals_.fetch_add((static_cast<u64>(str.size()) << BYTES_SHIFT) | 1,
+                    std::memory_order_relaxed);
 
   // Offsets always fit: capacity_ is capped at u32 max at construction and
   // the arena refuses allocations past it.
   FPAG_DCHECK(offset <= static_cast<usize>(std::numeric_limits<u32>::max()));
   FPAG_DCHECK(str.size() <=
               static_cast<usize>(std::numeric_limits<u32>::max()));
-  return {.offset = static_cast<u32>(offset),
-          .length = static_cast<u32>(str.size())};
+  return {.offset = static_cast<u32>(offset)};
 }
 
 }  // namespace str

@@ -8,17 +8,25 @@
 
 namespace str {
 
-// Fixed 8-byte identifier on all platforms (u32 offset + u32 length), so
-// layouts embedding it (e.g. IR nodes) are architecture-independent.
-// Offsets are valid only because StringPool capacity is capped well below
-// 4 GiB (see StringPool).
+// The bytes a name is preceded by in a StringPool, holding its length. The id
+// is the offset of the bytes and nothing else, so this is where the length
+// lives: an id a caller embeds in a node stays four bytes wide, and a name
+// costs the same to read from wherever it is reached.
+constexpr usize LENGTH_PREFIX_BYTES = sizeof(u32);
+
+// Fixed 4-byte identifier on all platforms (a u32 offset), so layouts embedding
+// it (e.g. IR nodes) are architecture-independent. Offsets are valid only
+// because StringPool capacity is capped well below 4 GiB (see StringPool).
 struct StringPoolId {
   u32 offset;
-  u32 length;
 };
 
 constexpr u32 INVALID_OFFSET = 0xFFFFFFFFu;
-constexpr StringPoolId INVALID_STRING_POOL_ID = {INVALID_OFFSET, 0};
-constexpr StringPoolId EMPTY_STRING_ID = {0, 0};
+constexpr StringPoolId INVALID_STRING_POOL_ID = {INVALID_OFFSET};
+// The empty name has no bytes, so its id names the zero length the pool keeps
+// at offset zero. get() reads an empty view out of it, which is what lets the
+// pool treat the empty name as a name rather than as a special case.
+constexpr StringPoolId EMPTY_STRING_ID = {
+    static_cast<u32>(LENGTH_PREFIX_BYTES)};
 
 }  // namespace str

@@ -19,7 +19,7 @@ namespace {
 constexpr usize MAP_CAPACITY = 1024;
 
 bool same_id(StringPoolId lhs, StringPoolId rhs) {
-  return lhs.offset == rhs.offset && lhs.length == rhs.length;
+  return lhs.offset == rhs.offset;
 }
 
 // Interns one string list from one worker. Catch2 assertions do not run on a

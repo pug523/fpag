@@ -62,7 +62,7 @@ TEST_CASE("StringPool hands back an id to the string it appended",
   // An empty string has no bytes to name.
   const StringPoolId empty_id = pool.append("");
   CHECK(empty_id.offset == EMPTY_STRING_ID.offset);
-  CHECK(empty_id.length == EMPTY_STRING_ID.length);
+  CHECK(pool.get(empty_id).empty());
   CHECK(pool.size() == text.size());
   CHECK(pool.string_count() == 1);
 }

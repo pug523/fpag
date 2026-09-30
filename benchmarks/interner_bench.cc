@@ -53,6 +53,10 @@ struct Corpus {
   // would leave the views of every short file dangling.
   std::deque<std::string> texts;
   std::vector<std::vector<std::string_view>> identifiers;
+  // Every distinct identifier, most frequent first, which is hot followed by
+  // cold. Walking this interns each name once, which is the only walk in which
+  // every operation is a first insert.
+  std::vector<std::string_view> names;
   std::vector<std::string_view> hot;
   std::vector<std::string_view> cold;
   // A deque for the same reason as texts: the views point into these strings,
@@ -233,11 +237,12 @@ Corpus load_corpus() {
       1, static_cast<usize>(corpus.distinct) * HOT_PERCENT / 100);
   corpus.hot.reserve(hot_count);
   corpus.cold.reserve(by_frequency.size() - hot_count);
-  for (usize index = 0; index < by_frequency.size(); ++index) {
+  corpus.names = std::move(by_frequency);
+  for (usize index = 0; index < corpus.names.size(); ++index) {
     if (index < hot_count) {
-      corpus.hot.push_back(by_frequency[index]);
+      corpus.hot.push_back(corpus.names[index]);
     } else {
-      corpus.cold.push_back(by_frequency[index]);
+      corpus.cold.push_back(corpus.names[index]);
     }
   }
 
@@ -248,7 +253,7 @@ Corpus load_corpus() {
   corpus.new_name_texts.resize(new_count);
   for (u32 index = 0; index < new_count; ++index) {
     std::string& name = corpus.new_name_texts[index];
-    name.assign(by_frequency[index % by_frequency.size()]);
+    name.assign(corpus.names[index % corpus.names.size()]);
     name += "_n";
     name += std::to_string(index);
     corpus.new_names.emplace_back(name);
@@ -308,29 +313,41 @@ void report_corpus(benchmark::State& state) {
 
 // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 
-// Interns every identifier occurrence in the corpus, which is what filling a
-// fresh interner costs: every operation is a first insert, so every one of them
-// takes the miss path and appends to the pool.
+// Interns every distinct name in the corpus into a fresh interner, which is
+// what filling one costs: every operation is a first insert, so every one of
+// them takes the miss path and appends to the pool.
+//
+// Both halves of that matter. An interner that outlives the loop hands the
+// second iteration a table that is already full, and the corpus repeats each of
+// its names about twelve times, so walking the occurrences measures a hit path
+// with one insert in twelve rather than the insert path.
+//
+// Each thread fills its own interner, so every thread pays for every insert and
+// the threads scale as eight independent fills rather than as one contended
+// one. What one shared table costs under contention is interner_mixed at four
+// and eight threads, where the threads reach for the same new names at the same
+// time.
 void interner_fill(benchmark::State& state) {
   const Corpus& corpus = stream();
-  StringInterner interner(table_capacity());
   u64 interned = 0;
+  usize pool_bytes = 0;
+  usize strings = 0;
 
   for (auto _ : state) {
-    for (i32 file = state.thread_index();
-         file < static_cast<i32>(corpus.identifiers.size());
-         file += state.threads()) {
-      for (const std::string_view identifier :
-           corpus.identifiers[static_cast<usize>(file)]) {
-        benchmark::DoNotOptimize(interner.intern(identifier));
-        ++interned;
-      }
+    StringInterner interner(table_capacity());
+    for (u32 index = static_cast<u32>(state.thread_index());
+         index < static_cast<u32>(corpus.names.size());
+         index += static_cast<u32>(state.threads())) {
+      benchmark::DoNotOptimize(interner.intern(corpus.names[index]));
+      ++interned;
     }
+    pool_bytes = interner.size();
+    strings = interner.string_count();
     state.SetItemsProcessed(static_cast<i64>(interned));
   }
   if (state.thread_index() == 0) {
-    state.counters["pool_bytes"] = static_cast<double>(interner.size());
-    state.counters["strings"] = static_cast<double>(interner.string_count());
+    state.counters["pool_bytes"] = static_cast<double>(pool_bytes);
+    state.counters["strings"] = static_cast<double>(strings);
   }
   report_corpus(state);
 }
