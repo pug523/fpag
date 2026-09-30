@@ -9,6 +9,7 @@
 #include <optional>
 #include <string_view>
 
+#include "fpag/base/attributes.h"
 #include "fpag/base/limits.h"
 #include "fpag/base/math_util.h"
 #include "fpag/base/numeric.h"
@@ -17,6 +18,7 @@
 #include "fpag/debug/fatal.h"
 #include "fpag/hardware/cpu_yield.h"
 #include "fpag/hash/xxh3_hasher.h"
+#include "fpag/mem/cache.h"
 #include "fpag/mem/page_allocator.h"
 #include "fpag/str/string_pool.h"
 #include "fpag/str/string_pool_id.h"
@@ -232,6 +234,43 @@ class InternTable {
     return static_cast<u8>((hash >> 56) & 0x7F) | PUBLISHED_BIT;
   }
 
+  static u64 word_at(const char* at) {
+    u64 word;
+    std::memcpy(&word, at, sizeof(word));
+    return word;
+  }
+
+  // Whether @p length bytes at @p lhs and @p rhs are the same.
+  //
+  // A candidate is compared against a name whose length the caller already has,
+  // and comparing two string_views is a call into memcmp. At the lengths a
+  // compiler's names have, that call and the callee's own dispatch cost more
+  // than the comparisons do: memcmp was a fifth of the instructions a lookup
+  // issued. Reading nothing outside the name is a call's problem too, so the
+  // tail is walked a byte at a time below eight bytes and read as an
+  // overlapping word at or above it.
+  static bool same_name(const char* lhs, const char* rhs, usize length) {
+    usize at = 0;
+    for (; at + sizeof(u64) <= length; at += sizeof(u64)) {
+      if (word_at(lhs + at) != word_at(rhs + at)) {
+        return false;
+      }
+    }
+    if (at == length) {
+      return true;
+    }
+    if (length >= sizeof(u64)) {
+      return word_at(lhs + length - sizeof(u64)) ==
+             word_at(rhs + length - sizeof(u64));
+    }
+    for (; at < length; ++at) {
+      if (lhs[at] != rhs[at]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // The region is passed in rather than read from the table, because a load
   // through it is a load of an unsigned char and a compiler has to assume such
   // a store could have changed any member. Hoisting it is what keeps a walk
@@ -268,10 +307,10 @@ class InternTable {
   // the name this caller wants may be the one being published into it. The walk
   // goes past it either way and says so, and only the caller that means to
   // claim the free slot has to act on it.
-  Probe lookup(u8* region,
-               u64 hash,
-               u8 fingerprint,
-               std::string_view content) const {
+  FPAG_ALWAYS_INLINE Probe lookup(u8* region,
+                                  u64 hash,
+                                  u8 fingerprint,
+                                  std::string_view content) const {
     const u32 mask = static_cast<u32>(slots_ - 1);
     // Hoisted for the same reason the region is: a walk that reloaded the
     // pool's base per slot would wait on it once per slot.
@@ -289,7 +328,7 @@ class InternTable {
         const StringPoolId id = entry(region, index);
         const char* const data = base + id.offset;
         if (StringPool::length_at(data) == content.size() &&
-            std::memcmp(data, content.data(), content.size()) == 0) {
+            same_name(data, content.data(), content.size())) {
           return {id, index, true, false};
         }
       } else if (state == EMPTY_CONTROL) {
@@ -336,7 +375,11 @@ class InternTable {
   u8* region_ = nullptr;
   usize slots_ = 0;
   usize region_bytes_ = 0;
-  std::atomic<usize> count_{0};
+  // On a line of its own: the count is written once per intern and read never
+  // on the hot path, while the members above it are read on every probe, and a
+  // reader sharing a line with a writer's increment takes the line's coherence
+  // misses with it.
+  alignas(mem::CACHE_LINE_SIZE) std::atomic<usize> count_{0};
   Hash hash_{};
 };
 

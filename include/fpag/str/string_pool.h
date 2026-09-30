@@ -12,6 +12,7 @@
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_config.h"
 #include "fpag/debug/check.h"
+#include "fpag/mem/cache.h"
 #include "fpag/mem/concurrent_arena.h"
 #include "fpag/mem/page_allocator.h"
 #include "fpag/str/string_pool_id.h"
@@ -114,7 +115,8 @@ class StringPool {
 
   mem::ConcurrentArena arena_;
   usize capacity_ = 0;
-  std::atomic<u64> totals_{0};
+  // On a line of its own, for the reason InternTable's count is.
+  alignas(mem::CACHE_LINE_SIZE) std::atomic<u64> totals_{0};
 };
 
 }  // namespace str

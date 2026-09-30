@@ -18,10 +18,6 @@ namespace {
 
 constexpr usize MAP_CAPACITY = 1024;
 
-bool same_id(StringPoolId lhs, StringPoolId rhs) {
-  return lhs.offset == rhs.offset;
-}
-
 // Interns one string list from one worker. Catch2 assertions do not run on a
 // worker thread, so the worker only records the ids it was handed.
 void intern_all(StringInterner* interner,
@@ -42,8 +38,8 @@ TEST_CASE("StringInterner hands back one id per string", "[str][interner]") {
   const StringInterner::StringId second = interner.intern("beta");
   const StringInterner::StringId again = interner.intern("alpha");
 
-  CHECK(same_id(first, again));
-  CHECK_FALSE(same_id(first, second));
+  CHECK(first == again);
+  CHECK(first != second);
   CHECK(interner.get(first) == "alpha");
   CHECK(interner.get(second) == "beta");
   CHECK(interner.string_count() == 2);
@@ -81,8 +77,8 @@ TEST_CASE("A default-constructed interner holds names without being sized",
   const StringInterner::StringId second = interner.intern("another-name");
   const StringInterner::StringId again = interner.intern("a-name");
 
-  CHECK(same_id(first, again));
-  CHECK_FALSE(same_id(first, second));
+  CHECK(first == again);
+  CHECK(first != second);
   CHECK(interner.get(first) == "a-name");
   CHECK(interner.string_count() == 2);
 }
@@ -97,7 +93,7 @@ TEST_CASE("The empty name interns to the pool's empty id", "[str][interner]") {
   // matters here is that the table holds it like any other name: interning the
   // empty string twice has to give one id, or a caller that interns an empty
   // format string once per log line would grow an entry per line.
-  CHECK(same_id(first, again));
+  CHECK(first == again);
   // The pool stores no bytes for an empty name, so its count does not move.
   // What matters is that the two calls agree, which is what says the table
   // holds one entry for the empty name rather than one per call.
@@ -134,7 +130,7 @@ TEST_CASE("StringInterner gives several threads one id for the same string",
   // the map keeps one winner, so every worker must still see the same id.
   for (usize index = 0; index < STRING_COUNT; ++index) {
     for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
-      CHECK(same_id(ids[worker][index], ids[0][index]));
+      CHECK(ids[worker][index] == ids[0][index]);
       CHECK(interner.get(ids[0][index]) == strings[index]);
     }
   }

@@ -5,6 +5,7 @@
 #include "fpag/str/intern_table.h"
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -26,10 +27,6 @@ struct CollidingHasher {
   usize operator()(const std::string_view) const { return 0x1234; }
 };
 
-bool same_id(StringPoolId lhs, StringPoolId rhs) {
-  return lhs.offset == rhs.offset;
-}
-
 }  // namespace
 
 TEST_CASE("A table hands back one id per name", "[str][intern_table]") {
@@ -40,8 +37,8 @@ TEST_CASE("A table hands back one id per name", "[str][intern_table]") {
   const StringPoolId second = table.intern("beta");
   const StringPoolId again = table.intern("alpha");
 
-  CHECK(same_id(first, again));
-  CHECK_FALSE(same_id(first, second));
+  CHECK(first == again);
+  CHECK(first != second);
   CHECK(pool.get(first) == "alpha");
   CHECK(pool.get(second) == "beta");
   CHECK(table.count() == 2);
@@ -66,12 +63,10 @@ TEST_CASE("A name that shares every fingerprint is still its own entry",
   for (usize index = 0; index < COUNT; ++index) {
     const std::string name = "name-" + std::to_string(index);
     const StringPoolId found = table.intern(name);
-    CHECK(same_id(found, ids[index]));
+    CHECK(found == ids[index]);
     CHECK(pool.get(found) == name);
     // And a lookup, which walks the chain rather than inserting into it.
-    const std::optional<StringPoolId> looked_up = table.find(name);
-    REQUIRE(looked_up.has_value());
-    CHECK(same_id(*looked_up, ids[index]));
+    CHECK(table.find(name) == ids[index]);
   }
 
   // The name past the end of what was interned is still not in the table, which
@@ -91,8 +86,41 @@ TEST_CASE("The empty name interns to the pool's empty id",
   // The pool does not store an empty name, so its id is the empty one and the
   // table holds it like any other: interning the empty name twice has to give
   // the same answer, or an interner would grow a new entry per call.
-  CHECK(same_id(empty, again));
+  CHECK(empty == again);
   CHECK(table.count() == 1);
+  CHECK(pool.get(empty).empty());
+}
+
+TEST_CASE("A name is separated from every other name of its length",
+          "[str][intern_table]") {
+  constexpr usize LONGEST_NAME = 40;
+
+  StringPool pool;
+  // One name per length, plus one per position a name of that length can
+  // differ at.
+  InternTable<> table(&pool, 1024);
+
+  // A probe compares a candidate a word at a time, so the lengths that do not
+  // divide a word and the positions that fall on a word's edge are the ones it
+  // can get wrong: reading past a name would compare another name's bytes, and
+  // stopping short would call two names the same. Every length and every
+  // position covers both, and the strings are on the heap so that a read past
+  // one is a read past an allocation.
+  for (usize length = 1; length <= LONGEST_NAME; ++length) {
+    const std::string name(length, 'a');
+    const StringPoolId id = table.intern(name);
+    CHECK(pool.get(id) == name);
+    CHECK(table.find(name).has_value());
+
+    for (usize at = 0; at < length; ++at) {
+      std::string other = name;
+      other[at] = 'b';
+      CHECK_FALSE(table.find(other).has_value());
+      const StringPoolId other_id = table.intern(other);
+      CHECK(pool.get(other_id) == other);
+      CHECK(other_id != id);
+    }
+  }
 }
 
 TEST_CASE("An id stays readable after the table has taken more names",
@@ -110,9 +138,7 @@ TEST_CASE("An id stays readable after the table has taken more names",
   // The id is an offset into the pool, so it survives every name after it. An
   // interner that handed out pointers into its own table would not.
   CHECK(pool.get(first) == "first");
-  const std::optional<StringPoolId> looked_up = table.find("first");
-  REQUIRE(looked_up.has_value());
-  CHECK(same_id(*looked_up, first));
+  CHECK(table.find("first") == first);
 }
 
 TEST_CASE("A table is probed by several threads at once",
@@ -150,7 +176,7 @@ TEST_CASE("A table is probed by several threads at once",
   // and finds the winner's entry rather than appending its own.
   for (usize index = 0; index < NAME_COUNT; ++index) {
     for (usize worker = 0; worker < WORKER_COUNT; ++worker) {
-      CHECK(same_id(ids[worker][index], ids[0][index]));
+      CHECK(ids[worker][index] == ids[0][index]);
     }
     CHECK(pool.get(ids[0][index]) == names[index]);
   }
@@ -192,8 +218,7 @@ TEST_CASE("A reader finds a name while a writer is publishing it",
   while (spins < SPIN_LIMIT) {
     const usize upto = published_upto.load(std::memory_order_acquire);
     for (usize index = 0; index < upto; ++index) {
-      const std::optional<StringPoolId> found = table.find(names[index]);
-      if (!found.has_value() || !same_id(*found, published[index])) {
+      if (table.find(names[index]) != published[index]) {
         misses.fetch_add(1, std::memory_order_relaxed);
       }
     }

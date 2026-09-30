@@ -161,7 +161,12 @@ other sinks, or own a resource outright. See `include/fpag/logging/sink/sink.h`.
   the pool takes one copy of a name rather than one per thread that wanted it.
   It never resizes: a table that grows by reallocating cannot promise that the
   entry a reader holds stays valid, and an interner's id is a pool offset that
-  has to outlive every name interned after it.
+  has to outlive every name interned after it. The claim is the only atomic in a
+  read: a lookup walks past a slot a writer is publishing into rather than
+  waiting on it, because such a slot holds no published name yet, so reporting
+  nothing was true at the moment it looked. A control byte and the entry it
+  publishes are adjacent, so a lookup costs two dependent memory accesses: the
+  line the control byte is in, and the pool's copy of the name.
 - `mem::ConcurrentArena` is a compare-exchange bump pointer, with a second
   compare-exchange loop to commit the pages the new allocation reached.
 - The default back-pressure policy on the log queue is to **drop**, not to
@@ -218,10 +223,13 @@ free. `Arena` and `ConcurrentArena` share the API; the difference is that
 threads, while `reserve` and `reset` on either are not and must happen before
 the arena is shared.
 
-`str::StringPoolId` is a fixed 8 bytes on every platform, deliberately, so
-that anything embedding it stays architecture independent. Interning never
-frees: a thread that loses the `try_insert` race has its pool bytes stranded,
-and that is the price of every outstanding `string_view` staying valid.
+`str::StringPoolId` is a fixed 4 bytes on every platform, deliberately, so
+that anything embedding it stays architecture independent. It is an offset and
+nothing else: the pool stores each name's length in four bytes in front of it,
+so a probe reads a length off the same line it reads the name from rather than
+carrying one in the id. Interning never frees: a thread that loses the
+`try_insert` race has its pool bytes stranded, and that is the price of every
+outstanding `string_view` staying valid.
 
 ## Error model
 
@@ -352,15 +360,19 @@ as if they were new.
   names, and it is a reservation rather than an allocation, so the common case
   never reaches the check.
 - The interner has a table of its own rather than a general concurrent map,
-  because an entry is the pool id that holds the name and nothing else: 9 bytes
-  against the 32 a `std::string_view` key and a duplicate value needed. The
-  cost of that decision is a second implementation of a data structure that a
-  general map would have provided, and the benefit does not survive a workload
-  that is neither. It was measured against a general table on the corpus in
-  `benchmarks/interner_bench.cc`: filling 1.38M names 621 ns per name becomes
-  302 and walking them 52.7 becomes 42.2, at three and a half times less
-  memory. It was not measured against a general map that stores a full hash in
-  the entry, and that is the honest limit of the claim.
+  because an entry is the pool id that holds the name and nothing else: 5 bytes,
+  a control byte and an offset, against the 32 a `std::string_view` key and a
+  duplicate value needed. The cost of that decision is a second implementation
+  of a data structure that a general map would have provided, and the benefit
+  does not survive a workload that is neither. It was measured against a general
+  table on the corpus in `benchmarks/interner_bench.cc`: filling 1.38M names 621
+  ns per name becomes 302 and walking them 52.7 becomes 42.2, at three and a
+  half times less memory. It was not measured against a general map that stores
+  a full hash in the entry, and that is the honest limit of the claim. A general
+  map would also get to store its key and its value in one entry and so would
+  compare against the name in the line the hash landed in; this one compares
+  against the pool's copy of it, which is a second access, and it wins back what
+  that costs by making the entry four bytes.
 - The DWARF reader in `src/debug/dwarf/` resolves a frame to the function and
   the source position it was written at, but not to the function *inside* an
   inlined one: `DW_TAG_inlined_subroutine` is skipped, so an inlined call is

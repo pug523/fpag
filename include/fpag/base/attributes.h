@@ -30,6 +30,17 @@
 #define FPAG_NOINLINE
 #endif
 
+// For a function whose call is on a hot path and whose body the compiler's own
+// size heuristic would put behind that call anyway. The argument setup and the
+// prologue of the call can cost more than the body.
+#if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
+#define FPAG_ALWAYS_INLINE inline __attribute__((always_inline))
+#elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
+#define FPAG_ALWAYS_INLINE __forceinline
+#else
+#define FPAG_ALWAYS_INLINE inline
+#endif
+
 #if FPAG_BUILD_FLAG(IS_COMPILER_GCC)
 #define FPAG_VISIBLE __attribute__((visibility("default")))
 #elif FPAG_BUILD_FLAG(IS_COMPILER_MSVC)

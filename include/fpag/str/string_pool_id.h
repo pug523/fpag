@@ -21,6 +21,15 @@ struct StringPoolId {
   u32 offset;
 };
 
+// Two ids name the same name when their offsets are the same, which is what a
+// caller comparing an id it holds against one it was just handed wants to say.
+constexpr bool operator==(StringPoolId lhs, StringPoolId rhs) {
+  return lhs.offset == rhs.offset;
+}
+constexpr bool operator!=(StringPoolId lhs, StringPoolId rhs) {
+  return !(lhs == rhs);
+}
+
 constexpr u32 INVALID_OFFSET = 0xFFFFFFFFu;
 constexpr StringPoolId INVALID_STRING_POOL_ID = {INVALID_OFFSET};
 // The empty name has no bytes, so its id names the zero length the pool keeps

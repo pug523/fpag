@@ -12,6 +12,7 @@
 
 #include "fpag/base/numeric.h"
 #include "fpag/debug/check.h"
+#include "fpag/mem/page_allocator.h"
 #include "fpag/str/string_pool_id.h"
 
 namespace str {
