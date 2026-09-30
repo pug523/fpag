@@ -4,13 +4,29 @@
 
 #include "fpag/debug/profiler/profile_section.h"
 
+#include <string_view>
+
 #include "fpag/base/numeric.h"
+#include "fpag/debug/location.h"
 #include "fpag/debug/process_id.h"
 #include "fpag/debug/profiler/profile_event.h"
+#include "fpag/debug/profiler/profiler.h"
 #include "fpag/debug/thread_id.h"
 #include "fpag/debug/time_util.h"
 
 namespace debug {
+
+ProfileSection::ProfileSection(Profiler* profiler,
+                               const std::string_view name,
+                               const Location& location,
+                               const std::string_view category) noexcept
+    : profiler_(profiler), location_(location) {
+  if (profiler_ == nullptr) [[unlikely]] {
+    return;
+  }
+  name_ = profiler_->intern(name);
+  category_ = profiler_->intern(category);
+}
 
 void ProfileSection::start() noexcept {
   if (profiler_ != nullptr && profiler_->is_enabled()) [[likely]] {

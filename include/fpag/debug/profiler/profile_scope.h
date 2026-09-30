@@ -13,9 +13,9 @@ namespace debug {
 class ProfileScope {
  public:
   ProfileScope(Profiler* profiler,
-               const char* name,
+               std::string_view name,
                const Location& location,
-               const char* category = "default") noexcept
+               std::string_view category = "default") noexcept
       : section_(profiler, name, location, category) {
     section_.start();
   }

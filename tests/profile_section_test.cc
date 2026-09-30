@@ -4,6 +4,7 @@
 
 #include "fpag/debug/profiler/profile_section.h"
 
+#include <string>
 #include <string_view>
 
 #include "catch2/catch_test_macros.hpp"
@@ -27,8 +28,8 @@ TEST_CASE("ProfileSection manual and destructor-based measurement",
 
     auto events = test_profiler.copy_events();
     REQUIRE(events.size() == 1);
-    CHECK(std::string_view(events[0].name) == "manual_section");
-    CHECK(std::string_view(events[0].category) == "compiler");
+    CHECK(test_profiler.name(events[0].name) == "manual_section");
+    CHECK(test_profiler.name(events[0].category) == "compiler");
   }
 
   SECTION(
@@ -51,6 +52,22 @@ TEST_CASE("ProfileSection manual and destructor-based measurement",
     PROFILE_SECTION_END(sec);
 
     REQUIRE(test_profiler.size() == 1);
+  }
+
+  SECTION("A temporary name is still readable when the section ends") {
+    // The temporary is destroyed at the end of the declaration statement, while
+    // the event is recorded when the block closes, so a section holding the
+    // caller's pointer reads freed memory here. Read back under ASan.
+    PROFILE_SECTION_START_WITH_PROFILER(sec, &test_profiler,
+                                        std::string("a_temporary_name"));
+    const int work = 168;
+    PROFILE_SECTION_END(sec);
+
+    CHECK(work == 168);
+
+    auto events = test_profiler.copy_events();
+    REQUIRE(events.size() == 1);
+    CHECK(test_profiler.name(events[0].name) == "a_temporary_name");
   }
 
   test_profiler.stop();

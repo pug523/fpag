@@ -12,13 +12,16 @@
 #include "fpag/base/numeric.h"
 #include "fpag/debug/profiler/profile_event.h"
 #include "fpag/io/memory_mapped_stream_writer.h"
+#include "fpag/str/string_interner.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace debug {
 
 // static
 bool TimeTraceFormatter::write_to_file(
     const std::string_view file_path,
-    const std::span<const ProfileEvent> events) {
+    const std::span<const ProfileEvent> events,
+    const str::StringInterner& interner) {
   io::MemoryMappedStreamWriter writer;
 
   // Initial allocation hint: ~200 bytes per event + JSON header/footer wrapper.
@@ -40,6 +43,12 @@ bool TimeTraceFormatter::write_to_file(
     const f64 start_us = static_cast<f64>(e.start_time_ns) / 1000.0;
     const f64 dur_us = static_cast<f64>(e.duration_ns) / 1000.0;
     const char* comma = (i + 1 < count) ? "," : "";
+    const std::string_view name = e.name == str::INVALID_STRING_POOL_ID
+                                      ? std::string_view{"unnamed"}
+                                      : interner.get(e.name);
+    const std::string_view category = e.category == str::INVALID_STRING_POOL_ID
+                                          ? std::string_view{"default"}
+                                          : interner.get(e.category);
 
     // Obtain direct pointer to memory-mapped region.
     u8* dest_ptr = writer.prepare_write_buffer(MAX_SINGLE_EVENT_WRITE_SIZE);
@@ -54,9 +63,8 @@ bool TimeTraceFormatter::write_to_file(
             "  {{\"name\":\"{}\",\"cat\":\"{}\",\"ph\":\"X\",\"ts\":{:.3f},"
             "\"dur\":{:.3f},\"pid\":{},\"tid\":{},\"args\":{{\"file\":\"{}\","
             "\"line\":{}}}}}{}\n"),
-        e.name ? e.name : "unnamed", e.category ? e.category : "default",
-        start_us, dur_us, e.process_id, e.thread_id, e.location.file,
-        e.location.line, comma);
+        name, category, start_us, dur_us, e.process_id, e.thread_id,
+        e.location.file, e.location.line, comma);
 
     writer.commit_write(result.size);
   }

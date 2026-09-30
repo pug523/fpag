@@ -6,14 +6,20 @@
 
 #include <atomic>
 #include <mutex>
+#include <string_view>
 #include <vector>
 
 #include "fpag/base/numeric.h"
 #include "fpag/debug/profiler/profile_event.h"
+#include "fpag/str/string_interner.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace debug {
 
-Profiler::Profiler(usize initial_capacity) noexcept {
+Profiler::Profiler(usize initial_capacity,
+                   const usize interner_names,
+                   const usize interner_pool_bytes) noexcept
+    : interner_(interner_names, interner_pool_bytes) {
   events_.reserve(initial_capacity);
 }
 
@@ -51,5 +57,8 @@ std::vector<ProfileEvent> Profiler::copy_events() const noexcept {
   return events_;
 }
 
-}  // namespace debug
+str::StringPoolId Profiler::intern(const std::string_view name) noexcept {
+  return interner_.intern(name);
+}
 
+}  // namespace debug

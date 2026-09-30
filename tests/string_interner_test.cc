@@ -71,7 +71,7 @@ TEST_CASE("An interner takes the pool capacity it is given",
           "[str][interner]") {
   // A caller on a small address space names a pool smaller than the default,
   // which on 32-bit is a large enough share of the address space to matter.
-  constexpr usize POOL_BYTES = 64 * 1024;
+  constexpr usize POOL_BYTES = 64ull * 1024;
   StringInterner interner(MAP_CAPACITY, POOL_BYTES);
 
   const StringInterner::StringId first = interner.intern("a-name");

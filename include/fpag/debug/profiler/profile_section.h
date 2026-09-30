@@ -4,22 +4,25 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "fpag/base/numeric.h"
 #include "fpag/debug/location.h"
 #include "fpag/debug/profiler/profiler.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace debug {
 
 class ProfileSection {
  public:
+  // The name and the category are interned here rather than at stop(), because
+  // this is the only point where the caller's argument is guaranteed to be
+  // alive: PROFILE_SCOPE(std::string(...)) dies at the end of the statement
+  // that constructed this object, and stop() runs when the block closes.
   ProfileSection(Profiler* profiler,
-                 const char* name,
+                 std::string_view name,
                  const Location& location,
-                 const char* category = "default") noexcept
-      : profiler_(profiler),
-        name_(name),
-        category_(category),
-        location_(location) {}
+                 std::string_view category = "default") noexcept;
   ~ProfileSection() = default;
 
   ProfileSection(const ProfileSection&) = delete;
@@ -34,8 +37,8 @@ class ProfileSection {
 
  private:
   Profiler* profiler_ = nullptr;
-  const char* name_ = nullptr;
-  const char* category_ = nullptr;
+  str::StringPoolId name_ = str::INVALID_STRING_POOL_ID;
+  str::StringPoolId category_ = str::INVALID_STRING_POOL_ID;
   Location location_;
   u64 start_time_ns_ = 0;
   bool is_running_ = false;

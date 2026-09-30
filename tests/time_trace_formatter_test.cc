@@ -13,17 +13,25 @@
 #include "catch2/catch_test_macros.hpp"
 #include "fpag/debug/location.h"
 #include "fpag/debug/profiler/profile_event.h"
+#include "fpag/str/string_interner.h"
+#include "fpag/str/string_pool_id.h"
 
 namespace debug {
 
 TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
   const char* TEST_FILENAME = "test_chrome_trace.json";
 
+  // The events carry ids, so the formatter is given the interner those ids came
+  // from. A formatter given a different one would print whatever that one holds
+  // at the same offsets, which is why the interner is a parameter rather than a
+  // global.
+  str::StringInterner interner(1024);
+
   SECTION("Writes valid JSON structure with events") {
     std::vector<ProfileEvent> events = {
         {
-            .name = "main_pass",
-            .category = "pipeline",
+            .name = interner.intern("main_pass"),
+            .category = interner.intern("pipeline"),
             .location =
                 Location{.file = "main.cc", .function = "main", .line = 10},
             .start_time_ns = 1000000,  // 1000 us
@@ -32,8 +40,8 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
             .process_id = 5678,
         },
         {
-            .name = "parse_pass",
-            .category = "parser",
+            .name = interner.intern("parse_pass"),
+            .category = interner.intern("parser"),
             .location =
                 Location{.file = "parser.cc", .function = "parse", .line = 42},
             .start_time_ns = 1500000,
@@ -43,7 +51,7 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
         }};
 
     const bool success =
-        TimeTraceFormatter::write_to_file(TEST_FILENAME, events);
+        TimeTraceFormatter::write_to_file(TEST_FILENAME, events, interner);
     REQUIRE(success);
 
     // Read back the file content to verify formatting
@@ -74,8 +82,8 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
 
   SECTION("Handles empty event list gracefully") {
     std::vector<ProfileEvent> empty_events;
-    const bool success =
-        TimeTraceFormatter::write_to_file(TEST_FILENAME, empty_events);
+    const bool success = TimeTraceFormatter::write_to_file(
+        TEST_FILENAME, empty_events, interner);
     REQUIRE(success);
 
     std::ifstream ifs(TEST_FILENAME);
@@ -86,6 +94,34 @@ TEST_CASE("TimeTraceFormatter file output", "[base][profiler][formatter]") {
 
     CHECK(content.find("{\"traceEvents\":[") != std::string::npos);
     CHECK(content.find("]}") != std::string::npos);
+
+    std::remove(TEST_FILENAME);
+  }
+
+  SECTION("An event with no name formats as unnamed and default") {
+    std::vector<ProfileEvent> events = {
+        {.name = str::INVALID_STRING_POOL_ID,
+         .category = str::INVALID_STRING_POOL_ID,
+         .location = Location{.file = "x.cc", .function = "x", .line = 1},
+         .start_time_ns = 1000,
+         .duration_ns = 500,
+         .thread_id = 1,
+         .process_id = 2}};
+
+    const bool success =
+        TimeTraceFormatter::write_to_file(TEST_FILENAME, events, interner);
+    REQUIRE(success);
+
+    std::ifstream ifs(TEST_FILENAME);
+    std::stringstream buffer;
+    buffer << ifs.rdbuf();
+    const std::string content = buffer.str();
+    ifs.close();
+
+    // Nothing was interned for this event, so there is no name to print and
+    // the placeholders are what a reader of the trace gets.
+    CHECK(content.find("\"name\":\"unnamed\"") != std::string::npos);
+    CHECK(content.find("\"cat\":\"default\"") != std::string::npos);
 
     std::remove(TEST_FILENAME);
   }

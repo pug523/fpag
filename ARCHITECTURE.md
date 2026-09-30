@@ -109,6 +109,10 @@ cannot reach back.**
   Parsing a command line is not a logging concern.
 - `io` is reachable from `debug` and from the file sinks, and from nowhere
   else.
+- `debug` reaches `str` for the profiler, which interns a scope's name and
+  category rather than holding the caller's pointer. It is the same edge
+  `logging` already has through `string_interner.h`, and it stops at the two
+  leaves of `debug` that cannot reach back, so it closes no cycle.
 
 ## The three design commitments
 
