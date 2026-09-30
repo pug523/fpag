@@ -27,7 +27,7 @@ namespace str {
 
 // The interner's table: a string's content maps to the pool id that holds it.
 //
-// Three properties shape it, and all three come from what an entry is. An entry
+// Four properties shape it, and all four come from what an entry is. An entry
 // is a StringPoolId and nothing else, because the id *is* the entry's content:
 // an interner has no key and a value, it has a name and the one pool offset
 // that holds it. So:
@@ -271,10 +271,11 @@ class InternTable {
     return true;
   }
 
-  // The region is passed in rather than read from the table, because a load
-  // through it is a load of an unsigned char and a compiler has to assume such
-  // a store could have changed any member. Hoisting it is what keeps a walk
-  // from reloading the table's own fields per slot.
+  // The region is passed in rather than read from the table because a store
+  // through it is a store of an unsigned char, which a compiler has to assume
+  // could have changed any member: the entry store and the control store below
+  // would otherwise force a reload of the pointer, and of the pool's base, on
+  // the way to the next slot.
   static u8* slot(u8* region, u32 index) {
     return region + static_cast<usize>(index) * SLOT_BYTES;
   }
@@ -312,8 +313,9 @@ class InternTable {
                                   u8 fingerprint,
                                   std::string_view content) const {
     const u32 mask = static_cast<u32>(slots_ - 1);
-    // Hoisted for the same reason the region is: a walk that reloaded the
-    // pool's base per slot would wait on it once per slot.
+    // The pool's base, read once for the same reason the region is: it is a
+    // member of a member, so it is two dependent loads away from every name a
+    // walk compares against.
     const char* const base = pool_->base();
     bool claimed = false;
     u32 index = static_cast<u32>(hash) & mask;
