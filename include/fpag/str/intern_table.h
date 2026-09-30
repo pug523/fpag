@@ -69,9 +69,9 @@ class InternTable {
   // does not know how many names it will intern should not have to say, and a
   // reservation costs address space rather than memory.
 #if FPAG_BUILD_FLAG(IS_ARCH_64_BITS)
-  static constexpr usize DEFAULT_NAMES = 1ull << 24;  // 16.7M names, 80 MiB
+  static constexpr usize DEFAULT_NAMES = 1ull << 24;  // 16.7M names, 160 MiB
 #else
-  static constexpr usize DEFAULT_NAMES = 1ull << 20;  // 1M names, 5 MiB
+  static constexpr usize DEFAULT_NAMES = 1ull << 20;  // 1M names, 10 MiB
 #endif
 
   // @p pool is where an interned name is stored and where a probe compares a
