@@ -1062,7 +1062,7 @@ bool read_unit(Cursor* info,
   // Before version 5 the primary source of the unit is not in its file table:
   // index 0 stands for the name the unit itself declares.
   if (version < 5 && !name.empty() && !unit->files.empty()) {
-    unit->files[0] = name;
+    unit->files[0] = std::move(name);
   }
   return true;
 }

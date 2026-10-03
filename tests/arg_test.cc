@@ -15,6 +15,7 @@
 #include "fpag/arg/error_code.h"
 #include "fpag/arg/error_formatter.h"
 #include "fpag/arg/parse_error.h"
+#include "fpag/base/numeric.h"
 #include "fpag/term/color_style.h"
 
 namespace arg {
@@ -55,8 +56,7 @@ bool styles_balanced(std::string_view text) {
 
 // The message is bold on purpose, and the line has to turn it off: leaving
 // it on painted the hint under the errors and anything printed after.
-TEST_CASE("The error formatter closes every style it opens",
-          "[arg][error]") {
+TEST_CASE("The error formatter closes every style it opens", "[arg][error]") {
   const std::vector<ParseError> errors = {
       ParseError{ErrorCode::UnknownLongOption, "--frobnicator"},
   };

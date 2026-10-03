@@ -28,9 +28,13 @@ volatile std::sig_atomic_t stack_trace_was_printed = 0;
 
 }  // namespace
 
-void mark_stack_trace_printed() { stack_trace_was_printed = 1; }
+void mark_stack_trace_printed() {
+  stack_trace_was_printed = 1;
+}
 
-bool stack_trace_printed() { return stack_trace_was_printed != 0; }
+bool stack_trace_printed() {
+  return stack_trace_was_printed != 0;
+}
 
 void fatal_crash_impl() {
 #if FPAG_BUILD_FLAG(IS_DEBUG)

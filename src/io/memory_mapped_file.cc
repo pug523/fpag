@@ -4,8 +4,6 @@
 
 #include "fpag/io/memory_mapped_file.h"
 
-#include <sys/types.h>
-
 #include "fpag/base/numeric.h"
 #include "fpag/build/build_flag.h"
 #include "fpag/io/file_handle.h"
@@ -125,8 +123,11 @@ bool MemoryMappedFile::map(const FileHandle& file,
   (void)populate_now;
 #endif
 
-  void* ptr = ::mmap(nullptr, size_, prot, flags, file.native_handle(),
-                     static_cast<off_t>(offset));
+  // The definition header for `off_t` varies depending on the environment.
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  const off_t file_offset = static_cast<off_t>(offset);
+  void* ptr =
+      ::mmap(nullptr, size_, prot, flags, file.native_handle(), file_offset);
   if (ptr == MAP_FAILED) {
     data_ = nullptr;
     size_ = 0;
