@@ -7,11 +7,65 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #include "catch2/catch_test_macros.hpp"
+#include "fpag/arg/error_code.h"
+#include "fpag/arg/error_formatter.h"
+#include "fpag/arg/parse_error.h"
+#include "fpag/term/color_style.h"
 
 namespace arg {
+
+namespace {
+
+// Whether every style a line opens is closed before the line ends. A style
+// that survives its line paints whatever comes after it.
+bool styles_balanced(std::string_view text) {
+  isize open = 0;
+  usize i = 0;
+  while (i < text.size()) {
+    if (text[i] == '\n') {
+      if (open != 0) {
+        return false;
+      }
+      ++i;
+      continue;
+    }
+    if (text[i] == '\x1b' && i + 1 < text.size() && text[i + 1] == '[') {
+      const usize end = text.find('m', i + 2);
+      if (end == std::string_view::npos) {
+        return false;
+      }
+      const std::string_view parameters = text.substr(i + 2, end - i - 2);
+      // One `0` closes every attribute, so it clears the count rather than
+      // closing one of them.
+      open = parameters == "0" ? 0 : open + 1;
+      i = end + 1;
+      continue;
+    }
+    ++i;
+  }
+  return open == 0;
+}
+
+}  // namespace
+
+// The message is bold on purpose, and the line has to turn it off: leaving
+// it on painted the hint under the errors and anything printed after.
+TEST_CASE("The error formatter closes every style it opens",
+          "[arg][error]") {
+  const std::vector<ParseError> errors = {
+      ParseError{ErrorCode::UnknownLongOption, "--frobnicator"},
+  };
+  const std::string text = DefaultErrorFormatter{}.operator()(
+      "demo", errors, term::ColorStyle::Ansi16);
+
+  CHECK(text.find("\x1b[") != std::string::npos);
+  CHECK(styles_balanced(text));
+}
 
 TEST_CASE("Arg default state", "[arg][arg]") {
   const Arg a = ArgBuilder("port").build();
