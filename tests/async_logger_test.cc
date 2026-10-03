@@ -18,7 +18,7 @@
 #include "fpag/logging/sink/null_sink.h"
 #include "fpag/logging/sink/sink.h"
 #include "fpag/term/console.h"
-// #include "fpag/logging/sink/stdout_sink.h"
+// #include "fpag/logging/sink/fd_sink.h"
 // #include "fpag/mem/page_allocator.h"
 
 namespace logging {

@@ -15,8 +15,8 @@ void init_debug_logger() {
   //     static_cast<char*>(mem::allocate_pages(mem::page_size())),
   //     mem::page_size(), term::console_color_style(term::Stream::Stdout),
   //     true));
-  debug_logger.init(logging::StdoutSink(
-      nullptr, 0, term::console_color_style(term::Stream::Stdout), false));
+  debug_logger.init(logging::StderrSink(
+      nullptr, 0, term::console_color_style(term::Stream::Stderr), false));
 }
 
 }  // namespace debug

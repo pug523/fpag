@@ -5,13 +5,16 @@
 #pragma once
 
 #include "fpag/logging/log_level.h"
-#include "fpag/logging/sink/stdout_sink.h"
+#include "fpag/logging/sink/fd_sink.h"
 #include "fpag/logging/sync/sync_logger.h"
 
 namespace debug {
 
+// The debug logger is a diagnostic stream, so it writes to stderr: stdout
+// belongs to whatever the program prints, and a crash report must not have
+// to share it.
 using DebugLogger =
-    logging::SyncLogger<logging::StdoutSink, logging::LogLevel::Debug>;
+    logging::SyncLogger<logging::StderrSink, logging::LogLevel::Debug>;
 
 extern DebugLogger debug_logger;
 

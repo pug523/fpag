@@ -5,7 +5,7 @@
 #pragma once
 
 #include "fpag/logging/log_level.h"
-#include "fpag/logging/sink/stdout_sink.h"
+#include "fpag/logging/sink/fd_sink.h"
 #include "fpag/logging/sync/sync_logger.h"
 #include "fpag/term/color_style.h"
 

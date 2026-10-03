@@ -17,12 +17,18 @@
 
 namespace logging {
 
-class StdoutSink {
+// A sink to one of the process's standard descriptors. The descriptor is
+// the sink's type, so the destination is fixed where the logger is built
+// and log() stays a direct call on the concrete sink. Two streams, two
+// types: program output belongs on stdout and diagnostics on stderr, and
+// a logger that has to choose keeps the choice out of the hot path.
+template <i32 FD>
+class FdSink {
  public:
-  explicit StdoutSink(char* buffer_ptr = nullptr,
-                      usize buffer_capacity = 0,
-                      term::ColorStyle color_style = term::ColorStyle::Ansi16,
-                      bool use_buffer = false)
+  explicit FdSink(char* buffer_ptr = nullptr,
+                  usize buffer_capacity = 0,
+                  term::ColorStyle color_style = term::ColorStyle::Ansi16,
+                  bool use_buffer = false)
       : buffer_(buffer_ptr),
         capacity_(buffer_capacity),
         color_style_(color_style),
@@ -33,10 +39,10 @@ class StdoutSink {
     }
   }
 
-  ~StdoutSink() = default;
+  ~FdSink() = default;
 
-  StdoutSink(StdoutSink&&) noexcept = default;
-  StdoutSink& operator=(StdoutSink&&) noexcept = default;
+  FdSink(FdSink&&) noexcept = default;
+  FdSink& operator=(FdSink&&) noexcept = default;
 
   void log(const LogEntry& entry) {
     // Prefix is " info: ", "error: ", etc.
@@ -67,7 +73,7 @@ class StdoutSink {
 
   void flush() {
     if (offset_ > 0 && use_buffer_) [[likely]] {
-      io::write(io::STDOUT_FD, buffer_, offset_);
+      io::write(FD, buffer_, offset_);
       offset_ = 0;
     }
   }
@@ -77,9 +83,9 @@ class StdoutSink {
 
   inline void directly_write(const std::string_view& prefix,
                              const std::string_view& message) {
-    io::write(io::STDOUT_FD, prefix.data(), prefix.size());
-    io::write(io::STDOUT_FD, message.data(), message.size());
-    io::write(io::STDOUT_FD, "\n", 1);
+    io::write(FD, prefix.data(), prefix.size());
+    io::write(FD, message.data(), message.size());
+    io::write(FD, "\n", 1);
   }
 
   char* buffer_;
@@ -89,6 +95,10 @@ class StdoutSink {
   bool use_buffer_;
 };
 
+using StdoutSink = FdSink<io::STDOUT_FD>;
+using StderrSink = FdSink<io::STDERR_FD>;
+
 static_assert(Sink<StdoutSink>);
+static_assert(Sink<StderrSink>);
 
 }  // namespace logging
