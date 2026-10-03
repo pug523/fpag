@@ -58,8 +58,10 @@ TEST_CASE("ProfileSection manual and destructor-based measurement",
     // The temporary is destroyed at the end of the declaration statement, while
     // the event is recorded when the block closes, so a section holding the
     // caller's pointer reads freed memory here. Read back under ASan.
-    PROFILE_SECTION_START_WITH_PROFILER(sec, &test_profiler,
-                                        std::string("a_temporary_name"));
+    PROFILE_SECTION_START_WITH_PROFILER(
+        sec, &test_profiler,
+        // NOLINTNEXTLINE(performance-string-view-conversions)
+        std::string("a_temporary_name"));
     const int work = 168;
     PROFILE_SECTION_END(sec);
 

@@ -50,10 +50,12 @@ TEST_CASE("ProfileScope RAII measurement", "[base][profiler][scope]") {
     // the scope, so the name has to be copied out of it there rather than at
     // stop(). Read back under ASan, which is where a name left pointing into
     // the freed temporary would be reported.
+    // NOLINTNEXTLINE(performance-string-view-conversions)
     { PROFILE_SCOPE_WITH_PROFILER(&test_profiler, std::string("temporary")); }
     {
       PROFILE_SCOPE_WITH_CATEGORY_AND_PROFILER(
           &test_profiler, std::string("dynamic_") + std::to_string(42),
+          // NOLINTNEXTLINE(performance-string-view-conversions)
           std::string("category_from_a_temporary"));
     }
 

@@ -348,7 +348,7 @@ ParseStatus Parser::parse_impl(ParseContext& ctx) {
 
     if (current.starts_with("--")) {
       should_stop = long_option(scope, current, &i, ctx, &status);
-    } else if (current.starts_with("-") && current.size() > 1) {
+    } else if (current.starts_with('-') && current.size() > 1) {
       should_stop = short_options(scope, current, &i, ctx, &status);
     } else if (const Command* sub = scope.back()->find_subcommand(current)) {
       scope.push_back(sub);

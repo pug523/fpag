@@ -67,8 +67,12 @@ HeaderFilterRegex: '^.*[\\/](src|tests)[\\/].*$'
 ExcludeHeaderFilterRegex: '[\\/](third_party|_deps|build|out)[\\/]'
 SystemHeaders:    false
 WarningsAsErrors: '*'
+# clang-tidy may analyze a command line another compiler assembled (the c++
+# the host provides), so flags that compiler carries and clang does not know
+# are expected, and the diagnostics about them say nothing about the code.
 ExtraArgsBefore:
   - '-Wno-unused-command-line-argument'
+  - '-Wno-unknown-warning-option'
 UseColor:         true
 CheckOptions:
   - key:          readability-identifier-naming.ClassCase
