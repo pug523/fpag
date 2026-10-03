@@ -1207,9 +1207,12 @@ bool line_position(const Tables& tables,
         return false;
       }
       if (sub_opcode == DW_LNE_END_SEQUENCE) {
-        // The row that ends a sequence is a row, and it covers the addresses
-        // between the last row before it and the first row after it.
-        emit_row();
+        // The sequence's last row reaches the address the sequence ends at
+        // and no farther: what follows belongs to another sequence or to
+        // none, and a row left open across the boundary claims addresses
+        // the producer never mapped.
+        close_row_at(address);
+        row_open = false;
         address = 0;
         file = 1;
         line_number = 1;
