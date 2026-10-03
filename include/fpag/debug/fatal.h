@@ -13,6 +13,15 @@ namespace debug::internal {
 
 [[noreturn]] FPAG_COLD void fatal_crash_impl();
 
+// Records that a fatal path has written a resolved stack trace, so the
+// signal handler that follows the trap can skip its raw one: the
+// addresses would only repeat the frames with less in them.
+void mark_stack_trace_printed();
+
+// Whether a resolved trace has been written. The answer is a plain flag,
+// so a signal handler may ask without allocating or locking.
+[[nodiscard]] bool stack_trace_printed();
+
 [[noreturn]] FPAG_COLD void unreachable_impl(const char* file,
                                              i32 line,
                                              const char* func,

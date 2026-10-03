@@ -30,15 +30,18 @@
 #include "fpag/arg/parse_result.h"
 #include "fpag/base/numeric.h"
 #include "fpag/base/result.h"
+#include "fpag/debug/logger.h"
+#include "fpag/debug/signal_handler.h"
 
 namespace debug {
 
 namespace {
 
 // Runs @p operation in a forked child with the child's stderr captured into a
-// pipe, and returns the child's wait status. The child never calls
-// init_debug_logger(), which is the case being covered: a check that fails
-// before the debug logger has a sink.
+// pipe, and returns the child's wait status. stdout goes to /dev/null: the
+// child inherits the Catch2 session, whose fatal condition handler reports the
+// death through a copy of the reporter, and that report would land in the
+// parent's output.
 template <typename Operation>
 i32 run_in_child(Operation&& operation, std::string* reported) {
   std::array<i32, 2> fds{};
@@ -83,6 +86,19 @@ i32 run_failing_check(std::string* reported) {
                       reported);
 }
 
+// The same check with the logger the process wires up: there is a sink to
+// write through, and the handlers are installed, so both the resolved trace
+// and the raw one have a place to come from.
+i32 run_failing_check_with_sink(std::string* reported) {
+  return run_in_child(
+      [] {
+        init_debug_logger();
+        register_signal_handlers();
+        FPAG_CHECK_MSG(false, "check_test sink probe");
+      },
+      reported);
+}
+
 #if FPAG_BUILD_FLAG(IS_DEBUG)
 // The signal a trap raises is the architecture's, not the standard's: an
 // undefined instruction raises SIGILL, a breakpoint raises SIGTRAP, and the brk
@@ -121,6 +137,33 @@ TEST_CASE("A failed check reports without a debug logger sink",
   const bool died_from_stack_overflow =
       WIFSIGNALED(status) && (WTERMSIG(status) == SIGSEGV);
   CHECK_FALSE(died_from_stack_overflow);
+  REQUIRE(WIFSIGNALED(status));
+  CHECK(WTERMSIG(status) == trap_signal());
+#endif
+}
+
+// With a sink, the report is one block on one stream, and the handler that
+// follows the trap does not repeat the frames it already named.
+TEST_CASE("A failed check reports its trace on stderr, once",
+          "[debug][check]") {
+  std::string reported;
+  const i32 status = run_failing_check_with_sink(&reported);
+
+  INFO(reported);
+  // The message and the trace under it are the report, and stderr is where
+  // a report goes: stdout belongs to the program.
+  CHECK(reported.find("check_test sink probe") != std::string::npos);
+  // The resolved formatter writes a frame index as `#  0`; the raw one
+  // writes it as `#0x0`.
+  CHECK(reported.find("#  0") != std::string::npos);
+  // The resolved trace already named the frames, so the raw list, which
+  // would repeat them with less in them, stays out.
+  CHECK(reported.find("stack (raw, unresolved)") == std::string::npos);
+
+  // Returning at all would mean the failing check did not abort.
+  const bool returned_normally = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  CHECK_FALSE(returned_normally);
+#if FPAG_BUILD_FLAG(IS_DEBUG)
   REQUIRE(WIFSIGNALED(status));
   CHECK(WTERMSIG(status) == trap_signal());
 #endif

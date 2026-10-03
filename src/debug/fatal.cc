@@ -4,6 +4,7 @@
 
 #include "fpag/debug/fatal.h"
 
+#include <csignal>
 #include <string_view>
 
 #include "fmt/compile.h"
@@ -11,12 +12,25 @@
 #include "fpag/build/build_config.h"
 #include "fpag/debug/check.h"
 #include "fpag/debug/logger.h"
+#include "fpag/debug/stack_trace/stack_trace.h"
 
 #if FPAG_BUILD_FLAG(IS_COMPILER_MSVC)
 #include <intrin.h>
 #endif
 
 namespace debug::internal {
+
+namespace {
+
+// The signal handler reads this after a deliberate trap, so it stays a
+// `sig_atomic_t`: the standard's word for a flag a handler may read.
+volatile std::sig_atomic_t stack_trace_was_printed = 0;
+
+}  // namespace
+
+void mark_stack_trace_printed() { stack_trace_was_printed = 1; }
+
+bool stack_trace_printed() { return stack_trace_was_printed != 0; }
 
 void fatal_crash_impl() {
 #if FPAG_BUILD_FLAG(IS_DEBUG)
@@ -47,6 +61,8 @@ void unreachable_impl(const char* file,
   }
   logger.fatal(FMT_COMPILE("UNREACHABLE\n{}\n  at {}:{} ({})"), msg, file, line,
                func);
+  print_stack_trace_from_here();
+  mark_stack_trace_printed();
   logger.flush();
   fatal_crash_impl();
 }

@@ -85,8 +85,12 @@ void signal_handler(i32 signal_number) {
 )"),
                tp, now, sig, pid, tid);
   // Raw addresses, and nothing else: the logger above has already used the
-  // heap, and a stack overflow has left no thread stack to walk.
-  print_raw_stack_from_here();
+  // heap, and a stack overflow has left no thread stack to walk. A fatal
+  // path that traps on purpose marks its resolved trace first, and the raw
+  // list would only repeat those frames with less in them.
+  if (!internal::stack_trace_printed()) {
+    print_raw_stack_from_here();
+  }
 
   // Which stack the handler got is the difference between a report and no
   // report, so the report says.

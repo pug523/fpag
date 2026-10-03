@@ -40,6 +40,7 @@ void check_fail_impl(const char* expr,
         file, line, func, msg);
   }
   print_stack_trace_from_here();
+  mark_stack_trace_printed();
   logger.flush();
 
   fatal_crash_impl();
@@ -69,6 +70,7 @@ void check_op_fail_impl(const char* expected,
                  expected, lhs, rhs, file, line, func, msg);
   }
   print_stack_trace_from_here();
+  mark_stack_trace_printed();
   logger.flush();
 
   fatal_crash_impl();

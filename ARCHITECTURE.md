@@ -244,8 +244,10 @@ Three levels, and nothing falls between them.
    and gives you `const&` and `&&` overloads so a payload can be moved out only
    when the caller is done with it.
 2. **A diagnostic.** `FPAG_CHECK` and its relatives report, then abort. They
-   write through the debug logger and print a stack trace, so a failure in a
-   debug build is actually diagnosable.
+   write the message through the debug logger and the stack trace beside it,
+   both on stderr, so a failure in a debug build is actually diagnosable. A
+   fatal path marks the trace it printed; the handler that follows the trap
+   skips its raw list rather than repeat the frames with less in them.
 3. **A trap.** `FPAG_UNREACHABLE` compiles to `__builtin_unreachable` in
    release. Reaching it is undefined behaviour by design, and the log line
    before it exists to tell you how you got there.
@@ -262,7 +264,7 @@ back is a library that makes the consumer's own handlers impossible to test.
 
 ```cpp
 term::register_console();               // detect the terminal, enable VT on Windows
-debug::init_debug_logger();             // give the debug logger its sink
+debug::init_debug_logger();             // give the debug logger its stderr sink
 debug::register_exit_handler();         // reset ANSI color on exit
 debug::register_terminate_handler();    // std::terminate -> log + stack trace + trap
 debug::register_signal_handlers();      // SIGSEGV and friends -> the same funnel
@@ -279,14 +281,16 @@ The signal handlers run on a stack of their own. `register_signal_handlers()`
 installs it with `sigaltstack` and asks for it with `SA_ONSTACK`, because a
 stack overflow arrives while the thread stack is the one being overflowed, and a
 handler that starts there has nothing left to run on. What a handler prints is
-**raw addresses and nothing else**: naming a frame needs the loader, the heap
-and a demangler, and every one of those takes a lock or allocates, which a
-handler that interrupted them cannot do. The report says which stack the handler
-got, because that is the difference between a report and no report, and a
-consumer reading one offline can still name every frame with addr2line.
+**raw addresses and nothing else** - and only when no fatal path already printed
+a resolved trace: naming a frame needs the loader, the heap and a demangler, and
+every one of those takes a lock or allocates, which a handler that interrupted
+them cannot do. The report says which stack the handler got, because that is the
+difference between a report and no report, and a consumer reading one offline can
+still name every frame with addr2line.
 
 Outside a handler, `StackTrace::collect_trace()` names every frame itself and
-needs no external tool. `dladdr` says which object an address is in, and the
+writes the report to stderr, like every other diagnostic, and needs no external
+tool. `dladdr` says which object an address is in, and the
 object answers the rest: `src/debug/dwarf/` maps the file, reads its symbol
 table for the function, and its `.debug_info` and `.debug_line` for the file,
 line and column. The symbol table is what puts a name on a static function or
