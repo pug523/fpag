@@ -99,6 +99,23 @@ class InternTable {
   // winner's entry instead of appending a copy of its own: the pool pays once
   // for the name rather than once per thread that wanted it.
   StringPoolId intern(std::string_view content) {
+    const std::optional<StringPoolId> id = try_intern(content);
+    if (id.has_value()) {
+      return *id;
+    }
+    // A name with no free slot is a caller that interned more names than the
+    // table was sized for. FPAG_CHECK would print "Expected: 'false'" for it.
+    FPAG_UNREACHABLE_MSG(
+        "InternTable: the table is full; size it for the names it holds "
+        "(InternTable::reserve).");
+  }
+
+  // The id for @p content, or nothing when the table has no free slot.
+  //
+  // A caller that can answer exhaustion - by reporting it, by growing, or by
+  // refusing the input - uses this rather than intern, which treats the same
+  // state as a programming error.
+  std::optional<StringPoolId> try_intern(std::string_view content) {
     const u64 hash = hash_(content);
     const u8 fingerprint = published(hash);
     u8* const region = region_;
@@ -107,6 +124,11 @@ class InternTable {
       const Probe probe = lookup(region, hash, fingerprint, content);
       if (probe.found) {
         return probe.id;
+      }
+      if (probe.full) {
+        // Every slot is taken and a claim in flight only publishes into one,
+        // so waiting cannot free a slot.
+        return std::nullopt;
       }
       if (!probe.blocked && claim(region, probe.index)) {
         const StringPoolId id = pool_->append(content);
@@ -228,6 +250,9 @@ class InternTable {
     u32 index;
     bool found;
     bool blocked;
+    // The walk covered every slot without meeting this name or an empty one, so
+    // the name cannot be interned into this table.
+    bool full = false;
   };
 
   static u8 published(u64 hash) {
@@ -341,12 +366,10 @@ class InternTable {
       index = (index + 1) & mask;
     }
 
-    // A name with no free slot is a caller that interned more names than the
-    // table was sized for, which is reachable rather than impossible, so it is
-    // reported as such. FPAG_CHECK would print "Expected: 'false'" for it.
-    FPAG_UNREACHABLE_MSG(
-        "InternTable: the table is full; size it for the names it holds "
-        "(InternTable::reserve).");
+    // Every slot was walked without meeting this name or an empty one: the
+    // table is full. What that means is the caller's to say, so it is reported
+    // rather than assumed.
+    return {{}, index, false, claimed, true};
   }
 
   // Takes a free slot for one writer. False means another writer took it, and

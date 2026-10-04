@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string_view>
 
 #include "fpag/base/numeric.h"
@@ -42,6 +43,12 @@ class StringInterner {
 
   // Interns the string and returns a stable StringId.
   StringId intern(const std::string_view str);
+
+  // Interns the string, or answers with nothing when the table has no room for
+  // another name.
+  std::optional<StringId> try_intern(const std::string_view str) {
+    return table_.try_intern(str);
+  }
 
   std::string_view get(StringId id) const { return pool_.get(id); }
   constexpr const StringPool& pool() const { return pool_; }

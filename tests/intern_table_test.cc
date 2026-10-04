@@ -256,4 +256,21 @@ TEST_CASE("A default-sized table holds a compiler's share of names",
         table.capacity() * (1 + sizeof(StringPoolId)));
 }
 
+TEST_CASE("A full table answers a fallible intern with nothing",
+          "[str][intern_table]") {
+  StringPool pool;
+  InternTable<> table(&pool, 16);
+
+  const usize slots = table.capacity();
+  for (usize index = 0; index < slots; ++index) {
+    CHECK(table.intern("name-" + std::to_string(index)) !=
+          INVALID_STRING_POOL_ID);
+  }
+  CHECK(table.count() == slots);
+  // What was interned is still found; only a name with no slot left has no
+  // answer, and it is an answer rather than a trap.
+  CHECK(table.find("name-0").has_value());
+  CHECK_FALSE(table.try_intern("late").has_value());
+}
+
 }  // namespace str
