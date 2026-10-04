@@ -351,7 +351,7 @@ jobs:
           #include "fpag/hash/xxh3_hasher.h"
           #include "fpag/logging/sink/composite_sink.h"
           #include "fpag/logging/sink/null_sink.h"
-          #include "fpag/logging/sink/stdout_sink.h"
+          #include "fpag/logging/sink/fd_sink.h"
           #include "fpag/logging/sync/sync_logger.h"
           #include "fpag/mem/arena.h"
 
