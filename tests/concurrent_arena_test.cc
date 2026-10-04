@@ -35,15 +35,34 @@ TEST_CASE("ConcurrentArena basic allocation and alignment", "[mem][arena]") {
     CHECK(arena.committed_size() == 0);
   }
 
-  SECTION("Pages are committed lazily, a page at a time") {
+  SECTION("Pages are committed lazily, a chunk at a time") {
     arena.reserve(page_size() * 4);
     void* const first = arena.alloc(1);
     REQUIRE(first != nullptr);
-    CHECK(arena.committed_size() == page_size());
+    // The chunk is larger than this reservation, so the frontier reaches the
+    // end of it. A reservation smaller than a chunk commits all of itself.
+    CHECK(arena.committed_size() == page_size() * 4);
 
-    void* const second = arena.alloc(page_size());
+    const usize committed_after_first = arena.committed_size();
+    void* const second = arena.alloc(1);
     REQUIRE(second != nullptr);
-    CHECK(arena.committed_size() == page_size() * 2);
+    // An allocation inside what is already committed commits nothing more.
+    CHECK(arena.committed_size() == committed_after_first);
+  }
+
+  SECTION("A reservation larger than a chunk commits in chunks") {
+    // Big enough that the chunk, not the reservation, is what bounds the
+    // first commit. The chunk is private to the translation unit, so it is
+    // observed rather than named: the watermark must be a whole number of
+    // pages, and must not be the whole reservation.
+    const usize pages = 4096;
+    arena.reserve(page_size() * pages);
+    void* const first = arena.alloc(1);
+    REQUIRE(first != nullptr);
+    const usize committed = arena.committed_size();
+    CHECK(is_page_aligned_size(committed));
+    CHECK(committed > 0);
+    CHECK(committed < page_size() * pages);
   }
 
   SECTION("Allocations are aligned and distinct") {

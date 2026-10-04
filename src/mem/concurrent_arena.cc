@@ -14,6 +14,14 @@
 
 namespace mem {
 
+namespace {
+
+// How far ahead of the frontier the pages are made writable. See
+// ConcurrentArena::alloc.
+constexpr usize COMMIT_CHUNK_BYTES = 256ull << 10;
+
+}  // namespace
+
 ConcurrentArena::ConcurrentArena(ConcurrentArena&& other) noexcept
     : ptr_(std::exchange(other.ptr_, nullptr)),
       capacity_(std::exchange(other.capacity_, 0)),
@@ -104,6 +112,14 @@ void* ConcurrentArena::alloc(usize size, usize align) {
   // Committing first costs a repeated, idempotent mprotect when two threads
   // race, and makes `new_size <= committed` a guarantee that the pages are
   // already committed.
+  //
+  // The watermark advances a chunk at a time rather than to the allocation
+  // that needed it. Committing exactly what was asked for makes every
+  // allocation that lands on a fresh page a system call, and several threads
+  // allocating at once cross the frontier over and over, so a run spends more
+  // time in the kernel than in the work. A chunk costs the same system call
+  // for a quarter of a thousand allocations, and a committed page that nothing
+  // writes is not resident, so the reservation stays as lazy as it was.
   while (true) {
     usize committed = committed_size_.load(std::memory_order_acquire);
 
@@ -111,7 +127,7 @@ void* ConcurrentArena::alloc(usize size, usize align) {
       break;
     }
 
-    usize new_committed = base::round_up(new_size, page_size());
+    usize new_committed = base::round_up(new_size, COMMIT_CHUNK_BYTES);
     if (new_committed > capacity_) [[unlikely]] {
       new_committed = capacity_;
     }
