@@ -82,6 +82,8 @@ void ConcurrentArena::reset() {
   ptr_ = nullptr;
   capacity_ = 0;
 
+  lanes_.clear();
+  pool_begin_ = 0;
   size_.store(0, std::memory_order_relaxed);
   committed_size_.store(0, std::memory_order_relaxed);
 }
@@ -127,30 +129,37 @@ bool ConcurrentArena::commit_until(usize end) {
   }
 }
 
-void ConcurrentArena::set_lanes(usize lanes, usize unit) {
-  FPAG_DCHECK_MSG(size_.load(std::memory_order_relaxed) == 0,
-                  "Arena has allocated already; a lane is a slice of room the "
-                  "offset has not reached yet.");
-  FPAG_DCHECK_MSG(lanes > 0, "An arena has at least one lane.");
-  FPAG_DCHECK_MSG(unit > 0, "A lane holds something.");
+void ConcurrentArena::set_lanes(usize lanes, usize unit, usize pool_bytes) {
   FPAG_DCHECK_MSG(lanes_.empty(),
                   "A lane that has handed out a node cannot be re-cut; reset "
                   "an arena that is to be divided again.");
+  FPAG_DCHECK_MSG(
+      pool_begin_ == 0 && size_.load(std::memory_order_relaxed) == 0,
+      "Arena has allocated already; a lane is a slice of room the offset has "
+      "not reached yet.");
+  FPAG_DCHECK_MSG(lanes > 0, "An arena has at least one lane.");
+  FPAG_DCHECK_MSG(unit > 0, "A lane holds something.");
 
-  // The slices cover the reservation in lane order, and both ends are whole
-  // numbers of the unit so that what a lane produced is the run from its begin
-  // to its cursor and nothing else. A unit is a size and not an alignment, so
-  // this rounds by division: the last slice gives up whatever is left.
+  // The slices are cut on the unit, so what a lane produced is the run from its
+  // begin to its cursor and nothing else. A unit is a size and not an
+  // alignment, so this rounds by division. The pool is the tail, rounded the
+  // same way because the shared cursor hands out the same units.
   lane_unit_ = unit;
-  const usize usable = (capacity_ / unit) * unit;
+  const usize asked = pool_bytes > capacity_ ? capacity_ : pool_bytes;
+  const usize pool = (asked / unit) * unit;
+  const usize lane_room = ((capacity_ - pool) / unit) * unit;
+  pool_begin_ = lane_room;
   lanes_.resize(lanes);
   for (usize i = 0; i < lanes; ++i) {
-    const usize begin = ((usable * i) / lanes / unit) * unit;
-    const usize end = ((usable * (i + 1)) / lanes / unit) * unit;
+    const usize begin = ((lane_room * i) / lanes / unit) * unit;
+    const usize end = ((lane_room * (i + 1)) / lanes / unit) * unit;
     lanes_[i].cursor = begin;
     lanes_[i].begin = begin;
     lanes_[i].end = end > begin ? end : begin;
   }
+  // The shared cursor starts where the lanes stop. A caller that never reaches
+  // for the pool never moves it, and what it has handed out is pool_size().
+  size_.store(pool_begin_, std::memory_order_relaxed);
 }
 
 void* ConcurrentArena::alloc_from(usize lane, usize size, usize align) {

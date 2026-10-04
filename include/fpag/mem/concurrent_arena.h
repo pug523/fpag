@@ -52,16 +52,23 @@ class ConcurrentArena {
   // it would be read from the one before. A unit is not an alignment, so it
   // need not be a power of two.
   //
-  // The slices are in lane order and cover the reservation, so the offset a
-  // lane hands out is still an offset into the whole arena, and a caller that
-  // addresses its objects by offset needs no change to how it reads them. What
-  // a lane costs is the part of its slice it does not fill, and what it cannot
-  // do is borrow: a lane that reaches its end answers nullptr even when
-  // another lane has room, so a caller that may be handed uneven work keeps
-  // alloc as the answer for that case.
+  // The slices are in lane order below the pool, so the offset a lane hands
+  // out is still an offset into the whole arena, and a caller that addresses
+  // its objects by offset needs no change to how it reads them.
+  //
+  // A lane cannot borrow: it answers nullptr when it reaches its end, even
+  // when another lane has room. `pool_bytes` is the room that answers for
+  // that, and it is the whole reason this takes three numbers rather than two.
+  // The appends of a caller that spreads work over threads are not spread the
+  // way its room is, so dividing the room by the lane count and stopping there
+  // means a package that fits a table with room to spare is refused once the
+  // lanes are uneven. The pool is at the end of the reservation, whole units,
+  // and the caller reaches it through alloc and alloc_exact as it did before
+  // there were lanes. `pool_bytes` of zero is a caller that has balanced its
+  // work and wants no room for the case where it has not.
   //
   // Not thread-safe, and it must be set before the first allocation.
-  void set_lanes(usize lanes, usize unit);
+  void set_lanes(usize lanes, usize unit, usize pool_bytes);
 
   // Allocates `size` bytes from one lane, which must be a whole number of the
   // unit the lane was set with, and aligned to `align`. A lane has one writer,
@@ -80,6 +87,16 @@ class ConcurrentArena {
   // there were lanes.
   [[nodiscard]] usize lane_begin(usize lane) const;
   [[nodiscard]] usize lane_end(usize lane) const;
+
+  // The run the shared cursor hands out, which is the whole of what the arena
+  // has used when there are no lanes. A caller that reads a table by index
+  // counts this among the runs that hold what it wrote: a lane that reached
+  // its end falls back here, so the room a table has filled is the lane runs
+  // and this one together.
+  [[nodiscard]] usize pool_begin() const { return pool_begin_; }
+  [[nodiscard]] usize pool_size() const {
+    return size_.load(std::memory_order_relaxed) - pool_begin_;
+  }
 
   // Allocates `size` bytes in one operation, for a table that appends one size
   // of object and no other.
@@ -136,6 +153,9 @@ class ConcurrentArena {
   usize capacity_ = 0;
   // The size of what a lane holds, which its slice ends are whole numbers of.
   usize lane_unit_ = 1;
+  // Where the pool begins, which is the end of the last lane. Zero when there
+  // are no lanes, so that the pool is what the shared cursor reaches.
+  usize pool_begin_ = 0;
 
   // One cursor per lane, empty until set_lanes names them: an arena without
   // lanes is one lane, and size() is what that lane has handed out. The cursor

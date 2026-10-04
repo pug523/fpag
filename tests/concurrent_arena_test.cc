@@ -85,7 +85,7 @@ TEST_CASE("ConcurrentArena basic allocation and alignment", "[mem][arena]") {
 TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
   ConcurrentArena arena;
   arena.reserve(page_size() * 8);
-  arena.set_lanes(4, sizeof(u64));
+  arena.set_lanes(4, sizeof(u64), 0);
 
   SECTION("The slices are in order and cover what the slack leaves") {
     usize previous = 0;
@@ -151,6 +151,51 @@ TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
     CHECK(arena.alloc_from(3, sizeof(u64), alignof(u64)) == nullptr);
     CHECK(arena.lane_size(3) == per_lane);
     CHECK(arena.alloc_from(0, sizeof(u64), alignof(u64)) != nullptr);
+  }
+}
+
+TEST_CASE("ConcurrentArena keeps a pool for a lane that fills",
+          "[mem][arena]") {
+  ConcurrentArena arena;
+  arena.reserve(page_size() * 8);
+
+  SECTION("The lanes and the pool share the reservation") {
+    arena.set_lanes(4, sizeof(u64), page_size() * 2);
+    // The pool is the tail, so the lanes stop where it begins.
+    const usize pool = arena.pool_begin();
+    CHECK(pool > 0);
+    CHECK(pool % sizeof(u64) == 0);
+    CHECK(arena.lane_end(3) <= pool);
+    CHECK(arena.pool_size() == 0);
+  }
+
+  SECTION("The pool hands out what the shared cursor always handed out") {
+    arena.set_lanes(4, sizeof(u64), page_size() * 2);
+    const usize pool = arena.pool_begin();
+    // A lane that has filled falls back here, and what it takes is an offset
+    // into the same reservation.
+    void* const from_pool = arena.alloc_exact(sizeof(u64), alignof(u64));
+    REQUIRE(from_pool != nullptr);
+    CHECK(static_cast<usize>(static_cast<char*>(from_pool) -
+                             arena.base_ptr()) == pool);
+    CHECK(arena.pool_size() == sizeof(u64));
+    // The lanes are untouched by it.
+    CHECK(arena.lane_size(0) == 0);
+    CHECK(arena.lane_size(3) == 0);
+  }
+
+  SECTION("A lane that fills leaves the pool to the ones that overflow") {
+    arena.set_lanes(4, sizeof(u64), page_size());
+    usize lane_taken = 0;
+    while (arena.alloc_from(0, sizeof(u64), alignof(u64)) != nullptr) {
+      ++lane_taken;
+    }
+    CHECK(lane_taken > 0);
+    CHECK(arena.lane_size(0) == lane_taken * sizeof(u64));
+    // The lane is done, and the room that answers for it is not.
+    CHECK(arena.alloc_from(0, sizeof(u64), alignof(u64)) == nullptr);
+    CHECK(arena.pool_begin() + arena.pool_size() < arena.capacity());
+    CHECK(arena.alloc_exact(sizeof(u64), alignof(u64)) != nullptr);
   }
 }
 
