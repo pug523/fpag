@@ -36,19 +36,6 @@ class ConcurrentArena {
   // Not thread-safe.
   void reset();
 
-  // Reserves `bytes` of the reservation that no allocation may hand out.
-  // Several threads allocating at once each check the room and then take it,
-  // and the two are not one step, so a check has to leave room for the takes
-  // that follow it. A caller that takes a slot per worker says so here.
-  //
-  // Zero, the default, is exact for one caller: the room it may hand out ends
-  // at the end of the reservation. It is only a caller with threads that needs
-  // more, because a take that finds no room has already moved the offset, and
-  // the caller that raced with it would then find room that is not there.
-  // Not thread-safe, and it must be set before the first allocation, because
-  // what it holds back is room the offset has not reached yet.
-  void set_claim_slack(usize bytes);
-
   // Lock-free allocation.
   [[nodiscard]] void* alloc(usize size,
                             usize align = alignof(std::max_align_t));
@@ -58,29 +45,29 @@ class ConcurrentArena {
   // the answer for a caller whose threads each want to allocate: a bump that
   // nobody else can move needs no atomic operation at all.
   //
-  // `align` is what a lane holds. A slice begins where the last one ended, and
-  // a caller reads what a lane produced as the run from its begin to its
-  // cursor, so both ends are rounded to `align`: the fill between slices is
-  // then not counted as something a lane produced, and the offsets a lane
-  // hands out are aligned without anything having to align them.
+  // `unit` is the size of what a lane holds, and both ends of a slice are
+  // whole numbers of it. That is the caller's whole reason to ask: a table
+  // whose index is `offset / unit` cannot have a slice that begins part-way
+  // into an object, because the division would truncate and every object after
+  // it would be read from the one before. A unit is not an alignment, so it
+  // need not be a power of two.
   //
   // The slices are in lane order and cover the reservation, so the offset a
   // lane hands out is still an offset into the whole arena, and a caller that
-  // addresses its objects by offset -- a table whose index is `offset / size`
-  // -- needs no change to how it reads them. What a lane costs is the part of
-  // its slice it does not fill, and what it cannot do is borrow: a lane that
-  // reaches its end answers nullptr even when another lane has room, so a
-  // caller that may be handed uneven work keeps alloc as the answer for that
-  // case.
+  // addresses its objects by offset needs no change to how it reads them. What
+  // a lane costs is the part of its slice it does not fill, and what it cannot
+  // do is borrow: a lane that reaches its end answers nullptr even when
+  // another lane has room, so a caller that may be handed uneven work keeps
+  // alloc as the answer for that case.
   //
   // Not thread-safe, and it must be set before the first allocation.
-  void set_lanes(usize lanes, usize align);
+  void set_lanes(usize lanes, usize unit);
 
   // Allocates `size` bytes from one lane, which must be a whole number of the
-  // alignment the lane was set with. A lane has one writer, so this reads the
-  // cursor, checks it and moves it and does nothing else. It answers nullptr
-  // when the lane is full, having written nothing, so the runs a caller counts
-  // are the runs it handed out.
+  // unit the lane was set with, and aligned to `align`. A lane has one writer,
+  // so this reads the cursor, checks it and moves it and does nothing else. It
+  // answers nullptr when the lane is full, having written nothing, so the runs
+  // a caller counts are the runs it handed out.
   [[nodiscard]] void* alloc_from(usize lane, usize size, usize align);
 
   // How much a lane has handed out, which is what a caller walks to. Before
@@ -104,15 +91,14 @@ class ConcurrentArena {
   // divides its size, so the next offset is aligned whenever this one is.
   //
   // The second is room. The caller has already established that the
-  // reservation can hold this request and the takes that can race with it,
-  // the way it does for alloc: it reads the offset, leaves a slot in hand for
-  // every take in flight, and stops once the last slot would not fit. This
-  // takes the room that check left. A take that finds none is a caller that
-  // did not check, so it is a check failure rather than an answer -- and that
-  // is what keeps the offset exact. `alloc` answers nullptr and leaves the
-  // offset where the refused request would have put it, so a table that counts
-  // its nodes by the offset counts one that is not there and walks past its
-  // end.
+  // reservation holds the request, the way it does for alloc: it reads the
+  // offset and stops once the request would not fit. A take that finds none is
+  // a caller that did not check, so it is a check failure rather than an
+  // answer -- and that is what keeps the offset exact. `alloc` answers nullptr
+  // and leaves the offset where the refused request would have put it, so a
+  // table that counts its nodes by the offset counts one that is not there and
+  // walks past its end. A caller with several appenders gives each of them a
+  // lane instead, which is what set_lanes is for.
   //
   // What this is for: `alloc` reads the offset, aligns it, and compares and
   // swaps, which under contention costs several transfers of the line the
@@ -148,8 +134,8 @@ class ConcurrentArena {
 
   char* ptr_ = nullptr;
   usize capacity_ = 0;
-  // Room held back for the claims that race with a check. See set_claim_slack.
-  usize claim_slack_ = 0;
+  // The size of what a lane holds, which its slice ends are whole numbers of.
+  usize lane_unit_ = 1;
 
   // One cursor per lane, empty until set_lanes names them: an arena without
   // lanes is one lane, and size() is what that lane has handed out. The cursor
@@ -161,6 +147,8 @@ class ConcurrentArena {
     usize begin = 0;
     usize end = 0;
   };
+  // Declared before the offset atomics so that a move takes the lanes and the
+  // reservation together, and so that reset() clears them with the pages.
   std::vector<Lane> lanes_;
 
   std::atomic<usize> size_{0};

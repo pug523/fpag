@@ -25,8 +25,13 @@ constexpr usize COMMIT_CHUNK_BYTES = 256ull << 10;
 ConcurrentArena::ConcurrentArena(ConcurrentArena&& other) noexcept
     : ptr_(std::exchange(other.ptr_, nullptr)),
       capacity_(std::exchange(other.capacity_, 0)),
+      lanes_(std::move(other.lanes_)),
       size_(other.size_.load(std::memory_order_relaxed)),
       committed_size_(other.committed_size_.load(std::memory_order_relaxed)) {
+  // The lanes went with the reservation: a cursor is an offset into the pages
+  // this arena now owns, and a lane left behind would hand out room that is no
+  // longer here.
+  other.lanes_.clear();
   other.size_.store(0, std::memory_order_relaxed);
   other.committed_size_.store(0, std::memory_order_relaxed);
 }
@@ -39,11 +44,15 @@ ConcurrentArena& ConcurrentArena::operator=(ConcurrentArena&& other) noexcept {
 
     ptr_ = std::exchange(other.ptr_, nullptr);
     capacity_ = std::exchange(other.capacity_, 0);
+    lanes_ = std::move(other.lanes_);
 
     size_.store(other.size_.load(std::memory_order_relaxed),
                 std::memory_order_relaxed);
     committed_size_.store(other.committed_size_.load(std::memory_order_relaxed),
                           std::memory_order_relaxed);
+
+    // The lanes went with the reservation, as in the constructor.
+    other.lanes_.clear();
 
     other.size_.store(0, std::memory_order_relaxed);
     other.committed_size_.store(0, std::memory_order_relaxed);
@@ -118,23 +127,26 @@ bool ConcurrentArena::commit_until(usize end) {
   }
 }
 
-void ConcurrentArena::set_lanes(usize lanes, usize align) {
+void ConcurrentArena::set_lanes(usize lanes, usize unit) {
   FPAG_DCHECK_MSG(size_.load(std::memory_order_relaxed) == 0,
                   "Arena has allocated already; a lane is a slice of room the "
                   "offset has not reached yet.");
   FPAG_DCHECK_MSG(lanes > 0, "An arena has at least one lane.");
-  FPAG_DCHECK_MSG(align > 0, "A lane holds something.");
+  FPAG_DCHECK_MSG(unit > 0, "A lane holds something.");
+  FPAG_DCHECK_MSG(lanes_.empty(),
+                  "A lane that has handed out a node cannot be re-cut; reset "
+                  "an arena that is to be divided again.");
 
-  // The slices cover the reservation in lane order, and the claim slack is
-  // held back from the end of it, because it is the room a check leaves for
-  // the takes racing with it and a lane is where those takes are. Both ends
-  // are rounded to the lane's alignment so that what a lane produced is the
-  // run from its begin to its cursor and nothing else.
-  const usize usable = base::round_down(capacity_ - claim_slack_, align);
+  // The slices cover the reservation in lane order, and both ends are whole
+  // numbers of the unit so that what a lane produced is the run from its begin
+  // to its cursor and nothing else. A unit is a size and not an alignment, so
+  // this rounds by division: the last slice gives up whatever is left.
+  lane_unit_ = unit;
+  const usize usable = (capacity_ / unit) * unit;
   lanes_.resize(lanes);
   for (usize i = 0; i < lanes; ++i) {
-    const usize begin = base::round_up((usable * i) / lanes, align);
-    const usize end = base::round_down((usable * (i + 1)) / lanes, align);
+    const usize begin = ((usable * i) / lanes / unit) * unit;
+    const usize end = ((usable * (i + 1)) / lanes / unit) * unit;
     lanes_[i].cursor = begin;
     lanes_[i].begin = begin;
     lanes_[i].end = end > begin ? end : begin;
@@ -144,12 +156,9 @@ void ConcurrentArena::set_lanes(usize lanes, usize align) {
 void* ConcurrentArena::alloc_from(usize lane, usize size, usize align) {
   FPAG_DCHECK(ptr_);
   FPAG_DCHECK_MSG(lane < lanes_.size(), "No such lane.");
-  FPAG_DCHECK_MSG(align != 0 && size % align == 0,
-                  "alloc_from needs a size that is a whole number of the "
-                  "alignment its lane was set with.");
-  FPAG_DCHECK_MSG(claim_slack_ >= size,
-                  "alloc_from needs claim slack for the takes that race with "
-                  "it; see set_claim_slack.");
+  FPAG_DCHECK_MSG(align != 0 && size % lane_unit_ == 0,
+                  "alloc_from needs a size that is a whole number of what its "
+                  "lane holds.");
 
   Lane& cursor = lanes_[lane];
   // One writer, so reading the cursor, checking it and moving it are the only
@@ -195,16 +204,6 @@ usize ConcurrentArena::lane_end(usize lane) const {
   }
   FPAG_DCHECK_MSG(lane < lanes_.size(), "No such lane.");
   return lanes_[lane].end;
-}
-
-void ConcurrentArena::set_claim_slack(usize bytes) {
-  FPAG_DCHECK_MSG(size_.load(std::memory_order_relaxed) == 0,
-                  "Arena has allocated already; the slack it holds back is "
-                  "room the offset has not reached yet.");
-  FPAG_DCHECK_MSG(lanes_.empty(),
-                  "The lanes are slices of the room the slack holds back; set "
-                  "this before set_lanes.");
-  claim_slack_ = bytes;
 }
 
 void* ConcurrentArena::alloc_exact(usize size, usize align) {

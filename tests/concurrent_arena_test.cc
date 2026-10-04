@@ -84,9 +84,8 @@ TEST_CASE("ConcurrentArena basic allocation and alignment", "[mem][arena]") {
 
 TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
   ConcurrentArena arena;
-  arena.set_claim_slack(sizeof(u64));
   arena.reserve(page_size() * 8);
-  arena.set_lanes(4, alignof(u64));
+  arena.set_lanes(4, sizeof(u64));
 
   SECTION("The slices are in order and cover what the slack leaves") {
     usize previous = 0;
@@ -97,10 +96,10 @@ TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
       CHECK(arena.lane_size(lane) == 0);
       previous = arena.lane_end(lane);
     }
-    // The slack is held back from the end of the last slice, and the rounding
-    // takes a little more.
-    CHECK(previous <= arena.capacity() - sizeof(u64));
-    CHECK(previous > arena.capacity() - sizeof(u64) - 4 * alignof(u64));
+    // The slices cover the reservation, and rounding takes a little from the
+    // end of the last one.
+    CHECK(previous <= arena.capacity());
+    CHECK(previous > arena.capacity() - 4 * alignof(u64));
   }
 
   SECTION("An allocation comes from its own lane and moves only that lane") {
@@ -140,8 +139,6 @@ TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
   }
 
   SECTION("A full lane answers nullptr and another lane still has room") {
-    // One page of a four-lane slice is a quarter of the reservation, so this
-    // fills the last lane and nothing else.
     const usize per_lane = arena.lane_end(3) - arena.lane_begin(3);
     usize count = 0;
     while (arena.alloc_from(3, sizeof(u64), alignof(u64)) != nullptr) {
@@ -149,8 +146,8 @@ TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
     }
     CHECK(count == per_lane / sizeof(u64));
     CHECK(arena.lane_size(3) == per_lane);
-    // The refusal did not move the lane, which is what keeps a table's count
-    // equal to the nodes it holds.
+    // The refusal did not move the lane, which is what keeps the runs a caller
+    // walks equal to the nodes a lane holds.
     CHECK(arena.alloc_from(3, sizeof(u64), alignof(u64)) == nullptr);
     CHECK(arena.lane_size(3) == per_lane);
     CHECK(arena.alloc_from(0, sizeof(u64), alignof(u64)) != nullptr);
