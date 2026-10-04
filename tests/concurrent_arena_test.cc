@@ -82,6 +82,96 @@ TEST_CASE("ConcurrentArena basic allocation and alignment", "[mem][arena]") {
   }
 }
 
+TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
+  ConcurrentArena arena;
+  arena.set_claim_slack(sizeof(u64));
+  arena.reserve(page_size() * 8);
+  arena.set_lanes(4, alignof(u64));
+
+  SECTION("The slices are in order and cover what the slack leaves") {
+    usize previous = 0;
+    for (usize lane = 0; lane < 4; ++lane) {
+      CHECK(arena.lane_begin(lane) >= previous);
+      CHECK(arena.lane_begin(lane) % alignof(u64) == 0);
+      CHECK(arena.lane_end(lane) % alignof(u64) == 0);
+      CHECK(arena.lane_size(lane) == 0);
+      previous = arena.lane_end(lane);
+    }
+    // The slack is held back from the end of the last slice, and the rounding
+    // takes a little more.
+    CHECK(previous <= arena.capacity() - sizeof(u64));
+    CHECK(previous > arena.capacity() - sizeof(u64) - 4 * alignof(u64));
+  }
+
+  SECTION("An allocation comes from its own lane and moves only that lane") {
+    void* const first = arena.alloc_from(1, sizeof(u64), alignof(u64));
+    REQUIRE(first != nullptr);
+    // The offset is the whole arena's, which is what lets a table whose index
+    // is the offset read a lane's nodes without asking which lane they are in.
+    const usize offset = static_cast<usize>(static_cast<char*>(first) -
+                                             arena.base_ptr());
+    CHECK(offset == arena.lane_begin(1));
+    CHECK(arena.lane_size(1) == sizeof(u64));
+    CHECK(arena.lane_size(0) == 0);
+    CHECK(arena.lane_size(2) == 0);
+    CHECK(arena.lane_size(3) == 0);
+
+    void* const again = arena.alloc_from(1, sizeof(u64), alignof(u64));
+    REQUIRE(again != nullptr);
+    CHECK(static_cast<char*>(again) - static_cast<char*>(first) ==
+          static_cast<ptrdiff_t>(sizeof(u64)));
+    CHECK(arena.lane_size(1) == 2 * sizeof(u64));
+  }
+
+  SECTION("Lanes do not overlap") {
+    std::vector<void*> taken;
+    for (usize lane = 0; lane < 4; ++lane) {
+      for (usize i = 0; i < 4; ++i) {
+        void* const ptr = arena.alloc_from(lane, sizeof(u64), alignof(u64));
+        REQUIRE(ptr != nullptr);
+        taken.push_back(ptr);
+      }
+    }
+    for (usize i = 0; i < taken.size(); ++i) {
+      for (usize j = i + 1; j < taken.size(); ++j) {
+        CHECK(taken[i] != taken[j]);
+      }
+    }
+  }
+
+  SECTION("A full lane answers nullptr and another lane still has room") {
+    // One page of a four-lane slice is a quarter of the reservation, so this
+    // fills the last lane and nothing else.
+    const usize per_lane = arena.lane_end(3) - arena.lane_begin(3);
+    usize count = 0;
+    while (arena.alloc_from(3, sizeof(u64), alignof(u64)) != nullptr) {
+      ++count;
+    }
+    CHECK(count == per_lane / sizeof(u64));
+    CHECK(arena.lane_size(3) == per_lane);
+    // The refusal did not move the lane, which is what keeps a table's count
+    // equal to the nodes it holds.
+    CHECK(arena.alloc_from(3, sizeof(u64), alignof(u64)) == nullptr);
+    CHECK(arena.lane_size(3) == per_lane);
+    CHECK(arena.alloc_from(0, sizeof(u64), alignof(u64)) != nullptr);
+  }
+}
+
+TEST_CASE("ConcurrentArena without lanes is one lane", "[mem][arena]") {
+  ConcurrentArena arena;
+  arena.reserve(page_size() * 4);
+
+  SECTION("Without lanes there is one, and it is the whole arena") {
+    CHECK(arena.lane_begin(0) == 0);
+    CHECK(arena.lane_size(0) == 0);
+    CHECK(arena.lane_end(0) == 0);
+    void* const ptr = arena.alloc(sizeof(u64), alignof(u64));
+    REQUIRE(ptr != nullptr);
+    CHECK(arena.lane_size(0) == sizeof(u64));
+    CHECK(arena.lane_end(0) == sizeof(u64));
+  }
+}
+
 TEST_CASE("ConcurrentArena object creation", "[mem][arena]") {
   ConcurrentArena arena;
   arena.reserve(page_size());
