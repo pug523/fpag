@@ -107,8 +107,8 @@ TEST_CASE("ConcurrentArena lanes allocate without an atomic", "[mem][arena]") {
     REQUIRE(first != nullptr);
     // The offset is the whole arena's, which is what lets a table whose index
     // is the offset read a lane's nodes without asking which lane they are in.
-    const usize offset = static_cast<usize>(static_cast<char*>(first) -
-                                             arena.base_ptr());
+    const usize offset =
+        static_cast<usize>(static_cast<char*>(first) - arena.base_ptr());
     CHECK(offset == arena.lane_begin(1));
     CHECK(arena.lane_size(1) == sizeof(u64));
     CHECK(arena.lane_size(0) == 0);
