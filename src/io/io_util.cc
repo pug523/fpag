@@ -114,8 +114,7 @@ bool is_dir(const std::string& dir_name) {
 i32 open(const std::string& path, i32 flags, i32 mode) {
   const char* ptr = path.c_str();
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  (void)mode;
-  return ::_open(ptr, flags);
+  return ::_open(ptr, flags, mode);
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   return ::open(ptr, flags, mode);
 #endif
