@@ -18,6 +18,8 @@
 #include <fcntl.h>
 #include <io.h>
 #include <windows.h>
+
+#include <vector>
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
 #include <errno.h>
 #include <sys/stat.h>
@@ -299,37 +301,65 @@ bool write_file(const std::span<const u8> data,
   }
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
-  constexpr i32 FLAGS = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
-  constexpr i32 MODE = _S_IREAD | _S_IWRITE;
+  // The POSIX-portability layer's _open maps O_CREAT | O_TRUNC to a
+  // create disposition some builds of the MSVC crt resolve through a
+  // handle the wineserver rejects on a previously-used name, while
+  // CreateFileW itself is consistent on both host and cross-compile
+  // setups. Going through the Win32 API removes both that gap and the
+  // truncate-by-presumed-position step below.
+  const int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                                       output_path.c_str(), -1, nullptr, 0);
+  if (wlen == 0) {
+    return false;
+  }
+  std::vector<wchar_t> wpath(static_cast<size_t>(wlen), L'\0');  // NOLINT
+  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, output_path.c_str(),
+                          -1, wpath.data(), wlen) == 0) {
+    return false;
+  }
+  HANDLE h = CreateFileW(wpath.data(), GENERIC_WRITE,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                         CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (h == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  const u8* ptr = data.data();
+  usize remaining = data.size();
+  bool ok = true;
+  while (remaining > 0) {
+    const DWORD want =
+        remaining > 0x8000u ? 0x8000u : static_cast<DWORD>(remaining);
+    DWORD written = 0;
+    if (!WriteFile(h, ptr, want, &written, nullptr) || written == 0) {
+      ok = false;
+      break;
+    }
+    ptr += written;
+    remaining -= static_cast<usize>(written);
+  }
+  CloseHandle(h);
+  return ok;
 #elif FPAG_BUILD_FLAG(IS_OS_POSIX)
   constexpr i32 FLAGS = O_WRONLY | O_CREAT | O_TRUNC;
   constexpr i32 MODE = 0644;
-#endif
-
   const ScopedFd fd(open(output_path, FLAGS, MODE));
   if (!fd.is_valid()) {
     return false;
   }
 
-  const u8* ptr = data.data();
-  usize remaining = data.size();
-
-  while (remaining > 0) {
-#if FPAG_BUILD_FLAG(IS_OS_WIN)
-    const i32 bytes = _write(fd.get(), ptr, static_cast<u32>(remaining));
-#elif FPAG_BUILD_FLAG(IS_OS_POSIX)
-    const isize bytes = ::write(fd.get(), ptr, remaining);
-#endif
-
+  const u8* ptr_ = data.data();
+  usize remaining_ = data.size();
+  while (remaining_ > 0) {
+    const isize bytes = ::write(fd.get(), ptr_, remaining_);
     if (bytes <= 0) {
       return false;
     }
-
-    ptr += bytes;
-    remaining -= static_cast<usize>(bytes);
+    ptr_ += bytes;
+    remaining_ -= static_cast<usize>(bytes);
   }
-
   return true;
+#endif
+  return false;
 }
 
 }  // namespace io
