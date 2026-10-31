@@ -42,7 +42,11 @@ bool FileHandle::open(std::string_view path, FileAccess access) {
 
 #if FPAG_BUILD_FLAG(IS_OS_WIN)
   DWORD desired_access = GENERIC_READ;
-  DWORD share_mode = FILE_SHARE_READ;
+  // An open reader may also need to be writable into by another caller
+  // on the same file; accepting writer sharing admits that reopen on
+  // Windows, where share_mode is fixed at open time, rather than let the
+  // writer observe access denied.
+  DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
   DWORD creation_disposition = OPEN_EXISTING;
 
   if (access == FileAccess::ReadWrite) {
